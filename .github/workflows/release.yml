@@ -97,7 +97,7 @@ jobs:
           cp "$NSIS_DIR/sprite-forge_${VERSION}_x64-setup.exe" "$NSIS_DIR/sprite-forge-setup.exe"
 
           cd "$NSIS_DIR"
-          7z a -tzip "sprite-forge_${VERSION}_x64-setup.nsis.zip" "sprite-forge_${VERSION}_x64-setup.exe"
+          7z a -tzip -mm=Deflate -mx=9 "sprite-forge_${VERSION}_x64-setup.nsis.zip" "sprite-forge_${VERSION}_x64-setup.exe"
 
       - name: Sign update bundle
         shell: bash

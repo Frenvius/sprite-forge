@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useUpdater } from '@/usecase/hooks/use-updater';
-import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+
+const RELEASES_URL = 'https://github.com/Frenvius/sprite-forge/releases/latest';
+const downloadUrlFor = (version: null | string) =>
+	version ? `https://github.com/Frenvius/sprite-forge/releases/tag/v${version}` : RELEASES_URL;
 
 const formatBytes = (bytes: number) => {
 	if (!bytes) return '0 B';
@@ -164,6 +169,17 @@ export const UpdateIndicator = () => {
 					{status === 'error' && (
 						<>
 							<p className="text-xs text-destructive leading-relaxed break-words">{error ?? 'Could not check for updates.'}</p>
+							<p className="text-[11px] text-muted-foreground leading-relaxed">
+								Auto-update failed. Download the installer manually from the release page.
+							</p>
+							<Button
+								size="sm"
+								className="h-8 text-xs w-full"
+								onClick={() => void openUrl(downloadUrlFor(version))}
+							>
+								<ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+								Download {version ? `v${version}` : 'latest'}
+							</Button>
 							<div className="flex items-center gap-2">
 								<Button size="sm" variant="outline" className="h-8 text-xs flex-1" onClick={() => void checkForUpdate()}>
 									<RefreshCw className="h-3.5 w-3.5 mr-1.5" />
