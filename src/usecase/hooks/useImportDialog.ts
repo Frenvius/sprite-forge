@@ -9,6 +9,7 @@ import {
 	readFileBytes,
 	readObdManifest,
 	readSfpManifest,
+	setCategoryCount,
 	extractObdEntries,
 	extractSfpEntries,
 	getCategoryStartId,
@@ -143,11 +144,10 @@ export const useImportDialog = () => {
 				const category = thing.category;
 				const map = getCategoryMapUtil(data, category);
 				let nextId = getCategoryStartId(TIBIA_FORMAT_CONFIG, category);
-				for (const key of map.keys()) {
-					if (key >= nextId) nextId = key + 1;
-				}
+				while (map.has(nextId)) nextId++;
 				thing.id = nextId;
 				map.set(nextId, thing as ThingType);
+				setCategoryCount(data, category, map.size);
 				updateThing(nextId, category, thing as ThingType);
 				markAsNewItem(nextId, category);
 			}
