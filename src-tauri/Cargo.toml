@@ -1,6 +1,6 @@
 [package]
 name = "sprite-forge"
-version = "0.1.3"
+version = "0.1.4"
 description = "A modern Tibia .spr/.dat editor for Open Tibia"
 authors = ["Frenvius <frenvius@gmail.com>"]
 edition = "2021"

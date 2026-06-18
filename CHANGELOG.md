@@ -5,6 +5,18 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-18
+
+### Added
+- Honors `.otfi` overrides when loading custom clients, so DAT/SPR files with non-standard extended/transparency/frame-durations/frame-groups flags now open correctly.
+- Similarity search for items.
+- Copy sprite to clipboard button.
+
+### Fixed
+- Magenta background appearing on sheet imports.
+- Thumbnail rendering for tall objects in the list.
+- Grid and exact-size view toggles now respond to clicks.
+
 ## [0.1.3] - 2026-06-04
 
 ### Added
