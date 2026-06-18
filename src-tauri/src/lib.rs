@@ -1714,9 +1714,15 @@ fn import_object_sheet_binary(
 
     let mut manager = spr_state.lock().map_err(|e| format!("Lock error: {}", e))?;
 
-    let img = image::load_from_memory(image_bytes)
+    let mut img = image::load_from_memory(image_bytes)
         .map_err(|e| format!("Failed to load image from bytes: {}", e))?
         .to_rgba8();
+
+    for pixel in img.pixels_mut() {
+        if pixel[0] == 255 && pixel[1] == 0 && pixel[2] == 255 && pixel[3] == 255 {
+            pixel.0 = [0, 0, 0, 0];
+        }
+    }
 
     let img_width = img.width();
     let img_height = img.height();
