@@ -213,9 +213,10 @@ interface RustSprHeader {
 export async function loadTibiaSpr(
 	path: string,
 	version: ClientVersion,
-	enableTransparency?: boolean
+	enableTransparency?: boolean,
+	extendedOverride?: boolean
 ): Promise<{ path: string; header: RustSprHeader; transparency: boolean }> {
-	const extended = version.supportsExtended;
+	const extended = extendedOverride ?? version.supportsExtended;
 	const transparency = enableTransparency ?? version.supportsAlphaChannel;
 	console.log(
 		`[loadTibiaSpr] Loading ${path} with version ${version.label}. Transparency: ${transparency} (Requested: ${enableTransparency}, Default: ${version.supportsAlphaChannel})`
@@ -282,12 +283,19 @@ export async function selectTibiaFolder(): Promise<null | { datPath: string; spr
 
 let loadEpoch = 0;
 
+export interface LoadOverrides {
+	extended?: boolean;
+	frameGroups?: boolean;
+	frameDurations?: boolean;
+}
+
 export async function loadTibiaData(
 	datPath: string,
 	sprPath: string,
 	version?: ClientVersion,
 	transparency?: boolean,
-	onProgress?: (stage: string, current: number, total: number) => void
+	onProgress?: (stage: string, current: number, total: number) => void,
+	overrides?: LoadOverrides
 ): Promise<AssetData> {
 	const startTime = performance.now();
 	const myEpoch = ++loadEpoch;
@@ -305,12 +313,18 @@ export async function loadTibiaData(
 
 	if (onProgress) onProgress('Loading files...', 10, 100);
 
+	const extendedOverride = overrides?.extended;
+	const effectiveExtended = extendedOverride ?? detectedVersion.supportsExtended;
+
 	const [datResponse, sprData] = await Promise.all([
 		invoke<Uint8Array>('parse_dat_file_bin', {
 			path: datPath,
-			version: detectedVersion.value
+			version: detectedVersion.value,
+			extended: overrides?.extended,
+			frameDurations: overrides?.frameDurations,
+			frameGroups: overrides?.frameGroups
 		}),
-		loadTibiaSpr(sprPath, detectedVersion, transparency)
+		loadTibiaSpr(sprPath, detectedVersion, transparency, extendedOverride)
 	]);
 
 	if (onProgress) onProgress('Parsing metadata...', 70, 100);
@@ -380,7 +394,7 @@ export async function loadTibiaData(
 		effectsCount: datData.effectsCount,
 		missilesCount: datData.missilesCount,
 		spritesCount: sprData.header.sprite_count,
-		extended: detectedVersion.supportsExtended
+		extended: effectiveExtended
 	};
 }
 

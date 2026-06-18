@@ -141,7 +141,11 @@ export const Toolbar = () => {
 		}
 	};
 
-	const handleFolderSelect = async (selectedPath: string, transparency: boolean) => {
+	const handleFolderSelect = async (
+		selectedPath: string,
+		transparency: boolean,
+		overrides?: { extended?: boolean; frameGroups?: boolean; frameDurations?: boolean }
+	) => {
 		try {
 			setLoading(true);
 			setError(null);
@@ -157,7 +161,8 @@ export const Toolbar = () => {
 				transparency ? true : undefined,
 				(stage, current, total) => {
 					setLoading(true, { stage, total, current });
-				}
+				},
+				overrides
 			);
 
 			setData(tibiaData, null as any);
@@ -199,7 +204,11 @@ export const Toolbar = () => {
 
 	const handleLoadWithOptions = async (options: LoadOptions) => {
 		setFolderDialogOpen(false);
-		await handleFolderSelect(options.folderPath, options.transparency);
+		await handleFolderSelect(options.folderPath, options.transparency, {
+			extended: options.extended,
+			frameGroups: options.frameGroups,
+			frameDurations: options.improvedAnimations
+		});
 	};
 
 	const handleMinimize = async (e: React.MouseEvent) => {

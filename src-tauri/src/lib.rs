@@ -947,6 +947,9 @@ fn update_spr_sprites_bin(request: tauri::ipc::Request) -> Result<(), String> {
 fn parse_dat_file_bin(
     path: String,
     version: u32,  // Version from frontend (e.g., 860 for 8.60, 1098 for 10.98)
+    extended: Option<bool>,
+    frame_durations: Option<bool>,
+    frame_groups: Option<bool>,
     dat_state: tauri::State<DatManagerState>,
     log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
@@ -954,6 +957,7 @@ fn parse_dat_file_bin(
 
     let mut reader = DatReader::open(&path)?;
     reader.set_version(version);
+    reader.apply_overrides(extended, frame_durations, frame_groups);
     let (signature, items, outfits, effects, missiles) = reader.read_dat()
         .map_err(|e| format!("DAT parse error (version {}): {}", version, e))?;
 
