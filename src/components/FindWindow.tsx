@@ -6,7 +6,22 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia/types';
-import { X, List, Minus, Square, Trash2, Columns, Sparkles, LayoutGrid } from 'lucide-react';
+import {
+	X,
+	Edit,
+	Copy,
+	List,
+	Minus,
+	Square,
+	Upload,
+	Trash2,
+	Columns,
+	Sparkles,
+	Download,
+	Clipboard,
+	LayoutGrid,
+	ClipboardPaste
+} from 'lucide-react';
 
 import { Input } from './ui/input';
 import { Switch } from './ui/switch';
@@ -17,6 +32,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { SpriteCanvas } from './commons/SpriteCanvas';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from './ui/select';
+import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from './ui/context-menu';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 type SimilarityRef = { id: number; category: ThingCategory };
@@ -132,6 +148,8 @@ export const FindWindow = () => {
 	const [isSearching, setIsSearching] = useState(false);
 	const [selectedResultId, setSelectedResultId] = useState<null | number>(null);
 	const [selectedResultCategory, setSelectedResultCategory] = useState<null | ThingCategory>(null);
+	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+	const [anchorKey, setAnchorKey] = useState<null | string>(null);
 	const [viewMode, setViewModeState] = useState<ViewMode>('list');
 	const [similarityRefs, setSimilarityRefs] = useState<SimilarityRef[]>([]);
 	const [similarityThreshold, setSimilarityThreshold] = useState<number>(70);
@@ -436,19 +454,86 @@ export const FindWindow = () => {
 		}
 	}, [selectedResultId, selectedResultCategory, selectResult]);
 
-	const handleResultClick = useCallback((id: number, category: ThingCategory) => {
-		setSelectedResultId(id);
-		setSelectedResultCategory(category);
-	}, []);
+	const handleResultClick = useCallback(
+		(id: number, category: ThingCategory, e?: React.MouseEvent) => {
+			const key = `${category}-${id}`;
+			setSelectedResultId(id);
+			setSelectedResultCategory(category);
+
+			if (e?.shiftKey && anchorKey) {
+				const startIdx = searchResults.findIndex((r) => `${r.category}-${r.id}` === anchorKey);
+				const endIdx = searchResults.findIndex((r) => `${r.category}-${r.id}` === key);
+				if (startIdx !== -1 && endIdx !== -1) {
+					const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+					const next = new Set<string>(e.ctrlKey || e.metaKey ? selectedKeys : []);
+					for (let i = lo; i <= hi; i++) {
+						const r = searchResults[i];
+						next.add(`${r.category}-${r.id}`);
+					}
+					setSelectedKeys(next);
+					return;
+				}
+			}
+
+			if (e?.ctrlKey || e?.metaKey) {
+				setSelectedKeys((prev) => {
+					const next = new Set(prev);
+					if (next.has(key)) next.delete(key);
+					else next.add(key);
+					return next;
+				});
+				setAnchorKey(key);
+				return;
+			}
+
+			setSelectedKeys(new Set([key]));
+			setAnchorKey(key);
+		},
+		[anchorKey, searchResults, selectedKeys]
+	);
 
 	const handleResultDoubleClick = useCallback(
 		(id: number, category: ThingCategory) => {
+			const key = `${category}-${id}`;
 			setSelectedResultId(id);
 			setSelectedResultCategory(category);
+			setSelectedKeys(new Set([key]));
+			setAnchorKey(key);
 			selectResult(id, category);
 		},
 		[selectResult]
 	);
+
+	const handleContextMenuTarget = useCallback(
+		(id: number, category: ThingCategory) => {
+			const key = `${category}-${id}`;
+			if (!selectedKeys.has(key)) {
+				setSelectedKeys(new Set([key]));
+				setAnchorKey(key);
+				setSelectedResultId(id);
+				setSelectedResultCategory(category);
+			}
+		},
+		[selectedKeys]
+	);
+
+	const emitFindAction = useCallback(async (action: string, targets: Array<{ id: number; category: ThingCategory }>) => {
+		if (targets.length === 0) return;
+		const { emit } = await import('@tauri-apps/api/event');
+		const grouped = new Map<ThingCategory, number[]>();
+		for (const t of targets) {
+			const list = grouped.get(t.category) || [];
+			list.push(t.id);
+			grouped.set(t.category, list);
+		}
+		for (const [category, ids] of grouped) {
+			await emit('find_action', { ids, action, category });
+		}
+	}, []);
+
+	const canFindSimilarThing = useCallback((thing: ThingType | undefined) => {
+		return !!thing?.spriteIndex?.some((sid) => isValidSpriteId(sid));
+	}, []);
 
 	useEffect(() => {
 		const loadSprites = async () => {
@@ -512,6 +597,8 @@ export const FindWindow = () => {
 		setSimilarityRefs([]);
 		setSelectedResultId(null);
 		setSelectedResultCategory(null);
+		setSelectedKeys(new Set());
+		setAnchorKey(null);
 	}, []);
 
 	const handleMinimize = async (e: React.MouseEvent) => {
@@ -594,6 +681,13 @@ export const FindWindow = () => {
 		setSimilarityRefs(cleaned);
 		pendingSimilarityRef.current = true;
 	}, []);
+
+	const handleFindSimilarFromResult = useCallback(
+		(targets: Array<{ id: number; category: ThingCategory }>) => {
+			applySimilarityRefs(targets.map((t) => ({ id: t.id, category: t.category })));
+		},
+		[applySimilarityRefs]
+	);
 
 	useEffect(() => {
 		const raw = localStorage.getItem('sprite-forge-pending-find-similar');
@@ -920,80 +1014,133 @@ export const FindWindow = () => {
 													{rowItems.map((result) => {
 														const key = `${result.category}-${result.id}`;
 														const thing = resultThings.get(key);
+														const isSelected = selectedKeys.has(key);
+														const selectionTargets =
+															isSelected && selectedKeys.size > 1
+																? searchResults.filter((r) => selectedKeys.has(`${r.category}-${r.id}`))
+																: [{ id: result.id, category: result.category }];
+														const isMulti = selectionTargets.length > 1;
 
 														return (
-															<div
-																key={key}
-																onClick={() => handleResultClick(result.id, result.category)}
-																onDoubleClick={() => handleResultDoubleClick(result.id, result.category)}
-																style={{
-																	width: viewMode === 'list' || viewMode === 'large' ? '100%' : `${100 / itemsPerRow}%`,
-																	flex:
-																		viewMode === 'list' || viewMode === 'large'
-																			? '1'
-																			: `0 0 calc(${100 / itemsPerRow}% - ${viewMode === 'compact' ? 2 : 4}px)`
-																}}
-																className={cn(
-																	'text-xs rounded cursor-pointer transition-colors',
-																	selectedResultId === result.id && selectedResultCategory === result.category
-																		? 'bg-primary text-primary-foreground'
-																		: 'hover:bg-muted',
-																	viewMode === 'list' && 'p-2 flex items-center gap-2 h-10',
-																	viewMode === 'grid' && 'p-1 flex items-center gap-1.5 h-[50px]',
-																	viewMode === 'compact' && 'p-0.5 flex flex-col items-center gap-0.5 h-[74px]',
-																	viewMode === 'large' && 'p-1 flex items-center gap-1.5 h-[140px]'
-																)}
-															>
-																{thing && (
-																	<CheckerBoard
+															<ContextMenu key={key}>
+																<ContextMenuTrigger asChild>
+																	<div
+																		onClick={(e) => handleResultClick(result.id, result.category, e)}
+																		onContextMenu={() => handleContextMenuTarget(result.id, result.category)}
+																		onDoubleClick={() => handleResultDoubleClick(result.id, result.category)}
+																		style={{
+																			width: viewMode === 'list' || viewMode === 'large' ? '100%' : `${100 / itemsPerRow}%`,
+																			flex:
+																				viewMode === 'list' || viewMode === 'large'
+																					? '1'
+																					: `0 0 calc(${100 / itemsPerRow}% - ${viewMode === 'compact' ? 2 : 4}px)`
+																		}}
 																		className={cn(
-																			'flex-shrink-0 border border-border/50 rounded overflow-hidden flex items-center justify-center',
-																			viewMode === 'list' && 'w-8 h-8',
-																			viewMode === 'grid' && 'w-12 h-12',
-																			viewMode === 'compact' && 'w-12 h-12',
-																			viewMode === 'large' && 'w-32 h-32'
+																			'text-xs rounded cursor-pointer transition-colors',
+																			isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+																			viewMode === 'list' && 'p-2 flex items-center gap-2 h-10',
+																			viewMode === 'grid' && 'p-1 flex items-center gap-1.5 h-[50px]',
+																			viewMode === 'compact' && 'p-0.5 flex flex-col items-center gap-0.5 h-[74px]',
+																			viewMode === 'large' && 'p-1 flex items-center gap-1.5 h-[140px]'
 																		)}
 																	>
-																		<SpriteCanvas
-																			showEmpty
-																			thing={thing}
-																			renderMode="list"
-																			width={thing.width}
-																			height={thing.height}
-																			scale={
-																				viewMode === 'list'
-																					? 32 / (Math.max(thing.width, thing.height) * spriteSize)
-																					: viewMode === 'grid' || viewMode === 'compact'
-																						? 48 / (Math.max(thing.width, thing.height) * spriteSize)
-																						: 128 / (Math.max(thing.width, thing.height) * spriteSize)
-																			}
-																		/>
-																	</CheckerBoard>
-																)}
-																<div
-																	className={cn(
-																		'min-w-0',
-																		viewMode === 'list' && 'flex-1 text-left',
-																		viewMode === 'grid' && 'flex-1 text-right',
-																		viewMode === 'compact' && 'text-center w-full truncate',
-																		viewMode === 'large' && 'flex-1 text-right'
-																	)}
-																>
-																	{viewMode === 'grid' || viewMode === 'large' ? (
-																		<div className="text-[11px] text-foreground font-mono font-medium leading-tight">
-																			{result.id}
+																		{thing && (
+																			<CheckerBoard
+																				className={cn(
+																					'flex-shrink-0 border border-border/50 rounded overflow-hidden flex items-center justify-center',
+																					viewMode === 'list' && 'w-8 h-8',
+																					viewMode === 'grid' && 'w-12 h-12',
+																					viewMode === 'compact' && 'w-12 h-12',
+																					viewMode === 'large' && 'w-32 h-32'
+																				)}
+																			>
+																				<SpriteCanvas
+																					showEmpty
+																					thing={thing}
+																					renderMode="list"
+																					width={thing.width}
+																					height={thing.height}
+																					scale={
+																						viewMode === 'list'
+																							? 32 / (Math.max(thing.width, thing.height) * spriteSize)
+																							: viewMode === 'grid' || viewMode === 'compact'
+																								? 48 / (Math.max(thing.width, thing.height) * spriteSize)
+																								: 128 / (Math.max(thing.width, thing.height) * spriteSize)
+																					}
+																				/>
+																			</CheckerBoard>
+																		)}
+																		<div
+																			className={cn(
+																				'min-w-0',
+																				viewMode === 'list' && 'flex-1 text-left',
+																				viewMode === 'grid' && 'flex-1 text-right',
+																				viewMode === 'compact' && 'text-center w-full truncate',
+																				viewMode === 'large' && 'flex-1 text-right'
+																			)}
+																		>
+																			{viewMode === 'grid' || viewMode === 'large' ? (
+																				<div className="text-[11px] text-foreground font-mono font-medium leading-tight">
+																					{result.id}
+																				</div>
+																			) : viewMode === 'compact' ? (
+																				<div className="text-[11px] text-foreground font-mono font-medium leading-tight">
+																					{result.id}
+																				</div>
+																			) : (
+																				<span>
+																					{result.category.charAt(0).toUpperCase() + result.category.slice(1)} #{result.id}
+																				</span>
+																			)}
 																		</div>
-																	) : viewMode === 'compact' ? (
-																		<div className="text-[11px] text-foreground font-mono font-medium leading-tight">
-																			{result.id}
-																		</div>
-																	) : (
-																		<span>
-																			{result.category.charAt(0).toUpperCase() + result.category.slice(1)} #{result.id}
-																		</span>
-																	)}
-																</div>
-															</div>
+																	</div>
+																</ContextMenuTrigger>
+																<ContextMenuContent>
+																	<ContextMenuItem
+																		disabled={isMulti}
+																		onClick={() => handleResultDoubleClick(result.id, result.category)}
+																	>
+																		<Edit className="mr-2 h-4 w-4" />
+																		<span>Edit</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem onClick={() => emitFindAction('duplicate', selectionTargets)}>
+																		<Copy className="mr-2 h-4 w-4" />
+																		<span>{isMulti ? `Duplicate (${selectionTargets.length})` : 'Duplicate'}</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem
+																		disabled={isMulti ? false : !canFindSimilarThing(thing)}
+																		onClick={() => handleFindSimilarFromResult(selectionTargets)}
+																	>
+																		<Sparkles className="mr-2 h-4 w-4" />
+																		<span>{isMulti ? `Find Similar (${selectionTargets.length})` : 'Find Similar'}</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem
+																		disabled={isMulti}
+																		onClick={() => emitFindAction('copy_properties', selectionTargets)}
+																	>
+																		<Clipboard className="mr-2 h-4 w-4" />
+																		<span>Copy Properties</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem onClick={() => emitFindAction('paste_properties', selectionTargets)}>
+																		<ClipboardPaste className="mr-2 h-4 w-4" />
+																		<span>{isMulti ? `Paste Properties (${selectionTargets.length})` : 'Paste Properties'}</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem
+																		disabled={isMulti}
+																		onClick={() => emitFindAction('export_sheet', selectionTargets)}
+																	>
+																		<Download className="mr-2 h-4 w-4" />
+																		<span>Export Object Sheet</span>
+																	</ContextMenuItem>
+																	<ContextMenuItem
+																		disabled={isMulti}
+																		onClick={() => emitFindAction('import_sheet', selectionTargets)}
+																	>
+																		<Upload className="mr-2 h-4 w-4" />
+																		<span>Import Object Sheet</span>
+																	</ContextMenuItem>
+																</ContextMenuContent>
+															</ContextMenu>
 														);
 													})}
 												</div>

@@ -44,6 +44,7 @@ export const useItemList = () => {
 	const [currentPage, setCurrentPage] = React.useState<number>(1);
 	const [copiedProperties, setCopiedProperties] = React.useState<null | Partial<ThingType>>(null);
 	const [inputValue, setInputValue] = React.useState<string>('');
+	const [selectedItemIds, setSelectedItemIds] = React.useState<Set<number>>(new Set());
 
 	const scrollViewportRef = React.useRef<HTMLDivElement>(null);
 	const shouldScrollToHighlightedRef = React.useRef(false);
@@ -107,8 +108,10 @@ export const useItemList = () => {
 				const firstItemId = allItemIds[0];
 				if (firstItemId !== undefined) {
 					setHighlightedItemId(firstItemId);
+					setSelectedItemIds(new Set([firstItemId]));
 				} else {
 					setHighlightedItemId(null);
+					setSelectedItemIds(new Set());
 				}
 			}
 		}
@@ -149,6 +152,7 @@ export const useItemList = () => {
 				setCurrentPage(targetPage);
 				shouldScrollToHighlightedRef.current = true;
 				setHighlightedItemId(id);
+				setSelectedItemIds(new Set([id]));
 				setPendingSelection(null);
 			}
 		}
@@ -254,6 +258,7 @@ export const useItemList = () => {
 			const firstItemId = allItemIds[start];
 			if (firstItemId !== undefined) {
 				setHighlightedItemId(firstItemId);
+				setSelectedItemIds(new Set([firstItemId]));
 			}
 		}
 	};
@@ -321,6 +326,7 @@ export const useItemList = () => {
 						setCurrentPage(targetPage);
 						shouldScrollToHighlightedRef.current = true;
 						setHighlightedItemId(itemId);
+						setSelectedItemIds(new Set([itemId]));
 					}
 				}
 			}
@@ -403,51 +409,92 @@ export const useItemList = () => {
 	const editItem = (id: number) => {
 		setOpenedItemId(id);
 		setHighlightedItemId(id);
+		setSelectedItemIds(new Set([id]));
 	};
 
-	const duplicateItem = (id: number, item: ThingType) => {
-		if (!data) return;
-		const map = getCategoryMapUtil(data, selectedCategory);
-		let newId = id + 1;
-		while (map.has(newId)) {
-			newId++;
+	const selectItem = (id: number, e: React.MouseEvent) => {
+		const newSelection = new Set(e.ctrlKey ? selectedItemIds : []);
+
+		if (e.shiftKey && highlightedItemId) {
+			const startIdx = allItemIds.indexOf(highlightedItemId);
+			const endIdx = allItemIds.indexOf(id);
+			if (startIdx !== -1 && endIdx !== -1) {
+				const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+				for (let i = lo; i <= hi; i++) newSelection.add(allItemIds[i]);
+			} else {
+				newSelection.add(id);
+			}
+		} else if (e.ctrlKey) {
+			if (newSelection.has(id)) newSelection.delete(id);
+			else newSelection.add(id);
+			setHighlightedItemId(id);
+		} else {
+			newSelection.add(id);
+			setHighlightedItemId(id);
 		}
 
-		const duplicate: ThingType = {
-			...item,
-			id: newId,
-			spriteIndex: [...item.spriteIndex],
-			frameDurations: item.frameDurations?.map((d) => ({ ...d })),
-			frameGroupsData: item.frameGroupsData?.map((g) => ({
-				...g,
-				spriteIndex: [...g.spriteIndex],
-				frameDurations: g.frameDurations?.map((d) => ({ ...d }))
-			}))
-		};
+		setSelectedItemIds(newSelection);
+	};
 
-		map.set(newId, duplicate);
+	const handleContextMenuTarget = (id: number) => {
+		if (!selectedItemIds.has(id)) {
+			setSelectedItemIds(new Set([id]));
+			setHighlightedItemId(id);
+		}
+	};
 
+	const duplicateItem = (ids: number | number[], itemArg?: ThingType) => {
+		if (!data) return;
+		const map = getCategoryMapUtil(data, selectedCategory);
+		const idList = Array.isArray(ids) ? ids : [ids];
 		const minId = getCategoryStartId(formatConfig, selectedCategory);
-		const updatedCount = Math.max(getCategoryCount(data, selectedCategory), newId - minId + 1);
+
+		let lastNewId: null | number = null;
+		const newIds: number[] = [];
+
+		for (const sourceId of idList) {
+			const source = itemArg && idList.length === 1 ? itemArg : map.get(sourceId);
+			if (!source) continue;
+
+			let newId = sourceId + 1;
+			while (map.has(newId) || newIds.includes(newId)) {
+				newId++;
+			}
+
+			const duplicate: ThingType = {
+				...source,
+				id: newId,
+				spriteIndex: [...source.spriteIndex],
+				frameDurations: source.frameDurations?.map((d) => ({ ...d })),
+				frameGroupsData: source.frameGroupsData?.map((g) => ({
+					...g,
+					spriteIndex: [...g.spriteIndex],
+					frameDurations: g.frameDurations?.map((d) => ({ ...d }))
+				}))
+			};
+
+			map.set(newId, duplicate);
+			markAsNewItem(newId, selectedCategory);
+			markUnsavedChanges(newId, selectedCategory, true);
+			newIds.push(newId);
+			lastNewId = newId;
+		}
+
+		if (lastNewId === null) return;
+
+		const updatedCount = Math.max(getCategoryCount(data, selectedCategory), lastNewId - minId + 1);
 		setCategoryCount(data, selectedCategory, updatedCount);
 
 		const updatedMaxId = minId + updatedCount - 1;
 		const updatedAllItemIds: number[] = [];
-		if (map) {
-			for (let scanId = minId; scanId <= updatedMaxId; scanId++) {
-				if (map.has(scanId)) {
-					updatedAllItemIds.push(scanId);
-				}
-			}
+		for (let scanId = minId; scanId <= updatedMaxId; scanId++) {
+			if (map.has(scanId)) updatedAllItemIds.push(scanId);
 		}
 
-		const itemIndex = updatedAllItemIds.indexOf(newId);
+		const itemIndex = updatedAllItemIds.indexOf(lastNewId);
 		const targetPage = Math.floor(itemIndex / itemsPerPage) + 1;
 
-		markAsNewItem(newId, selectedCategory);
-		markUnsavedChanges(newId, selectedCategory, true);
-
-		pendingNewItemId.current = newId;
+		pendingNewItemId.current = lastNewId;
 		notifyDataChanged();
 		setCurrentPage(targetPage);
 	};
@@ -459,12 +506,15 @@ export const useItemList = () => {
 		toast({ description: 'Properties copied' });
 	};
 
-	const pasteProperties = (id: number) => {
+	const pasteProperties = (ids: number | number[]) => {
 		if (!copiedProperties) return;
-		updateThing(id, selectedCategory, copiedProperties);
-		markUnsavedChanges(id, selectedCategory, true);
-		notifyDataChanged([id]);
-		toast({ description: 'Properties pasted' });
+		const idList = Array.isArray(ids) ? ids : [ids];
+		for (const id of idList) {
+			updateThing(id, selectedCategory, copiedProperties);
+			markUnsavedChanges(id, selectedCategory, true);
+		}
+		notifyDataChanged(idList);
+		toast({ description: idList.length > 1 ? `Properties pasted to ${idList.length} items` : 'Properties pasted' });
 	};
 
 	const exportSheet = (item: ThingType) => {
@@ -484,28 +534,36 @@ export const useItemList = () => {
 		}
 	};
 
-	const removeItem = (id: number) => {
+	const removeItem = (ids: number | number[]) => {
 		if (!data) return;
 		const map = getCategoryMap(selectedCategory);
-		if (!map?.has(id)) return;
-		map.delete(id);
+		if (!map) return;
 
-		removeOpenedItem(id, selectedCategory);
+		const idList = Array.isArray(ids) ? ids : [ids];
+		const toRemove = idList.filter((id) => map.has(id));
+		if (toRemove.length === 0) return;
 
-		if (openedItemId === id) {
-			setOpenedItemId(null);
+		const firstRemoved = toRemove[0];
+		const firstIndex = allItemIds.indexOf(firstRemoved);
+
+		for (const id of toRemove) {
+			map.delete(id);
+			removeOpenedItem(id, selectedCategory);
+			if (openedItemId === id) setOpenedItemId(null);
 		}
 
 		setHighlightedItemId(null);
+		setSelectedItemIds(new Set());
 
-		const remainingIds = allItemIds.filter((itemId) => itemId !== id);
+		const removedSet = new Set(toRemove);
+		const remainingIds = allItemIds.filter((itemId) => !removedSet.has(itemId));
 		if (remainingIds.length === 0) {
 			setCurrentPage(1);
 		} else {
-			const currentIndex = allItemIds.indexOf(id);
-			const nextId = remainingIds[currentIndex] || remainingIds[currentIndex - 1] || remainingIds[0];
+			const nextId = remainingIds[firstIndex] || remainingIds[firstIndex - 1] || remainingIds[0];
 			if (nextId) {
 				setHighlightedItemId(nextId);
+				setSelectedItemIds(new Set([nextId]));
 				const targetPage = Math.floor(remainingIds.indexOf(nextId) / itemsPerPage) + 1;
 				setCurrentPage(targetPage);
 			}
@@ -516,11 +574,75 @@ export const useItemList = () => {
 
 	const canFindSimilar = (item: ThingType) => !!item.spriteIndex?.some((sid) => isValidSpriteId(sid));
 
+	const [pendingFindActions, setPendingFindActions] = React.useState<
+		Array<{ ids: number[]; action: string; category: ThingCategory }>
+	>([]);
+
+	React.useEffect(() => {
+		let unlisten: undefined | (() => void);
+
+		const setupListener = async () => {
+			const { listen } = await import('@tauri-apps/api/event');
+			unlisten = await listen('find_action', (event: any) => {
+				const payload = event.payload as { id?: number; ids?: number[]; action: string; category: ThingCategory };
+				const ids = Array.isArray(payload.ids) ? payload.ids : payload.id !== undefined ? [payload.id] : [];
+				if (ids.length === 0) return;
+				setPendingFindActions((prev) => [...prev, { ids, action: payload.action, category: payload.category }]);
+			});
+		};
+
+		setupListener();
+
+		return () => {
+			if (unlisten) unlisten();
+		};
+	}, []);
+
+	React.useEffect(() => {
+		if (pendingFindActions.length === 0) return;
+		const next = pendingFindActions[0];
+		if (next.category !== selectedCategory) {
+			setSelectedCategory(next.category);
+			return;
+		}
+
+		const { ids, action } = next;
+		const validItems = ids.map((id) => ({ id, item: getThing(id, selectedCategory) })).filter((x) => !!x.item);
+		setPendingFindActions((prev) => prev.slice(1));
+		if (validItems.length === 0) return;
+
+		const isMulti = validItems.length > 1;
+		const idList = validItems.map((x) => x.id);
+
+		switch (action) {
+			case 'duplicate':
+				duplicateItem(isMulti ? idList : validItems[0].id, isMulti ? undefined : validItems[0].item!);
+				break;
+			case 'copy_properties':
+				if (!isMulti) copyProperties(validItems[0].item!);
+				break;
+			case 'paste_properties':
+				if (!copiedProperties) {
+					toast({ description: 'No properties copied' });
+				} else {
+					pasteProperties(isMulti ? idList : validItems[0].id);
+				}
+				break;
+			case 'export_sheet':
+				if (!isMulti) exportSheet(validItems[0].item!);
+				break;
+			case 'import_sheet':
+				if (!isMulti) importSheet(validItems[0].item!);
+				break;
+		}
+	}, [pendingFindActions, selectedCategory, copiedProperties, setSelectedCategory, getThing]);
+
 	return {
 		data,
 		getThing,
 		viewMode,
 		editItem,
+		selectItem,
 		inputValue,
 		removeItem,
 		totalPages,
@@ -535,6 +657,7 @@ export const useItemList = () => {
 		duplicateItem,
 		canFindSimilar,
 		copyProperties,
+		selectedItemIds,
 		pasteProperties,
 		handlePageChange,
 		copiedProperties,
@@ -546,6 +669,7 @@ export const useItemList = () => {
 		handleInputKeyDown,
 		setSelectedCategory,
 		setHighlightedItemId,
+		handleContextMenuTarget,
 		findSimilar: handleFindSimilar
 	};
 };
