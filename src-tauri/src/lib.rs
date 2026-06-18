@@ -30,6 +30,9 @@ mod sprite_protocol;
 mod similarity;
 use similarity::{SpriteSignature, signature_compressed};
 
+mod formats;
+use formats::FormatManagerState;
+
 #[derive(Serialize, Deserialize)]
 struct FileBytes(#[serde(with = "serde_bytes")] Vec<u8>);
 
@@ -2038,6 +2041,20 @@ pub fn run() {
 
     let dat_manager: DatManagerState = Arc::new(Mutex::new(DatManager::new()));
 
+    let format_manager: FormatManagerState = {
+        #[cfg(feature = "tibia")]
+        {
+            Arc::new(Mutex::new(formats::FormatManager::new(
+                Box::new(formats::tibia::TibiaSpriteProvider::new()),
+                Box::new(formats::tibia::TibiaMetadataProvider::new()),
+            )))
+        }
+        #[cfg(not(feature = "tibia"))]
+        {
+            compile_error!("At least one format feature must be enabled (e.g. 'tibia')");
+        }
+    };
+
     {
         let mut log = logger.lock().unwrap();
         let log_path = "sprite-forge-debug.jsonl";
@@ -2060,6 +2077,7 @@ tauri::Builder::default()
         .manage(spr_manager)
         .manage(logger)
         .manage(dat_manager)
+        .manage(format_manager)
         .invoke_handler(tauri::generate_handler![
             read_file,
             read_file_text,

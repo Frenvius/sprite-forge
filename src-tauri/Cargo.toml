@@ -28,6 +28,12 @@ lz4_flex = { version = "0.11", features = ["frame"] }
 sha1 = "0.10.6"
 tempfile = "3.23.0"
 image = "0.24"
+
+[features]
+default = ["tibia"]
+tibia = []
+bpak = []
+
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26.1"
 objc = "0.2.7"
