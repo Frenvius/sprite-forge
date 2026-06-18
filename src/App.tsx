@@ -4,6 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/usecase/context/ThemeContext';
 import { Route, Routes, BrowserRouter } from 'react-router-dom';
 import { DragDropProvider } from '@/usecase/context/DragDropContext';
+import { TransferProvider } from '@/usecase/context/TransferContext';
 import { AssetDataProvider } from '@/usecase/context/AssetDataContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorDialogProvider } from '@/usecase/context/ErrorDialogContext';
@@ -24,14 +25,16 @@ const App = () => (
 						<PanelSettingsProvider>
 							<GeneralSettingsProvider>
 								<DragDropProvider>
-									<Toaster />
-									<Sonner />
-									<BrowserRouter>
-										<Routes>
-											<Route path="/" element={<Index />} />
-											<Route path="*" element={<NotFound />} />
-										</Routes>
-									</BrowserRouter>
+									<TransferProvider>
+										<Toaster />
+										<Sonner />
+										<BrowserRouter>
+											<Routes>
+												<Route path="/" element={<Index />} />
+												<Route path="*" element={<NotFound />} />
+											</Routes>
+										</BrowserRouter>
+									</TransferProvider>
 								</DragDropProvider>
 							</GeneralSettingsProvider>
 						</PanelSettingsProvider>

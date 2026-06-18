@@ -172,11 +172,7 @@ export const UpdateIndicator = () => {
 							<p className="text-[11px] text-muted-foreground leading-relaxed">
 								Auto-update failed. Download the installer manually from the release page.
 							</p>
-							<Button
-								size="sm"
-								className="h-8 text-xs w-full"
-								onClick={() => void openUrl(downloadUrlFor(version))}
-							>
+							<Button size="sm" className="h-8 text-xs w-full" onClick={() => void openUrl(downloadUrlFor(version))}>
 								<ExternalLink className="h-3.5 w-3.5 mr-1.5" />
 								Download {version ? `v${version}` : 'latest'}
 							</Button>

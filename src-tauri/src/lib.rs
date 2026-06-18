@@ -33,6 +33,9 @@ use similarity::{SpriteSignature, signature_compressed};
 mod formats;
 use formats::FormatManagerState;
 
+mod obd;
+mod pack;
+
 #[derive(Serialize, Deserialize)]
 struct FileBytes(#[serde(with = "serde_bytes")] Vec<u8>);
 
@@ -2043,6 +2046,383 @@ fn import_object_sheet_binary(
     Ok(tauri::ipc::Response::new(result))
 }
 
+fn transfer_category_label(value: u8) -> &'static str {
+    match value {
+        1 => "item",
+        2 => "outfit",
+        3 => "effect",
+        4 => "missile",
+        _ => "item",
+    }
+}
+
+fn transfer_category_value(category: &str) -> u8 {
+    match category {
+        "item" => 1,
+        "outfit" => 2,
+        "effect" => 3,
+        "missile" => 4,
+        _ => 1,
+    }
+}
+
+fn read_sprite_rgba(r: &mut Reader, transparent: bool) -> Result<(u32, bool, Vec<u8>, Vec<u8>), String> {
+    let local_id = r.u32()?;
+    let kind = r.u8()?;
+    let len = r.u32()? as usize;
+    let bytes = r.take(len)?.to_vec();
+    let (is_empty, rle, rgba) = match kind {
+        0 => (true, Vec::new(), vec![0u8; 4096]),
+        1 => {
+            let rgba = decompress_to_rgba(&bytes, transparent);
+            (false, bytes, rgba)
+        }
+        _ => {
+            let rle = compress_to_rle(&bytes, transparent);
+            (false, rle, bytes)
+        }
+    };
+    Ok((local_id, is_empty, rle, rgba))
+}
+
+fn build_extract_response(
+    things: Vec<ThingType>,
+    sprites: Vec<(u32, Vec<u8>)>,
+    transparent: bool,
+) -> Result<tauri::ipc::Response, String> {
+    let mut result = Vec::new();
+    result.extend_from_slice(&(things.len() as u32).to_le_bytes());
+    for t in &things {
+        let json = serde_json::to_vec(t).map_err(|e| format!("JSON serialize error: {}", e))?;
+        result.extend_from_slice(&(json.len() as u32).to_le_bytes());
+        result.extend_from_slice(&json);
+    }
+    let sprite_data: Vec<SpriteData> = sprites
+        .into_iter()
+        .map(|(id, rgba)| SpriteData {
+            id,
+            is_empty: false,
+            compressed_pixels: compress_to_rle(&rgba, transparent),
+        })
+        .collect();
+    let buf = SprManager::pack_sprites_rgba_lz4(sprite_data, transparent);
+    result.extend_from_slice(&buf);
+    Ok(tauri::ipc::Response::new(result))
+}
+
+#[tauri::command]
+fn export_pack_bin(request: tauri::ipc::Request) -> Result<(), String> {
+    use std::collections::HashMap;
+
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("export_pack_bin expects a raw binary payload".to_string()),
+    };
+
+    let mut r = Reader::new(bytes);
+    let mode = r.u8()?;
+    let out_path = r.string()?;
+    let append_path = r.string()?;
+    let client_version = r.u16()?;
+    let flags = r.u8()?;
+    let transparent = flags & pack::FLAG_TRANSPARENCY != 0;
+
+    let thing_count = r.u32()? as usize;
+    let mut entries = Vec::with_capacity(thing_count);
+    for _ in 0..thing_count {
+        let category = r.u8()?;
+        let name = r.string()?;
+        let thing_len = r.u32()? as usize;
+        let thing_bytes = r.take(thing_len)?;
+        let mut tr = Reader::new(thing_bytes);
+        let thing = read_thing(&mut tr, transfer_category_label(category))?;
+        entries.push(pack::PackEntryInput { category, name, thing });
+    }
+
+    let sprite_count = r.u32()? as usize;
+    let mut sprites: HashMap<u32, pack::SpriteInput> = HashMap::with_capacity(sprite_count);
+    for _ in 0..sprite_count {
+        let (local_id, is_empty, rle, rgba) = read_sprite_rgba(&mut r, transparent)?;
+        sprites.insert(local_id, pack::SpriteInput { is_empty, rle, rgba });
+    }
+
+    let append = if mode == 1 && !append_path.is_empty() {
+        Some(append_path.as_str())
+    } else {
+        None
+    };
+
+    pack::write_pack(&out_path, append, client_version, flags, entries, &sprites)
+}
+
+#[tauri::command]
+fn export_obd_bin(request: tauri::ipc::Request) -> Result<(), String> {
+    use std::collections::HashMap;
+
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("export_obd_bin expects a raw binary payload".to_string()),
+    };
+
+    let mut r = Reader::new(bytes);
+    let out_path = r.string()?;
+    let client_version = r.u16()?;
+    let flags = r.u8()?;
+    let transparent = flags & pack::FLAG_TRANSPARENCY != 0;
+    let category = r.u8()?;
+    let thing_len = r.u32()? as usize;
+    let thing_bytes = r.take(thing_len)?;
+    let mut tr = Reader::new(thing_bytes);
+    let thing = read_thing(&mut tr, transfer_category_label(category))?;
+
+    let sprite_count = r.u32()? as usize;
+    let mut rgba_by_id: HashMap<u32, Vec<u8>> = HashMap::with_capacity(sprite_count);
+    for _ in 0..sprite_count {
+        let (local_id, _is_empty, _rle, rgba) = read_sprite_rgba(&mut r, transparent)?;
+        rgba_by_id.insert(local_id, rgba);
+    }
+
+    let encoded = obd::encode_obd_v3(client_version, &thing, &rgba_by_id)?;
+    fs::write(&out_path, &encoded).map_err(|e| format!("Failed to write OBD: {}", e))?;
+    Ok(())
+}
+
+fn emit_manifest_entry(
+    out: &mut Vec<u8>,
+    category: u8,
+    source_id: u32,
+    thing: &ThingType,
+    name: &str,
+    thumb_w: u16,
+    thumb_h: u16,
+    thumb: &[u8],
+    sprite_count: u32,
+) {
+    out.push(category);
+    out.extend_from_slice(&source_id.to_le_bytes());
+    out.push(thing.width);
+    out.push(thing.height);
+    out.push(thing.layers);
+    out.push(thing.frames);
+    let name_bytes = name.as_bytes();
+    out.extend_from_slice(&(name_bytes.len() as u16).to_le_bytes());
+    out.extend_from_slice(name_bytes);
+    out.extend_from_slice(&thumb_w.to_le_bytes());
+    out.extend_from_slice(&thumb_h.to_le_bytes());
+    out.extend_from_slice(&(thumb.len() as u32).to_le_bytes());
+    out.extend_from_slice(thumb);
+    out.extend_from_slice(&sprite_count.to_le_bytes());
+}
+
+#[tauri::command]
+fn read_pack_manifest_bin(request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("read_pack_manifest_bin expects a raw binary payload".to_string()),
+    };
+    let data = pack::read_pack(bytes)?;
+
+    let mut out = Vec::new();
+    out.push(0u8);
+    out.extend_from_slice(&data.client_version.to_le_bytes());
+    out.push(data.flags);
+    out.extend_from_slice(&(data.entries.len() as u32).to_le_bytes());
+
+    for e in &data.entries {
+        let sprite_count = pack::count_entry_sprites(&e.thing);
+        emit_manifest_entry(
+            &mut out, e.category, e.thing.id, &e.thing, &e.name, e.thumb_w, e.thumb_h, &e.thumb, sprite_count,
+        );
+    }
+
+    Ok(tauri::ipc::Response::new(out))
+}
+
+fn read_file_list(r: &mut Reader) -> Result<Vec<Vec<u8>>, String> {
+    let count = r.u32()? as usize;
+    let mut files = Vec::with_capacity(count);
+    for _ in 0..count {
+        let len = r.u32()? as usize;
+        files.push(r.take(len)?.to_vec());
+    }
+    Ok(files)
+}
+
+#[tauri::command]
+fn read_obd_manifest_bin(request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
+    use std::collections::HashMap;
+
+    let body = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("read_obd_manifest_bin expects a raw binary payload".to_string()),
+    };
+    let mut r = Reader::new(body);
+    let files = read_file_list(&mut r)?;
+
+    let mut out = Vec::new();
+    out.push(1u8);
+    out.extend_from_slice(&0u16.to_le_bytes());
+    out.push(0u8);
+    out.extend_from_slice(&(files.len() as u32).to_le_bytes());
+
+    for bytes in &files {
+        let obj = obd::decode_obd(bytes)?;
+        let mut rgba_by_id: HashMap<u32, Vec<u8>> = HashMap::new();
+        for s in &obj.sprites {
+            rgba_by_id.insert(s.id, s.rgba.clone());
+        }
+        let (thumb_w, thumb_h, thumb) = pack::render_thing_thumb(&obj.thing, &rgba_by_id);
+        let sprite_count = obj.sprites.len() as u32;
+        let category = transfer_category_value(&obj.thing.category);
+        emit_manifest_entry(
+            &mut out, category, obj.thing.id, &obj.thing, &obj.thing.market_name, thumb_w, thumb_h, &thumb, sprite_count,
+        );
+    }
+
+    Ok(tauri::ipc::Response::new(out))
+}
+
+#[tauri::command]
+fn extract_pack_entries_bin(request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
+    use std::collections::HashMap;
+
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("extract_pack_entries_bin expects a raw binary payload".to_string()),
+    };
+
+    let mut r = Reader::new(bytes);
+    let base_sprite_id = r.u32()?;
+    let sel_count = r.u32()? as usize;
+    let mut selected = Vec::with_capacity(sel_count);
+    for _ in 0..sel_count {
+        selected.push(r.u32()? as usize);
+    }
+
+    let data = pack::read_pack(r.rest())?;
+    let transparent = data.flags & pack::FLAG_TRANSPARENCY != 0;
+
+    let mut next_id = base_sprite_id;
+    let mut pool_to_new: HashMap<u32, u32> = HashMap::new();
+    let mut sprites: Vec<(u32, Vec<u8>)> = Vec::new();
+    let mut things: Vec<ThingType> = Vec::new();
+
+    let remap = |pool_id: u32,
+                 next_id: &mut u32,
+                 pool_to_new: &mut HashMap<u32, u32>,
+                 sprites: &mut Vec<(u32, Vec<u8>)>,
+                 pool: &[pack::PoolSprite]|
+     -> u32 {
+        if pool_id == 0 || (pool_id as usize) > pool.len() {
+            return 0;
+        }
+        if let Some(&id) = pool_to_new.get(&pool_id) {
+            return id;
+        }
+        let id = *next_id;
+        *next_id += 1;
+        pool_to_new.insert(pool_id, id);
+        sprites.push((id, pack::pool_rgba(&pool[(pool_id - 1) as usize], transparent)));
+        id
+    };
+
+    for &idx in &selected {
+        let entry = match data.entries.get(idx) {
+            Some(e) => e,
+            None => continue,
+        };
+        let mut thing = entry.thing.clone();
+        thing.sprite_index = thing
+            .sprite_index
+            .iter()
+            .map(|&p| remap(p, &mut next_id, &mut pool_to_new, &mut sprites, &data.pool))
+            .collect();
+        if let Some(fgs) = thing.frame_groups_data.as_mut() {
+            for fg in fgs.iter_mut() {
+                fg.sprite_index = fg
+                    .sprite_index
+                    .iter()
+                    .map(|&p| remap(p, &mut next_id, &mut pool_to_new, &mut sprites, &data.pool))
+                    .collect();
+            }
+        }
+        things.push(thing);
+    }
+
+    build_extract_response(things, sprites, transparent)
+}
+
+#[tauri::command]
+fn extract_obd_bin(request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
+    use std::collections::HashMap;
+
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
+        _ => return Err("extract_obd_bin expects a raw binary payload".to_string()),
+    };
+
+    let mut r = Reader::new(bytes);
+    let flags = r.u8()?;
+    let transparent = flags & pack::FLAG_TRANSPARENCY != 0;
+    let base_sprite_id = r.u32()?;
+    let files = read_file_list(&mut r)?;
+
+    let mut next_id = base_sprite_id;
+    let mut hash_to_new: HashMap<u64, u32> = HashMap::new();
+    let mut sprites: Vec<(u32, Vec<u8>)> = Vec::new();
+    let mut things: Vec<ThingType> = Vec::new();
+
+    for file_bytes in &files {
+        let obj = obd::decode_obd(file_bytes)?;
+
+        let mut rgba_by_id: HashMap<u32, Vec<u8>> = HashMap::new();
+        for s in &obj.sprites {
+            rgba_by_id.insert(s.id, s.rgba.clone());
+        }
+
+        let mut id_map: HashMap<u32, u32> = HashMap::new();
+        let mut remap = |obd_id: u32| -> u32 {
+            if obd_id == 0 {
+                return 0;
+            }
+            if let Some(&id) = id_map.get(&obd_id) {
+                return id;
+            }
+            let rgba = rgba_by_id.get(&obd_id).cloned().unwrap_or_else(|| vec![0u8; 4096]);
+            let hash = {
+                let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+                for &b in &rgba {
+                    h ^= b as u64;
+                    h = h.wrapping_mul(0x0000_0100_0000_01b3);
+                }
+                h
+            };
+            let new_id = if let Some(&existing) = hash_to_new.get(&hash) {
+                existing
+            } else {
+                let id = next_id;
+                next_id += 1;
+                hash_to_new.insert(hash, id);
+                sprites.push((id, rgba));
+                id
+            };
+            id_map.insert(obd_id, new_id);
+            new_id
+        };
+
+        let mut thing = obj.thing.clone();
+        thing.sprite_index = thing.sprite_index.iter().map(|&id| remap(id)).collect();
+        if let Some(fgs) = thing.frame_groups_data.as_mut() {
+            for fg in fgs.iter_mut() {
+                fg.sprite_index = fg.sprite_index.iter().map(|&id| remap(id)).collect();
+            }
+        }
+        things.push(thing);
+    }
+
+    build_extract_response(things, sprites, transparent)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let spr_manager: SprManagerState = Arc::new(Mutex::new(SprManager::new()));
@@ -2145,6 +2525,12 @@ tauri::Builder::default()
             apply_optimization,
             export_object_sheet_rust,
             import_object_sheet_binary,
+            export_pack_bin,
+            export_obd_bin,
+            read_pack_manifest_bin,
+            extract_pack_entries_bin,
+            read_obd_manifest_bin,
+            extract_obd_bin,
             set_window_acrylic
         ])
         .setup(move |app| {

@@ -9,10 +9,10 @@ export * from './spriteReader';
 export * from './spriteManager';
 export * from './propertySchema';
 
-export { exportObjectSheet } from './export';
 export { decodeDatResponse } from './datDecoder';
 export type { OtfiData, DatHeader, SprHeader } from './loader';
 export { importObjectSheet, type ImportResult } from './import';
+export { exportObjectSheet, exportObjectSheets } from './export';
 export {
 	readOtfiFile,
 	loadSpriteIds,
@@ -22,3 +22,18 @@ export {
 	loadSpriteIdsLz4,
 	loadSpriteWindow
 } from './loader';
+export {
+	exportObd,
+	exportPack,
+	readFileBytes,
+	readObdManifest,
+	readSfpManifest,
+	type ImportEntry,
+	extractObdEntries,
+	extractSfpEntries,
+	type ExportFormat,
+	type ImportSource,
+	type ExtractResult,
+	type ImportManifest,
+	collectReferencedSpriteIds
+} from './transfer';

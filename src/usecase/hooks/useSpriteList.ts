@@ -217,33 +217,53 @@ export const useSpriteList = () => {
 		}
 	}, [highlightedSpriteId, currentPage]);
 
-	const handleDeleteSprite = (id: number) => {
+	const handleDeleteSprite = (ids: number | number[]) => {
 		if (!data || !data.sprites) return;
 
-		const sprite = data.sprites.get(id);
-		if (!sprite) return;
+		const idList = Array.isArray(ids) ? [...ids].sort((a, b) => b - a) : [ids];
+		const modified: number[] = [];
 
-		if (id === data.spritesCount) {
-			data.sprites.delete(id);
-			data.spritesCount--;
-		} else {
-			sprite.isEmpty = true;
-			sprite.rgbaPixels = new Uint8Array(4096);
-			sprite.pixels = undefined;
-			sprite.compressedPixels = new Uint8Array(0);
-			sprite.imageData = undefined;
+		for (const id of idList) {
+			const sprite = data.sprites.get(id);
+			if (!sprite) continue;
+
+			if (id === data.spritesCount) {
+				data.sprites.delete(id);
+				data.spritesCount--;
+			} else {
+				sprite.isEmpty = true;
+				sprite.rgbaPixels = new Uint8Array(4096);
+				sprite.pixels = undefined;
+				sprite.compressedPixels = new Uint8Array(0);
+				sprite.imageData = undefined;
+			}
+
+			if (openedSpriteId === id) setOpenedSpriteId(null);
+			modified.push(id);
 		}
 
-		if (openedSpriteId === id) {
-			setOpenedSpriteId(null);
-		}
+		if (modified.length === 0) return;
 
-		if (highlightedSpriteId === id) {
+		const deletedSet = new Set(modified);
+		if (highlightedSpriteId && deletedSet.has(highlightedSpriteId)) {
 			setHighlightedSpriteId(null);
 		}
+		setSelectedSpriteIds((prev) => {
+			const next = new Set(prev);
+			for (const id of modified) next.delete(id);
+			return next;
+		});
 
 		notifySpritesLoaded();
-		notifyDataChanged([id]);
+		notifyDataChanged(modified);
+	};
+
+	const handleContextMenuTarget = (id: number) => {
+		if (!selectedSpriteIds.has(id)) {
+			setSelectedSpriteIds(new Set([id]));
+			setHighlightedSpriteId(id);
+			isInternalHighlightChange.current = true;
+		}
 	};
 
 	const pasteClipboardImage = async (targetSpriteId?: number) => {
@@ -476,6 +496,31 @@ export const useSpriteList = () => {
 		[ensureSpriteLoaded, toast]
 	);
 
+	const handleExportSpritesPng = React.useCallback(
+		async (ids: number[]) => {
+			if (ids.length === 0) return;
+			try {
+				const { open } = await import('@tauri-apps/plugin-dialog');
+				const dirPath = await open({ directory: true, multiple: false });
+				if (!dirPath || typeof dirPath !== 'string') return;
+
+				let exported = 0;
+				for (const id of ids) {
+					const sprite = await ensureSpriteLoaded(id);
+					if (!sprite) continue;
+					const filePath = `${dirPath}/sprite_${id}.png`;
+					await invoke('write_sprite_png', { path: filePath, rgba: Array.from(sprite.rgbaPixels) });
+					exported++;
+				}
+				toast({ title: 'Exported', description: `${exported} sprite${exported === 1 ? '' : 's'} saved` });
+			} catch (err) {
+				console.error('Export failed:', err);
+				toast({ title: 'Export failed', variant: 'destructive', description: String(err) });
+			}
+		},
+		[ensureSpriteLoaded, toast]
+	);
+
 	const handleReplaceFromPng = React.useCallback(
 		async (id: number) => {
 			if (!data) return;
@@ -543,18 +588,22 @@ export const useSpriteList = () => {
 	React.useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key !== 'Delete') return;
-			if (!data || !highlightedSpriteId) return;
+			if (!data) return;
 			if (document.activeElement?.tagName === 'INPUT') return;
 
+			const targets =
+				selectedSpriteIds.size > 0 ? Array.from(selectedSpriteIds) : highlightedSpriteId ? [highlightedSpriteId] : [];
+			if (targets.length === 0) return;
+
 			e.preventDefault();
-			handleDeleteSprite(highlightedSpriteId);
+			handleDeleteSprite(targets);
 		};
 
 		document.addEventListener('keydown', handleKeyDown);
 		return () => {
 			document.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [data, highlightedSpriteId]);
+	}, [data, highlightedSpriteId, selectedSpriteIds]);
 
 	const createNewSprite = () => {
 		if (!data) return;
@@ -654,6 +703,8 @@ export const useSpriteList = () => {
 		handleReplaceFromPng,
 		startSpriteDragTimer,
 		handleCopySpriteImage,
-		handleExportSpritePng
+		handleExportSpritePng,
+		handleExportSpritesPng,
+		handleContextMenuTarget
 	};
 };

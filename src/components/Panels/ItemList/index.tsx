@@ -18,21 +18,23 @@ export const ItemList = () => {
 		getThing,
 		viewMode,
 		editItem,
+		selectItem,
 		inputValue,
 		removeItem,
 		totalPages,
 		spriteSize,
+		importInto,
 		currentPage,
 		setViewMode,
-		exportSheet,
-		importSheet,
 		findSimilar,
+		exportSheets,
 		createNewItem,
 		setInputValue,
 		updateCounter,
 		duplicateItem,
 		canFindSimilar,
 		copyProperties,
+		selectedItemIds,
 		pasteProperties,
 		handlePageChange,
 		copiedProperties,
@@ -43,8 +45,12 @@ export const ItemList = () => {
 		highlightedItemId,
 		handleInputKeyDown,
 		setSelectedCategory,
-		setHighlightedItemId
+		handleContextMenuTarget
 	} = useItemList();
+
+	const selectionCount = selectedItemIds.size;
+	const isMulti = selectionCount > 1;
+	const selectionIds = Array.from(selectedItemIds);
 
 	if (!data) {
 		return (
@@ -130,10 +136,11 @@ export const ItemList = () => {
 										<button
 											data-item-id={id}
 											onDoubleClick={() => editItem(id)}
-											onClick={() => setHighlightedItemId(id)}
+											onClick={(e) => selectItem(id, e)}
+											onContextMenu={() => handleContextMenuTarget(id)}
 											className={cn(
 												'w-full rounded-md transition-all hover:bg-item-hover relative',
-												highlightedItemId === id && 'bg-primary/15 ring-1 ring-primary/50',
+												(selectedItemIds.has(id) || highlightedItemId === id) && 'bg-primary/15 ring-1 ring-primary/50',
 												viewMode === 'list' && 'flex items-center gap-2 px-2 py-1',
 												viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
 												viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
@@ -219,40 +226,49 @@ export const ItemList = () => {
 										</button>
 									</ContextMenuTrigger>
 									<ContextMenuContent>
-										<ContextMenuItem onClick={() => editItem(id)}>
+										<ContextMenuItem disabled={isMulti} onClick={() => editItem(id)}>
 											<Edit className="mr-2 h-4 w-4" />
 											<span>Edit</span>
 										</ContextMenuItem>
-										<ContextMenuItem onClick={() => duplicateItem(id, item)}>
+										<ContextMenuItem onClick={() => duplicateItem(isMulti ? selectionIds : id, item)}>
 											<Copy className="mr-2 h-4 w-4" />
-											<span>Duplicate</span>
+											<span>{isMulti ? `Duplicate (${selectionCount})` : 'Duplicate'}</span>
 										</ContextMenuItem>
 										<ContextMenuItem
-											disabled={!canFindSimilar(item)}
-											onClick={() => findSimilar([{ id, category: selectedCategory }])}
+											disabled={isMulti ? false : !canFindSimilar(item)}
+											onClick={() =>
+												findSimilar(
+													isMulti
+														? selectionIds.map((sid) => ({ id: sid, category: selectedCategory }))
+														: [{ id, category: selectedCategory }]
+												)
+											}
 										>
 											<Sparkles className="mr-2 h-4 w-4" />
-											<span>Find Similar</span>
+											<span>{isMulti ? `Find Similar (${selectionCount})` : 'Find Similar'}</span>
 										</ContextMenuItem>
-										<ContextMenuItem onClick={() => copyProperties(item)}>
+										<ContextMenuItem disabled={isMulti} onClick={() => copyProperties(item)}>
 											<Clipboard className="mr-2 h-4 w-4" />
 											<span>Copy Properties</span>
 										</ContextMenuItem>
-										<ContextMenuItem disabled={!copiedProperties} onClick={() => pasteProperties(id)}>
+										<ContextMenuItem disabled={!copiedProperties} onClick={() => pasteProperties(isMulti ? selectionIds : id)}>
 											<ClipboardPaste className="mr-2 h-4 w-4" />
-											<span>Paste Properties</span>
+											<span>{isMulti ? `Paste Properties (${selectionCount})` : 'Paste Properties'}</span>
 										</ContextMenuItem>
-										<ContextMenuItem onClick={() => exportSheet(item)}>
+										<ContextMenuItem onClick={() => exportSheets(isMulti ? selectionIds : id)}>
 											<Download className="mr-2 h-4 w-4" />
-											<span>Export Object Sheet</span>
+											<span>{isMulti ? `Export (${selectionCount})` : 'Export…'}</span>
 										</ContextMenuItem>
-										<ContextMenuItem onClick={() => importSheet(item)}>
+										<ContextMenuItem onClick={() => importInto(item)}>
 											<Upload className="mr-2 h-4 w-4" />
-											<span>Import Object Sheet</span>
+											<span>Import…</span>
 										</ContextMenuItem>
-										<ContextMenuItem onClick={() => removeItem(id)} className="text-destructive focus:text-destructive">
+										<ContextMenuItem
+											className="text-destructive focus:text-destructive"
+											onClick={() => removeItem(isMulti ? selectionIds : id)}
+										>
 											<Trash2 className="mr-2 h-4 w-4" />
-											<span>Remove</span>
+											<span>{isMulti ? `Remove (${selectionCount})` : 'Remove'}</span>
 										</ContextMenuItem>
 									</ContextMenuContent>
 								</ContextMenu>

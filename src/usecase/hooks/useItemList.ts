@@ -1,9 +1,11 @@
 import React from 'react';
 import { logger, EventCode } from '@/lib/debug';
+import { open } from '@tauri-apps/plugin-dialog';
+import { useTransfer } from '@/usecase/context/TransferContext';
 import { useListViewMode } from '@/usecase/hooks/useListViewMode';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { getThumbnailSpriteIds } from '@/usecase/util/thumbnailUtils';
-import { exportObjectSheet, importObjectSheet } from '@/lib/formats/tibia';
+import { readFileBytes, importObjectSheet } from '@/lib/formats/tibia';
 import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 import {
 	ThingCategory,
@@ -40,6 +42,7 @@ export const useItemList = () => {
 		setHighlightedItemId
 	} = useAssetData();
 	const { toast } = useToast();
+	const { openExport, openImport } = useTransfer();
 	const { viewMode, setViewMode } = useListViewMode('get_item_list_view_mode', 'set_item_list_view_mode');
 	const [currentPage, setCurrentPage] = React.useState<number>(1);
 	const [copiedProperties, setCopiedProperties] = React.useState<null | Partial<ThingType>>(null);
@@ -518,12 +521,43 @@ export const useItemList = () => {
 	};
 
 	const exportSheet = (item: ThingType) => {
-		if (data) exportObjectSheet(item, data);
+		if (data) openExport([item.id]);
 	};
 
-	const importSheet = async (item: ThingType) => {
+	const exportSheets = (ids: number | number[]) => {
 		if (!data) return;
-		const result = await importObjectSheet(item, data, undefined, {
+		const idList = Array.isArray(ids) ? ids : [ids];
+		const things = idList.filter((id) => !!getThing(id, selectedCategory));
+		if (things.length === 0) return;
+		openExport(things);
+	};
+
+	const importInto = async (item: ThingType) => {
+		if (!data) return;
+
+		const selected = await open({
+			multiple: true,
+			filters: [{ name: 'Importable', extensions: ['sfp', 'obd', 'png', 'bmp', 'jpg', 'jpeg'] }]
+		});
+		if (!selected) return;
+		const paths = Array.isArray(selected) ? selected : [selected];
+
+		const sfp = paths.find((p) => /\.sfp$/i.test(p));
+		if (sfp) {
+			openImport({ source: 'sfp', files: [await readFileBytes(sfp)] });
+			return;
+		}
+
+		const obds = paths.filter((p) => /\.obd$/i.test(p));
+		if (obds.length > 0) {
+			openImport({ source: 'obd', files: await Promise.all(obds.map(readFileBytes)) });
+			return;
+		}
+
+		const image = paths.find((p) => /\.(png|bmp|jpe?g)$/i.test(p));
+		if (!image) return;
+
+		const result = await importObjectSheet(item, data, image, {
 			isNew: isNewItem(item.id, selectedCategory)
 		});
 		if (result.success) {
@@ -629,10 +663,10 @@ export const useItemList = () => {
 				}
 				break;
 			case 'export_sheet':
-				if (!isMulti) exportSheet(validItems[0].item!);
+				exportSheets(idList);
 				break;
 			case 'import_sheet':
-				if (!isMulti) importSheet(validItems[0].item!);
+				if (!isMulti) importInto(validItems[0].item!);
 				break;
 		}
 	}, [pendingFindActions, selectedCategory, copiedProperties, setSelectedCategory, getThing]);
@@ -647,10 +681,11 @@ export const useItemList = () => {
 		removeItem,
 		totalPages,
 		spriteSize,
+		importInto,
 		currentPage,
 		setViewMode,
 		exportSheet,
-		importSheet,
+		exportSheets,
 		createNewItem,
 		setInputValue,
 		updateCounter,

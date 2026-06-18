@@ -1125,12 +1125,11 @@ export const FindWindow = () => {
 																		<ClipboardPaste className="mr-2 h-4 w-4" />
 																		<span>{isMulti ? `Paste Properties (${selectionTargets.length})` : 'Paste Properties'}</span>
 																	</ContextMenuItem>
-																	<ContextMenuItem
-																		disabled={isMulti}
-																		onClick={() => emitFindAction('export_sheet', selectionTargets)}
-																	>
+																	<ContextMenuItem onClick={() => emitFindAction('export_sheet', selectionTargets)}>
 																		<Download className="mr-2 h-4 w-4" />
-																		<span>Export Object Sheet</span>
+																		<span>
+																			{isMulti ? `Export Object Sheets (${selectionTargets.length})` : 'Export Object Sheet'}
+																		</span>
 																	</ContextMenuItem>
 																	<ContextMenuItem
 																		disabled={isMulti}

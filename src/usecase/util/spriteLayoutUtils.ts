@@ -83,8 +83,8 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 				if (index < thing.spriteIndex.length) {
 					const posX = (thing.width - w - 1) * spriteSize;
 					layout.push({
-						x: posX,
 						y: 0,
+						x: posX,
 						layer: l,
 						patternY: 0,
 						spriteId: thing.spriteIndex[index]

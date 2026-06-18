@@ -38,8 +38,14 @@ export const SpriteList = () => {
 		handleReplaceFromPng,
 		startSpriteDragTimer,
 		handleCopySpriteImage,
-		handleExportSpritePng
+		handleExportSpritePng,
+		handleExportSpritesPng,
+		handleContextMenuTarget
 	} = useSpriteList();
+
+	const selectionCount = selectedSpriteIds.size;
+	const isMulti = selectionCount > 1;
+	const selectionIds = Array.from(selectedSpriteIds);
 
 	if (!data) {
 		return (
@@ -105,6 +111,7 @@ export const SpriteList = () => {
 								<div
 									role="button"
 									data-sprite-id={id}
+									onContextMenu={() => handleContextMenuTarget(id)}
 									onClick={(e) => {
 										e.stopPropagation();
 										selectSprite(id, e);
@@ -200,32 +207,37 @@ export const SpriteList = () => {
 								</div>
 							</ContextMenuTrigger>
 							<ContextMenuContent>
-								<ContextMenuItem onClick={() => id && handleCopySpriteImage(id)}>
+								<ContextMenuItem disabled={isMulti} onClick={() => id && handleCopySpriteImage(id)}>
 									<Copy className="mr-2 h-4 w-4" />
 									<span>Copy Image</span>
 								</ContextMenuItem>
-								<ContextMenuItem onClick={() => id && data && pasteClipboardImage(id)}>
+								<ContextMenuItem disabled={isMulti} onClick={() => id && data && pasteClipboardImage(id)}>
 									<ClipboardPaste className="mr-2 h-4 w-4" />
 									<span>Paste from Clipboard</span>
 								</ContextMenuItem>
 								<ContextMenuSeparator />
-								<ContextMenuItem onClick={() => id && handleFindUsages(id)}>
+								<ContextMenuItem disabled={isMulti} onClick={() => id && handleFindUsages(id)}>
 									<Search className="mr-2 h-4 w-4" />
 									<span>Find Usages</span>
 								</ContextMenuItem>
 								<ContextMenuSeparator />
-								<ContextMenuItem onClick={() => id && handleExportSpritePng(id)}>
+								<ContextMenuItem
+									onClick={() => (isMulti ? handleExportSpritesPng(selectionIds) : id && handleExportSpritePng(id))}
+								>
 									<Download className="mr-2 h-4 w-4" />
-									<span>Export PNG...</span>
+									<span>{isMulti ? `Export PNGs (${selectionCount})...` : 'Export PNG...'}</span>
 								</ContextMenuItem>
-								<ContextMenuItem onClick={() => id && handleReplaceFromPng(id)}>
+								<ContextMenuItem disabled={isMulti} onClick={() => id && handleReplaceFromPng(id)}>
 									<Upload className="mr-2 h-4 w-4" />
 									<span>Replace from PNG...</span>
 								</ContextMenuItem>
 								<ContextMenuSeparator />
-								<ContextMenuItem onClick={() => id && handleDeleteSprite(id)} className="text-destructive focus:text-destructive">
+								<ContextMenuItem
+									className="text-destructive focus:text-destructive"
+									onClick={() => (isMulti ? handleDeleteSprite(selectionIds) : id && handleDeleteSprite(id))}
+								>
 									<Trash2 className="mr-2 h-4 w-4" />
-									<span>Remove</span>
+									<span>{isMulti ? `Remove (${selectionCount})` : 'Remove'}</span>
 								</ContextMenuItem>
 							</ContextMenuContent>
 						</ContextMenu>

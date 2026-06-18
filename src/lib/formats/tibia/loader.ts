@@ -319,10 +319,10 @@ export async function loadTibiaData(
 	const [datResponse, sprData] = await Promise.all([
 		invoke<Uint8Array>('parse_dat_file_bin', {
 			path: datPath,
-			version: detectedVersion.value,
 			extended: overrides?.extended,
-			frameDurations: overrides?.frameDurations,
-			frameGroups: overrides?.frameGroups
+			version: detectedVersion.value,
+			frameGroups: overrides?.frameGroups,
+			frameDurations: overrides?.frameDurations
 		}),
 		loadTibiaSpr(sprPath, detectedVersion, transparency, extendedOverride)
 	]);
@@ -388,13 +388,13 @@ export async function loadTibiaData(
 		outfits: datData.outfits,
 		effects: datData.effects,
 		missiles: datData.missiles,
+		extended: effectiveExtended,
 		itemsCount: datData.itemsCount,
 		transparency: sprData.transparency,
 		outfitsCount: datData.outfitsCount,
 		effectsCount: datData.effectsCount,
 		missilesCount: datData.missilesCount,
-		spritesCount: sprData.header.sprite_count,
-		extended: effectiveExtended
+		spritesCount: sprData.header.sprite_count
 	};
 }
 

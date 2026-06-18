@@ -1628,6 +1628,13 @@ impl<'a> Reader<'a> {
     pub fn rest(&self) -> &'a [u8] {
         &self.buf[self.pos..]
     }
+
+    pub fn take(&mut self, n: usize) -> Result<&'a [u8], String> {
+        self.need(n)?;
+        let s = &self.buf[self.pos..self.pos + n];
+        self.pos += n;
+        Ok(s)
+    }
 }
 
 fn read_u32_vec(r: &mut Reader) -> Result<Vec<u32>, String> {
@@ -1871,6 +1878,118 @@ pub fn read_thing(r: &mut Reader, category: &str) -> Result<ThingType, String> {
         start_frame,
         frame_durations,
     })
+}
+
+fn nw_u16(buf: &mut Vec<u8>, v: u16) {
+    buf.extend_from_slice(&v.to_le_bytes());
+}
+
+fn nw_i16(buf: &mut Vec<u8>, v: i16) {
+    buf.extend_from_slice(&v.to_le_bytes());
+}
+
+fn nw_u32(buf: &mut Vec<u8>, v: u32) {
+    buf.extend_from_slice(&v.to_le_bytes());
+}
+
+fn nw_str(buf: &mut Vec<u8>, s: &str) {
+    let bytes = s.as_bytes();
+    nw_u16(buf, bytes.len() as u16);
+    buf.extend_from_slice(bytes);
+}
+
+fn nw_frame_durations(buf: &mut Vec<u8>, durations: &[FrameDuration]) {
+    nw_u16(buf, durations.len() as u16);
+    for d in durations {
+        nw_u32(buf, d.minimum);
+        nw_u32(buf, d.maximum);
+    }
+}
+
+fn nw_u32_vec(buf: &mut Vec<u8>, arr: &[u32]) {
+    nw_u32(buf, arr.len() as u32);
+    for &v in arr {
+        nw_u32(buf, v);
+    }
+}
+
+fn nw_i16_vec_u8len(buf: &mut Vec<u8>, arr: &[i16]) {
+    buf.push(arr.len() as u8);
+    for &v in arr {
+        nw_i16(buf, v);
+    }
+}
+
+pub fn write_thing_neutral(buf: &mut Vec<u8>, t: &ThingType) {
+    nw_u32(buf, t.id);
+    buf.push(t.width);
+    buf.push(t.height);
+    buf.push(t.exact_size);
+    buf.push(t.layers);
+    buf.push(t.pattern_x);
+    buf.push(t.pattern_y);
+    buf.push(t.pattern_z);
+    buf.push(t.frames);
+
+    for b in [
+        t.is_ground, t.is_ground_border, t.is_on_bottom, t.is_on_top, t.is_container, t.stackable,
+        t.multi_use, t.force_use, t.has_charges, t.writable, t.writable_once, t.is_fluid_container,
+        t.is_fluid, t.is_unpassable, t.is_unmoveable, t.block_missile, t.block_pathfind,
+        t.no_move_animation, t.pickupable, t.hangable, t.is_vertical, t.is_horizontal, t.rotatable,
+        t.has_light, t.dont_hide, t.floor_change, t.is_translucent, t.has_offset, t.has_elevation,
+        t.is_lying_object, t.animate_always, t.mini_map, t.is_lens_help, t.is_full_ground,
+        t.ignore_look, t.cloth, t.is_market_item, t.has_default_action, t.wrappable, t.unwrappable,
+        t.usable, t.top_effect, t.has_bones,
+    ] {
+        buf.push(if b { 1 } else { 0 });
+    }
+
+    nw_u16(buf, t.ground_speed);
+    nw_u16(buf, t.max_text_length);
+    nw_u16(buf, t.light_level);
+    nw_u16(buf, t.light_color);
+    nw_i16(buf, t.offset_x);
+    nw_i16(buf, t.offset_y);
+    nw_u16(buf, t.elevation);
+    nw_u16(buf, t.mini_map_color);
+    nw_u16(buf, t.lens_help);
+    nw_u16(buf, t.cloth_slot);
+    nw_u16(buf, t.market_category);
+    nw_u16(buf, t.market_trade_as);
+    nw_u16(buf, t.market_show_as);
+    nw_u16(buf, t.market_restrict_profession);
+    nw_u16(buf, t.market_restrict_level);
+    nw_u16(buf, t.default_action);
+    buf.push(t.animation_mode);
+    buf.extend_from_slice(&t.loop_count.to_le_bytes());
+    buf.push(t.start_frame as u8);
+
+    nw_str(buf, &t.market_name);
+
+    nw_i16_vec_u8len(buf, &t.bones_offset_x);
+    nw_i16_vec_u8len(buf, &t.bones_offset_y);
+
+    nw_frame_durations(buf, &t.frame_durations);
+    nw_u32_vec(buf, &t.sprite_index);
+
+    let groups = t.frame_groups_data.as_deref().unwrap_or(&[]);
+    buf.push(groups.len() as u8);
+    for g in groups {
+        buf.push(g.r#type);
+        buf.push(g.width);
+        buf.push(g.height);
+        buf.push(g.exact_size);
+        buf.push(g.layers);
+        buf.push(g.pattern_x);
+        buf.push(g.pattern_y);
+        buf.push(g.pattern_z);
+        buf.push(g.frames);
+        buf.push(g.animation_mode.unwrap_or(0));
+        buf.extend_from_slice(&g.loop_count.unwrap_or(0).to_le_bytes());
+        buf.push(g.start_frame.unwrap_or(0) as u8);
+        nw_frame_durations(buf, g.frame_durations.as_deref().unwrap_or(&[]));
+        nw_u32_vec(buf, &g.sprite_index);
+    }
 }
 
 fn read_things(r: &mut Reader, category: &str) -> Result<Vec<ThingType>, String> {
