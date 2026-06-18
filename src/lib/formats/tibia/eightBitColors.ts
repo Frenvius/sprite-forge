@@ -1,4 +1,3 @@
-
 export function from8Bit(color: number): [number, number, number] {
 	if (color >= 216) return [0, 0, 0];
 	const R = (Math.floor(color / 36) % 6) * 51;

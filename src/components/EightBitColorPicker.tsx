@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { from8Bit, generate8BitColorGridFlat } from '@/lib/formats/tibia/eightBitColors';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { from8Bit, generate8BitColorGridFlat } from '@/lib/formats/tibia/eightBitColors';
 
 interface EightBitColorPickerProps {
 	value: number;

@@ -12,13 +12,13 @@ export const VisualizationPanel = () => {
 	const { data, getThing, formatConfig, selectedCategory, highlightedItemId, notifySpritesLoaded } = useAssetData();
 	const item = highlightedItemId ? getThing(highlightedItemId, selectedCategory) : null;
 
-const [currentFrame, setCurrentFrame] = useState(0);
+	const [currentFrame, setCurrentFrame] = useState(0);
 	const [isPlaying, setIsPlaying] = useState(false);
 
-const itemRef = useRef(item);
+	const itemRef = useRef(item);
 	itemRef.current = item;
 
-const animationState = useRef({
+	const animationState = useRef({
 		frame: 0,
 		frames: 0,
 		lastTime: 0,
@@ -32,7 +32,7 @@ const animationState = useRef({
 	});
 	const requestRef = useRef<number>();
 
-useEffect(() => {
+	useEffect(() => {
 		setCurrentFrame(0);
 		setIsPlaying(false);
 		animationState.current = {
@@ -102,10 +102,10 @@ useEffect(() => {
 	}, [item, itemRenderConfig]);
 	const hasAnimation = animationInfo !== null;
 
-const displayThing = useMemo(() => {
+	const displayThing = useMemo(() => {
 		if (!item) return null;
 
-if (animationInfo?.group && animationInfo.index >= 0) {
+		if (animationInfo?.group && animationInfo.index >= 0) {
 			const group = animationInfo.group;
 			return {
 				...item,
@@ -123,9 +123,9 @@ if (animationInfo?.group && animationInfo.index >= 0) {
 		return item;
 	}, [item, animationInfo]);
 
-useEffect(() => {
+	useEffect(() => {
 		if (item && hasAnimation) {
-const timer = setTimeout(() => {
+			const timer = setTimeout(() => {
 				setIsPlaying(true);
 			}, 100);
 			return () => clearTimeout(timer);
@@ -191,7 +191,7 @@ const timer = setTimeout(() => {
 		requestRef.current = requestAnimationFrame(animate);
 	};
 
-useEffect(() => {
+	useEffect(() => {
 		if (isPlaying && item && hasAnimation && animationInfo) {
 			const currentGroup = animationInfo.group;
 			const frameCount = currentGroup?.frames ?? item.frames;
@@ -236,9 +236,9 @@ useEffect(() => {
 			animationState.current.lastTime = 0;
 			setCurrentFrame(initialFrame);
 
-requestRef.current = requestAnimationFrame(animate);
+			requestRef.current = requestAnimationFrame(animate);
 		} else {
-animationState.current.frames = 0;
+			animationState.current.frames = 0;
 			if (requestRef.current) cancelAnimationFrame(requestRef.current);
 		}
 

@@ -6,7 +6,7 @@ import { useToast } from '@/usecase/hooks/use-toast';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { getCommitHistory, cleanOldVersions } from '@/lib/versionControl';
-import { Clock, Trash2, Package, FolderOpen, RotateCcw } from 'lucide-react';
+import { Clock, Trash2, Package, RotateCcw, FolderOpen } from 'lucide-react';
 
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -21,7 +21,7 @@ interface VersionHistoryDialogProps {
 
 export const VersionHistoryDialog = ({ open, onOpenChange }: VersionHistoryDialogProps) => {
 	const { toast } = useToast();
-	const { restoreCommit, data } = useAssetData();
+	const { data, restoreCommit } = useAssetData();
 	const [commitLog, setCommitLog] = useState<null | CommitLog>(null);
 	const [loading, setLoading] = useState(false);
 	const [cleanupDays, setCleanupDays] = useState('30');

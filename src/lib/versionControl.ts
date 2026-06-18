@@ -1,29 +1,29 @@
 import { invoke } from '@tauri-apps/api/core';
 
-import { Sprite, ThingType, ThingCategory } from './tibia/types';
+import { ThingType, ThingCategory } from './tibia/types';
 
 export const SCHEMA_VERSION = 2;
 
 export interface CommitItemEntry {
 	id: number;
 	category: ThingCategory;
-	before: ThingType | null;
-	after: ThingType | null;
+	after: null | ThingType;
+	before: null | ThingType;
 }
 
 export interface CommitSpriteEntry {
 	id: number;
-	before: { transparent: boolean; compressedPixels: string } | null;
-	after: { transparent: boolean; compressedPixels: string } | null;
+	after: null | { transparent: boolean; compressedPixels: string };
+	before: null | { transparent: boolean; compressedPixels: string };
 }
 
 export interface Commit {
-	schema: typeof SCHEMA_VERSION;
 	hash: string;
 	message: string;
 	timestamp: number;
 	items: CommitItemEntry[];
 	sprites: CommitSpriteEntry[];
+	schema: typeof SCHEMA_VERSION;
 }
 
 export interface CommitLogEntry {
@@ -35,8 +35,8 @@ export interface CommitLogEntry {
 }
 
 export interface CommitLog {
-	schema: typeof SCHEMA_VERSION;
 	commits: CommitLogEntry[];
+	schema: typeof SCHEMA_VERSION;
 }
 
 function generateCommitHash(): string {
@@ -84,7 +84,7 @@ async function getCommitPath(hash: string): Promise<string> {
 	return `${versionsDir}/${hash}.json`;
 }
 
-let schemaCheckPromise: Promise<void> | null = null;
+let schemaCheckPromise: null | Promise<void> = null;
 
 async function ensureSchema(): Promise<void> {
 	if (!schemaCheckPromise) {
@@ -116,14 +116,18 @@ interface ReadOnDiskSprite {
 	compressedPixels: Uint8Array;
 }
 
-export async function readOnDiskSprites(sprPath: string, ids: number[], extended: boolean): Promise<Map<number, ReadOnDiskSprite>> {
+export async function readOnDiskSprites(
+	sprPath: string,
+	ids: number[],
+	extended: boolean
+): Promise<Map<number, ReadOnDiskSprite>> {
 	const out = new Map<number, ReadOnDiskSprite>();
 	if (ids.length === 0) return out;
 
 	const resp = await invoke<ArrayBuffer>('read_sprites_compressed_raw', {
-		path: sprPath,
 		ids,
-		extended
+		extended,
+		path: sprPath
 	});
 	const view = new DataView(resp);
 	let offset = 0;
@@ -147,7 +151,10 @@ export async function readOnDiskSprites(sprPath: string, ids: number[], extended
 	return out;
 }
 
-function encodeSpriteEntry(transparent: boolean, compressedPixels: Uint8Array | null | undefined): { transparent: boolean; compressedPixels: string } {
+function encodeSpriteEntry(
+	transparent: boolean,
+	compressedPixels: null | undefined | Uint8Array
+): { transparent: boolean; compressedPixels: string } {
 	return {
 		transparent,
 		compressedPixels: encodeBase64(compressedPixels ?? new Uint8Array(0))
@@ -156,8 +163,14 @@ function encodeSpriteEntry(transparent: boolean, compressedPixels: Uint8Array | 
 
 export interface CreateCommitInput {
 	message: string;
-	items: Map<string, { id: number; category: ThingCategory; before: ThingType | null; after: ThingType | null }>;
-	sprites: Map<number, { before: { transparent: boolean; compressedPixels: Uint8Array } | null; after: { transparent: boolean; compressedPixels: Uint8Array } | null }>;
+	items: Map<string, { id: number; category: ThingCategory; after: null | ThingType; before: null | ThingType }>;
+	sprites: Map<
+		number,
+		{
+			after: null | { transparent: boolean; compressedPixels: Uint8Array };
+			before: null | { transparent: boolean; compressedPixels: Uint8Array };
+		}
+	>;
 }
 
 export async function createCommit(input: CreateCommitInput): Promise<Commit> {
@@ -169,23 +182,23 @@ export async function createCommit(input: CreateCommitInput): Promise<Commit> {
 	const items: CommitItemEntry[] = Array.from(input.items.values()).map((entry) => ({
 		id: entry.id,
 		category: entry.category,
-		before: entry.before ? (JSON.parse(JSON.stringify(entry.before)) as ThingType) : null,
-		after: entry.after ? (JSON.parse(JSON.stringify(entry.after)) as ThingType) : null
+		after: entry.after ? (JSON.parse(JSON.stringify(entry.after)) as ThingType) : null,
+		before: entry.before ? (JSON.parse(JSON.stringify(entry.before)) as ThingType) : null
 	}));
 
 	const sprites: CommitSpriteEntry[] = Array.from(input.sprites.entries()).map(([id, entry]) => ({
 		id,
-		before: entry.before ? encodeSpriteEntry(entry.before.transparent, entry.before.compressedPixels) : null,
-		after: entry.after ? encodeSpriteEntry(entry.after.transparent, entry.after.compressedPixels) : null
+		after: entry.after ? encodeSpriteEntry(entry.after.transparent, entry.after.compressedPixels) : null,
+		before: entry.before ? encodeSpriteEntry(entry.before.transparent, entry.before.compressedPixels) : null
 	}));
 
 	const commit: Commit = {
-		schema: SCHEMA_VERSION,
 		hash,
-		message: input.message,
-		timestamp,
 		items,
-		sprites
+		sprites,
+		timestamp,
+		schema: SCHEMA_VERSION,
+		message: input.message
 	};
 
 	const commitPath = await getCommitPath(hash);
@@ -196,8 +209,8 @@ export async function createCommit(input: CreateCommitInput): Promise<Commit> {
 
 	await appendToCommitLog({
 		hash,
-		message: input.message,
 		timestamp,
+		message: input.message,
 		itemCount: items.length,
 		spriteCount: sprites.length
 	});
@@ -211,9 +224,9 @@ async function appendToCommitLog(entry: CommitLogEntry): Promise<void> {
 	try {
 		const content = await invoke<string>('read_file_text', { path: logPath });
 		const parsed = JSON.parse(content) as CommitLog;
-		log = parsed.schema === SCHEMA_VERSION && Array.isArray(parsed.commits) ? parsed : { schema: SCHEMA_VERSION, commits: [] };
+		log = parsed.schema === SCHEMA_VERSION && Array.isArray(parsed.commits) ? parsed : { commits: [], schema: SCHEMA_VERSION };
 	} catch {
-		log = { schema: SCHEMA_VERSION, commits: [] };
+		log = { commits: [], schema: SCHEMA_VERSION };
 	}
 
 	log.commits.unshift(entry);
@@ -235,9 +248,9 @@ export async function getCommitHistory(): Promise<CommitLog> {
 		log =
 			parsed && parsed.schema === SCHEMA_VERSION && Array.isArray(parsed.commits)
 				? parsed
-				: { schema: SCHEMA_VERSION, commits: [] };
+				: { commits: [], schema: SCHEMA_VERSION };
 	} catch {
-		log = { schema: SCHEMA_VERSION, commits: [] };
+		log = { commits: [], schema: SCHEMA_VERSION };
 	}
 
 	let onDiskHashes: string[];
@@ -279,7 +292,7 @@ export async function getCommitHistory(): Promise<CommitLog> {
 	}
 
 	const merged = [...survivors, ...recoveredOrphans].sort((a, b) => b.timestamp - a.timestamp);
-	const reconciled: CommitLog = { schema: SCHEMA_VERSION, commits: merged };
+	const reconciled: CommitLog = { commits: merged, schema: SCHEMA_VERSION };
 
 	try {
 		await invoke('write_json_file', {
@@ -296,7 +309,7 @@ export async function getCommitHistory(): Promise<CommitLog> {
 	return reconciled;
 }
 
-export async function getCommitState(hash: string): Promise<Commit | null> {
+export async function getCommitState(hash: string): Promise<null | Commit> {
 	await ensureSchema();
 	const commitPath = await getCommitPath(hash);
 	try {
@@ -310,7 +323,10 @@ export async function getCommitState(hash: string): Promise<Commit | null> {
 	}
 }
 
-export function decodeCommitSpritePayload(entry: { transparent: boolean; compressedPixels: string }): { transparent: boolean; compressedPixels: Uint8Array } {
+export function decodeCommitSpritePayload(entry: { transparent: boolean; compressedPixels: string }): {
+	transparent: boolean;
+	compressedPixels: Uint8Array;
+} {
 	return {
 		transparent: entry.transparent,
 		compressedPixels: decodeBase64(entry.compressedPixels)
