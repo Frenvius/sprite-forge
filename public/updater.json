@@ -1,7 +1,7 @@
 {
-  "version": "0.1.3",
-  "notes": "### Added\n- In-app updater indicator with auto-check, download progress and one-click restart.\n\n### Docs\n- Download links and auto-update info in the README.",
-  "pub_date": "2026-06-04T05:34:26Z",
-  "url": "https://github.com/Frenvius/sprite-forge/releases/download/v0.1.3/sprite-forge_0.1.3_x64-setup.nsis.zip",
-  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTcEJYRTBaa2tIcFAwSTBrK3h5bVdLTUhxWUFFQklqQkE0VnhjNzNrcmFzTHVYRW03OXZEWFJqbFk1R0hqbmpQR3c5VUE1RlM3VHhxWjJ5NHlHSExYdVlONDkraTBHemdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNTUxMjY0CWZpbGU6c3ByaXRlLWZvcmdlXzAuMS4zX3g2NC1zZXR1cC5uc2lzLnppcApSOXlEeFJua3dNZUxhYjM5dER1bGNtR21EZGpCZDB6R3VzYkdiYnJCaGZIYzh6NzhGSlJIdnd1ZWRKdWRLczRPKy80WUtKS3EwTkhTYWdZdmczdXZDQT09Cg=="
+  "version": "0.1.4",
+  "notes": "### Added\n- Honors `.otfi` overrides when loading custom clients, so DAT/SPR files with non-standard extended/transparency/frame-durations/frame-groups flags now open correctly.\n- Similarity search for items.\n- Copy sprite to clipboard button.\n\n### Fixed\n- Magenta background appearing on sheet imports.\n- Thumbnail rendering for tall objects in the list.\n- Grid and exact-size view toggles now respond to clicks.",
+  "pub_date": "2026-06-18T14:17:52Z",
+  "url": "https://github.com/Frenvius/sprite-forge/releases/download/v0.1.4/sprite-forge_0.1.4_x64-setup.nsis.zip",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTcEJYRTBaa2tIcFBRYWJvaThMWDVXNFVoSGh0cGY3K2hlb051WTlteDNiN1RaQU9IUXV2d3JtUFRKWklOSlMxZHRldTAxOExieTJqd1MzU1ozb0l2dXhOdEtnbjZCdlE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxNzkyMjY5CWZpbGU6c3ByaXRlLWZvcmdlXzAuMS40X3g2NC1zZXR1cC5uc2lzLnppcApXZTdhZ1JxYjgySTErZHdMMHE0UjlCVjdtbk52VFd0SmtUUkNpTW9UYkJOQm1CZzlLOTVhVm1YRGIzTjBaSWhaS29VbFI5TXZvV1RESkU2NXBMMmxEQT09Cg=="
 }
