@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<attributes server="tfs1.1" displayName="TFS 1.1" supportsFromToId="true">
+    <category name="General">
+        <attribute key="name" type="string" />
+        <attribute key="article" type="string" />
+        <attribute key="plural" type="string" />
+        <attribute key="description" type="string" />
+        <attribute key="weight" type="number" />
+        <attribute key="showCount" type="boolean" />
+        <attribute key="writeOnceItemId" type="number" />
+    </category>
+    <category name="Type">
+        <attribute key="type" type="string"
+            values="container,key,magicfield,depot,mailbox,trashholder,teleport,door,bed,rune" />
+    </category>
+    <category name="Combat">
+        <attribute key="attack" type="number" />
+        <attribute key="defense" type="number" />
+        <attribute key="armor" type="number" />
+        <attribute key="extraDef" type="number" />
+        <attribute key="extraAttack" type="number" />
+        <attribute key="range" type="number" />
+        <attribute key="hitChance" type="number" />
+        <attribute key="maxHitChance" type="number" />
+    </category>
+    <category name="Equipment">
+        <attribute key="slotType" type="string"
+            values="head,body,legs,feet,backpack,two-handed,right-hand,left-hand,necklace,ring,ammo,hand" />
+        <attribute key="weaponType" type="string"
+            values="sword,club,axe,shield,distance,wand,ammunition" />
+        <attribute key="ammoType" type="string"
+            values="spear,bolt,arrow,poisonarrow,burstarrow,throwingstar,throwingknife,smallstone,largerock,snowball,powerbolt,infernalbolt,huntingspear,enchantedspear,royalspear,sniperarrow,onyxarrow,piercingbolt,etherealspear,flasharrow,flammingarrow,shiverarrow,eartharrow" />
+        <attribute key="shootType" type="string"
+            values="spear,bolt,arrow,fire,energy,poisonarrow,burstarrow,throwingstar,throwingknife,smallstone,death,largerock,snowball,powerbolt,poison,infernalbolt,huntingspear,enchantedspear,redstar,greenstar,royalspear,sniperarrow,onyxarrow,piercingbolt,whirlwindsword,whirlwindaxe,whirlwindclub,etherealspear,ice,earth,holy,suddendeath,flasharrow,flammingarrow,shiverarrow,energyball,smallice,smallholy,smallearth,eartharrow,explosion,cake,tarsalarrow,vortexbolt,prismaticbolt,crystallinearrow,drillbolt,envenomedarrow,gloothspear,simplearrow" />
+        <attribute key="effect" type="string"
+            values="redspark,bluebubble,poff,yellowspark,explosionarea,explosion,firearea,yellowbubble,greenbubble,blackspark,teleport,energy,blueshimmer,redshimmer,greenshimmer,fire,greenspark,mortarea,greennote,rednote,poison,yellownote,purplenote,bluenote,whitenote,bubbles,dice,giftwraps,yellowfirework,redfirework,bluefirework,stun,sleep,watercreature,groundshaker,hearts,fireattack,energyarea,smallclouds,holydamage,bigclouds,icearea,icetornado,iceattack,stones,smallplants,carniphila,purpleenergy,yellowenergy,holyarea,bigplants,cake,giantice,watersplash,plantattack,tutorialarrow,tutorialsquare,mirrorhorizontal,mirrorvertical,skullhorizontal,skullvertical,assassin,stepshorizontal,bloodysteps,stepsvertical,yalaharighost,bats,smoke,insects,dragonhead,orcshaman,orcshamanfire,thunder,ferumbras,confettihorizontal,confettivertical,blacksmoke,redsmoke,yellowsmoke,greensmoke,purplesmoke" />
+    </category>
+    <category name="Container">
+        <attribute key="containerSize" type="number" />
+        <attribute key="fluidSource" type="string"
+            values="water,blood,beer,slime,lemonade,milk,mana,life,oil,urine,coconut,wine,mud,fruitjuice,lava,rum,swamp,tea,mead" />
+    </category>
+    <category name="Duration">
+        <attribute key="decayTo" type="number" />
+        <attribute key="decayTime" type="number" />
+        <attribute key="duration" type="number" />
+        <attribute key="stopDuration" type="boolean" />
+        <attribute key="showDuration" type="boolean" />
+        <attribute key="charges" type="number" />
+        <attribute key="showCharges" type="boolean" />
+    </category>
+    <category name="Transform">
+        <attribute key="rotateTo" type="number" />
+        <attribute key="transformEquipTo" type="number" />
+        <attribute key="transformDeEquipTo" type="number" />
+        <attribute key="maleTransformTo" type="number" />
+        <attribute key="femaleTransformTo" type="number" />
+        <attribute key="transformTo" type="number" />
+    </category>
+    <category name="Text">
+        <attribute key="writeable" type="boolean" />
+        <attribute key="readable" type="boolean" />
+        <attribute key="maxTextLen" type="number" />
+        <attribute key="allowDistRead" type="boolean" />
+    </category>
+    <category name="Properties">
+        <attribute key="moveable" type="boolean" />
+        <attribute key="blockProjectile" type="boolean" />
+        <attribute key="allowPickupable" type="boolean" />
+        <attribute key="blocking" type="boolean" />
+        <attribute key="invisible" type="boolean" />
+        <attribute key="floorChange" type="string"
+            values="down,north,south,southalt,southex,west,east,eastalt,eastex" />
+        <attribute key="corpseType" type="string" values="venom,blood,undead,fire,energy" />
+        <attribute key="manaShield" type="boolean" />
+        <attribute key="showAttributes" type="boolean" />
+        <attribute key="levelDoor" type="number" />
+        <attribute key="runeSpellName" type="string" />
+        <attribute key="walkStack" type="boolean" />
+        <attribute key="partnerDirection" type="string" values="north,east,south,west" />
+        <attribute key="replaceable" type="boolean" />
+    </category>
+    <category name="Skills">
+        <attribute key="speed" type="number" />
+        <attribute key="skillSword" type="number" />
+        <attribute key="skillAxe" type="number" />
+        <attribute key="skillClub" type="number" />
+        <attribute key="skillDist" type="number" />
+        <attribute key="skillFish" type="number" />
+        <attribute key="skillShield" type="number" />
+        <attribute key="skillFist" type="number" />
+        <attribute key="maxHitPoints" type="number" />
+        <attribute key="maxHitPointsPercent" type="number" />
+        <attribute key="maxManaPoints" type="number" />
+        <attribute key="maxManaPointsPercent" type="number" />
+        <attribute key="soulPoints" type="number" />
+        <attribute key="soulPointsPercent" type="number" />
+        <attribute key="magicPoints" type="number" />
+        <attribute key="magicPointsPercent" type="number" />
+    </category>
+    <category name="Regeneration">
+        <attribute key="healthGain" type="number" />
+        <attribute key="healthTicks" type="number" />
+        <attribute key="manaGain" type="number" />
+        <attribute key="manaTicks" type="number" />
+    </category>
+    <category name="Absorb">
+        <attribute key="absorbPercentAll" type="number" />
+        <attribute key="absorbPercentElements" type="number" />
+        <attribute key="absorbPercentMagic" type="number" />
+        <attribute key="absorbPercentEnergy" type="number" />
+        <attribute key="absorbPercentFire" type="number" />
+        <attribute key="absorbPercentPoison" type="number" />
+        <attribute key="absorbPercentIce" type="number" />
+        <attribute key="absorbPercentHoly" type="number" />
+        <attribute key="absorbPercentDeath" type="number" />
+        <attribute key="absorbPercentLifeDrain" type="number" />
+        <attribute key="absorbPercentManaDrain" type="number" />
+        <attribute key="absorbPercentDrown" type="number" />
+        <attribute key="absorbPercentPhysical" type="number" />
+        <attribute key="absorbPercentHealing" type="number" />
+        <attribute key="absorbPercentUndefined" type="number" />
+    </category>
+    <category name="Field Absorb">
+        <attribute key="fieldAbsorbPercentEnergy" type="number" />
+        <attribute key="fieldAbsorbPercentFire" type="number" />
+        <attribute key="fieldAbsorbPercentPoison" type="number" />
+    </category>
+    <category name="Elements">
+        <attribute key="elementFire" type="number" />
+        <attribute key="elementEnergy" type="number" />
+        <attribute key="elementEarth" type="number" />
+        <attribute key="elementIce" type="number" />
+    </category>
+    <category name="Suppress">
+        <attribute key="suppressEnergy" type="boolean" />
+        <attribute key="suppressFire" type="boolean" />
+        <attribute key="suppressPoison" type="boolean" />
+        <attribute key="suppressDrown" type="boolean" />
+        <attribute key="suppressPhysical" type="boolean" />
+        <attribute key="suppressFreeze" type="boolean" />
+        <attribute key="suppressDazzle" type="boolean" />
+        <attribute key="suppressCurse" type="boolean" />
+        <attribute key="suppressDrunk" type="boolean" />
+    </category>
+</attributes>

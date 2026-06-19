@@ -1,8 +1,8 @@
-import type { Sprite, AssetData, ThingType, FormatConfig } from '@/lib/formats/tibia';
+import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItemData } from '@/lib/formats/tibia';
 
 import React from 'react';
 import { logger, EventCode } from '@/lib/debug';
-import { SpriteReader, ThingCategory, getCategoryMap, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
+import { SpriteReader, ThingCategory, getCategoryMap, saveCachedProfile, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 
 interface AssetDataContextType {
 	spriteSize: number;
@@ -11,6 +11,7 @@ interface AssetDataContextType {
 	clearData: () => void;
 	updateCounter: number;
 	data: null | AssetData;
+	autoSyncServer: boolean;
 	openedItems: ThingType[];
 	spriteLoadVersion: number;
 	formatConfig: FormatConfig;
@@ -23,18 +24,22 @@ interface AssetDataContextType {
 	hasModifiedItems: () => boolean;
 	highlightedItemId: null | number;
 	spriteReader: null | SpriteReader;
-	compileFiles: () => Promise<void>;
 	clearModifiedTracking: () => void;
 	highlightedSpriteId: null | number;
 	modifiedSprites: Map<number, Sprite>;
 	setError: (error: null | string) => void;
 	getSprite: (id: number) => null | Sprite;
 	openedItemCategory: null | ThingCategory;
+	setAutoSyncServer: (value: boolean) => void;
+	setServerProfile: (profileId: string) => void;
 	setOpenedSpriteId: (id: null | number) => void;
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
 	setHighlightedSpriteId: (id: null | number) => void;
+	getServerItem: (serverId: number) => null | ServerItem;
 	setSelectedCategory: (category: ThingCategory) => void;
+	attachServerItems: (serverItems: ServerItemData) => void;
+	getServerItemsForClient: (clientId: number) => ServerItem[];
 	isNewItem: (id: number, category: ThingCategory) => boolean;
 	clearNewItem: (id: number, category: ThingCategory) => void;
 	markAsNewItem: (id: number, category: ThingCategory) => void;
@@ -42,7 +47,9 @@ interface AssetDataContextType {
 	getThing: (id: number, category: ThingCategory) => null | ThingType;
 	hasUnsavedChanges: (id: number, category: ThingCategory) => boolean;
 	setOpenedItemId: (id: null | number, category?: ThingCategory) => void;
+	compileFiles: () => Promise<null | { synced: number; created: number }>;
 	loadingProgress: null | { stage: string; total: number; current: number };
+	updateServerItem: (serverId: number, updates: Partial<ServerItem>) => void;
 	setSelectedCategoryAndItem: (category: ThingCategory, itemId: number) => void;
 	setData: (data: AssetData, reader: SpriteReader, skipBackendSync?: boolean) => void;
 	markUnsavedChanges: (id: number, category: ThingCategory, hasChanges: boolean) => void;
@@ -104,6 +111,23 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		Map<string, { id: number; data: ThingType; category: ThingCategory }>
 	>(new Map());
 	const [modifiedSprites, setModifiedSprites] = React.useState<Map<number, Sprite>>(new Map());
+	const [modifiedServerIds, setModifiedServerIds] = React.useState<Set<number>>(new Set());
+	const [autoSyncServer, setAutoSyncServerState] = React.useState<boolean>(() => {
+		try {
+			return typeof window === 'undefined' ? true : localStorage.getItem('sprite-forge-otb-autosync') !== 'false';
+		} catch {
+			return true;
+		}
+	});
+
+	const setAutoSyncServer = React.useCallback((value: boolean) => {
+		setAutoSyncServerState(value);
+		try {
+			if (typeof window !== 'undefined') localStorage.setItem('sprite-forge-otb-autosync', String(value));
+		} catch {
+			void 0;
+		}
+	}, []);
 
 	const saveOpenedItemsState = React.useCallback(
 		(items: ThingType[], openedId: null | number, openedCategory: null | ThingCategory) => {
@@ -274,6 +298,68 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			return getCategoryMap(data, category).get(id) ?? null;
 		},
 		[data, updateCounter]
+	);
+
+	const getServerItem = React.useCallback(
+		(serverId: number): null | ServerItem => {
+			return data?.serverItems?.items.get(serverId) ?? null;
+		},
+		[data, updateCounter]
+	);
+
+	const attachServerItems = React.useCallback(
+		(serverItems: ServerItemData) => {
+			if (!data) return;
+			data.serverItems = serverItems;
+			data.otbPath = serverItems.otbPath;
+			data.xmlPath = serverItems.xmlPath;
+			setModifiedServerIds(new Set());
+			setUpdateCounter((c) => c + 1);
+		},
+		[data]
+	);
+
+	const setServerProfile = React.useCallback(
+		(profileId: string) => {
+			const sd = data?.serverItems;
+			if (!sd) return;
+			sd.profileId = profileId;
+			saveCachedProfile(sd.otbPath, profileId);
+			setUpdateCounter((c) => c + 1);
+		},
+		[data]
+	);
+
+	const getServerItemsForClient = React.useCallback(
+		(clientId: number): ServerItem[] => {
+			const sd = data?.serverItems;
+			if (!sd) return [];
+			const ids = sd.byClientId.get(clientId) ?? [];
+			const result: ServerItem[] = [];
+			for (const id of ids) {
+				const item = sd.items.get(id);
+				if (item) result.push(item);
+			}
+			return result;
+		},
+		[data, updateCounter]
+	);
+
+	const updateServerItem = React.useCallback(
+		(serverId: number, updates: Partial<ServerItem>) => {
+			const sd = data?.serverItems;
+			if (!sd) return;
+			const item = sd.items.get(serverId);
+			if (!item) return;
+			Object.assign(item, updates);
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				next.add(serverId);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+		},
+		[data]
 	);
 
 	const setOpenedItemId = React.useCallback(
@@ -512,49 +598,73 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	);
 
 	const hasModifiedItems = React.useCallback(() => {
-		return modifiedSinceCompile.size > 0 || modifiedSprites.size > 0;
-	}, [modifiedSinceCompile, modifiedSprites]);
+		return modifiedSinceCompile.size > 0 || modifiedSprites.size > 0 || modifiedServerIds.size > 0;
+	}, [modifiedSinceCompile, modifiedSprites, modifiedServerIds]);
 
 	const clearModifiedTracking = React.useCallback(() => {
 		setModifiedSinceCompile(new Map());
 		setOriginalItemsSinceCompile(new Map());
 		setModifiedSprites(new Map());
+		setModifiedServerIds(new Set());
 		setNewItemKeys(new Set());
 	}, []);
 
-	const compileFiles = React.useCallback(async () => {
+	const compileFiles = React.useCallback(async (): Promise<null | { synced: number; created: number }> => {
 		if (!data || !data.datPath || !data.sprPath) {
 			throw new Error('No data or file paths available for compilation');
 		}
 
-		if (modifiedSinceCompile.size === 0 && modifiedSprites.size === 0) {
+		const datChanged = modifiedSinceCompile.size > 0 || modifiedSprites.size > 0;
+		const hasOtb = !!data.otbPath && !!data.serverItems;
+		const serverChanged = hasOtb && (modifiedServerIds.size > 0 || (autoSyncServer && datChanged));
+
+		if (!datChanged && !serverChanged) {
 			console.log('No modifications to compile');
-			return;
+			return null;
 		}
 
-		const { compileFiles: doCompile } = await import('@/lib/formats/tibia/compiler');
-
 		let compileSucceeded = false;
+		let otbResult: null | { synced: number; created: number } = null;
 		try {
-			await doCompile({
-				data,
-				datPath: data.datPath,
-				sprPath: data.sprPath,
-				modifiedItems: modifiedSinceCompile,
-				directlyModifiedSprites: modifiedSprites,
-				originalItems: originalItemsSinceCompile,
-				onProgress: (stage, current, total) => {
-					setLoading(true, { stage, total, current });
-				}
-			});
+			if (datChanged) {
+				const { compileFiles: doCompile } = await import('@/lib/formats/tibia/compiler');
+				await doCompile({
+					data,
+					datPath: data.datPath,
+					sprPath: data.sprPath,
+					modifiedItems: modifiedSinceCompile,
+					directlyModifiedSprites: modifiedSprites,
+					originalItems: originalItemsSinceCompile,
+					onProgress: (stage, current, total) => {
+						setLoading(true, { stage, total, current });
+					}
+				});
+			}
+
+			if (hasOtb && (datChanged || serverChanged)) {
+				setLoading(true, { total: 1, current: 1, stage: 'Writing server items (OTB/XML)...' });
+				const { compileServerItems } = await import('@/lib/formats/tibia/otb');
+				otbResult = await compileServerItems(data, autoSyncServer, data.version.value);
+				console.log(`[OTB] synced ${otbResult.synced} server items, created ${otbResult.created} missing`);
+			}
+
 			compileSucceeded = true;
+			return otbResult;
 		} finally {
 			if (compileSucceeded) {
 				clearModifiedTracking();
 			}
 			setLoading(false);
 		}
-	}, [data, modifiedSinceCompile, modifiedSprites, originalItemsSinceCompile, clearModifiedTracking]);
+	}, [
+		data,
+		modifiedSinceCompile,
+		modifiedSprites,
+		modifiedServerIds,
+		autoSyncServer,
+		originalItemsSinceCompile,
+		clearModifiedTracking
+	]);
 
 	const restoreCommit = React.useCallback(
 		async (hash: string) => {
@@ -640,18 +750,24 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				restoreCommit,
 				updateCounter,
 				markAsNewItem,
+				getServerItem,
 				openedSpriteId,
+				autoSyncServer,
 				loadingProgress,
 				setOpenedItemId,
 				modifiedSprites,
 				removeOpenedItem,
 				selectedCategory,
 				hasModifiedItems,
+				updateServerItem,
+				setServerProfile,
+				attachServerItems,
 				highlightedItemId,
 				setOpenedSpriteId,
 				spriteLoadVersion,
 				hasUnsavedChanges,
 				notifyDataChanged,
+				setAutoSyncServer,
 				openedItemCategory,
 				markUnsavedChanges,
 				notifySpriteImport,
@@ -663,6 +779,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				modifiedSinceCompile,
 				clearModifiedTracking,
 				setHighlightedSpriteId,
+				getServerItemsForClient,
 				setSelectedCategoryAndItem,
 				formatConfig: TIBIA_FORMAT_CONFIG
 			}}

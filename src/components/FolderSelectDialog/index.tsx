@@ -66,6 +66,7 @@ export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 							info={c.assetInfo}
 							extended={c.extended}
 							loading={c.assetLoading}
+							serverFiles={c.serverFiles}
 							frameGroups={c.frameGroups}
 							transparency={c.transparency}
 							onExtendedChange={c.setExtended}

@@ -21,6 +21,7 @@ import { EmptyState } from './EmptyState';
 import { categoryTitle } from './constants';
 import { PreviewPanel } from './PreviewPanel';
 import { BasicsColumn } from './BasicsColumn';
+import { ServerSection } from './ServerSection';
 import { PropertyColumns } from './PropertyColumns';
 
 export const PropertiesPanel = () => {
@@ -71,6 +72,8 @@ export const PropertiesPanel = () => {
 						<Separator />
 
 						<PropertyColumns />
+
+						{c.visibility.isItem && c.data?.otbPath && <ServerSection clientId={draftItem.id} />}
 					</div>
 				</ScrollArea>
 

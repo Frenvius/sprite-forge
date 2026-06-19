@@ -10,6 +10,7 @@ export const TibiaAssetPanel = ({
 	info,
 	loading,
 	extended,
+	serverFiles,
 	frameGroups,
 	transparency,
 	onExtendedChange,
@@ -166,6 +167,31 @@ export const TibiaAssetPanel = ({
 					</div>
 				</div>
 			</div>
+
+			{serverFiles && (serverFiles.otb || serverFiles.xml) && (
+				<div className="fb-asset-field">
+					<Label className="fb-asset-label">
+						<Package size={13} className="fb-asset-label-icon" />
+						Server Items
+					</Label>
+					<div className="fb-asset-options">
+						<label className="fb-asset-toggle">
+							<span>items.otb</span>
+							<span className={serverFiles.otb ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
+								{serverFiles.otb ? <CheckCircle2 size={13} /> : '-'}
+								{serverFiles.otb ? 'Found' : 'Not found'}
+							</span>
+						</label>
+						<label className="fb-asset-toggle">
+							<span>items.xml</span>
+							<span className={serverFiles.xml ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
+								{serverFiles.xml ? <CheckCircle2 size={13} /> : '-'}
+								{serverFiles.xml ? 'Found' : 'Not found'}
+							</span>
+						</label>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

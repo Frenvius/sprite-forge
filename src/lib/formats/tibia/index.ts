@@ -1,3 +1,4 @@
+export * from './otb';
 export * from './types';
 export * from './loader';
 export * from './outfit';
@@ -8,6 +9,7 @@ export * from './datDecoder';
 export * from './spriteReader';
 export * from './spriteManager';
 export * from './propertySchema';
+export * from './serverAttributes';
 
 export { decodeDatResponse } from './datDecoder';
 export type { OtfiData, DatHeader, SprHeader } from './loader';

@@ -18,6 +18,7 @@ import {
 	Minus,
 	Square,
 	Search,
+	Server,
 	Palette,
 	History,
 	Grid3x3,
@@ -43,8 +44,18 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 
 export const Toolbar = () => {
-	const { data, setData, setError, isLoading, setLoading, compileFiles, loadingProgress, hasModifiedItems, notifyDataChanged } =
-		useAssetData();
+	const {
+		data,
+		setData,
+		setError,
+		isLoading,
+		setLoading,
+		compileFiles,
+		loadingProgress,
+		hasModifiedItems,
+		notifyDataChanged,
+		attachServerItems
+	} = useAssetData();
 	const { settings, togglePanel } = usePanelSettings();
 	const { showError } = useErrorDialog();
 	const { toast } = useToast();
@@ -144,7 +155,8 @@ export const Toolbar = () => {
 	const handleFolderSelect = async (
 		selectedPath: string,
 		transparency: boolean,
-		overrides?: { extended?: boolean; frameGroups?: boolean; frameDurations?: boolean }
+		overrides?: { extended?: boolean; frameGroups?: boolean; frameDurations?: boolean },
+		serverPaths?: { otbPath?: string; xmlPath?: string }
 	) => {
 		try {
 			setLoading(true);
@@ -162,7 +174,8 @@ export const Toolbar = () => {
 				(stage, current, total) => {
 					setLoading(true, { stage, total, current });
 				},
-				overrides
+				overrides,
+				serverPaths
 			);
 
 			setData(tibiaData, null as any);
@@ -202,13 +215,61 @@ export const Toolbar = () => {
 		setFolderDialogOpen(true);
 	};
 
+	const handleLoadOtb = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (!data) return;
+
+		try {
+			const { open } = await import('@tauri-apps/plugin-dialog');
+			const selected = await open({
+				multiple: false,
+				title: 'Select items.otb',
+				filters: [{ extensions: ['otb'], name: 'OTB Server Items' }]
+			});
+			if (!selected || typeof selected !== 'string') return;
+
+			setLoading(true, { total: 1, current: 0, stage: 'Loading server items...' });
+
+			const { join, dirname } = await import('@tauri-apps/api/path');
+			const { invoke } = await import('@tauri-apps/api/core');
+			const { loadServerItems } = await import('@/lib/formats/tibia');
+
+			const dir = await dirname(selected);
+			const xmlFull = await join(dir, 'items.xml');
+			let xmlExists = false;
+			try {
+				const res = await invoke<boolean[]>('check_files_exist', { path: dir, filenames: ['items.xml'] });
+				xmlExists = res[0] ?? false;
+			} catch {
+				xmlExists = false;
+			}
+
+			const sd = await loadServerItems(selected, xmlExists ? xmlFull : undefined);
+			attachServerItems(sd);
+
+			toast({
+				title: 'Server items loaded',
+				description: `${sd.items.size} items from items.otb${xmlExists ? ' + items.xml' : ' (no items.xml found alongside)'}.`
+			});
+		} catch (err) {
+			showError('Failed to load items.otb', err);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const handleLoadWithOptions = async (options: LoadOptions) => {
 		setFolderDialogOpen(false);
-		await handleFolderSelect(options.folderPath, options.transparency, {
-			extended: options.extended,
-			frameGroups: options.frameGroups,
-			frameDurations: options.improvedAnimations
-		});
+		await handleFolderSelect(
+			options.folderPath,
+			options.transparency,
+			{
+				extended: options.extended,
+				frameGroups: options.frameGroups,
+				frameDurations: options.improvedAnimations
+			},
+			{ otbPath: options.otbPath, xmlPath: options.xmlPath }
+		);
 	};
 
 	const handleMinimize = async (e: React.MouseEvent) => {
@@ -260,11 +321,13 @@ export const Toolbar = () => {
 				});
 			}
 
-			await compileFiles();
+			const otbResult = await compileFiles();
+
+			const otbNote = otbResult ? ` items.otb updated (${otbResult.synced} synced, ${otbResult.created} created).` : '';
 
 			toast({
 				title: 'Compile successful',
-				description: 'Files have been compiled and a version was created.'
+				description: `Files have been compiled and a version was created.${otbNote}`
 			});
 		} catch (err) {
 			const errorMessage = errorToString(err);
@@ -436,6 +499,18 @@ export const Toolbar = () => {
 					>
 						<Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
 						Scene
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						disabled={!data}
+						onClick={handleLoadOtb}
+						onMouseDown={(e) => e.stopPropagation()}
+						className={cn('h-8 text-xs font-medium', data?.otbPath && 'text-primary')}
+						title={data?.otbPath ? `Server items loaded: ${data.otbPath}` : 'Load items.otb (server item database)'}
+					>
+						<Server className="h-3.5 w-3.5 mr-1.5" />
+						{data?.otbPath ? 'OTB ✓' : 'Load OTB'}
 					</Button>
 				</div>
 

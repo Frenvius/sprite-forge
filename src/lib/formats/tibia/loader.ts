@@ -295,7 +295,8 @@ export async function loadTibiaData(
 	version?: ClientVersion,
 	transparency?: boolean,
 	onProgress?: (stage: string, current: number, total: number) => void,
-	overrides?: LoadOverrides
+	overrides?: LoadOverrides,
+	serverPaths?: { otbPath?: string; xmlPath?: string }
 ): Promise<AssetData> {
 	const startTime = performance.now();
 	const myEpoch = ++loadEpoch;
@@ -307,7 +308,7 @@ export async function loadTibiaData(
 		detectedVersion =
 			getVersionBySignatures(datSig, sprSig) ?? detectVersionFromSignature(datSig) ?? detectVersionFromSignature(sprSig);
 		if (!detectedVersion) {
-			throw new Error(`Unknown signatures — DAT: 0x${datSig.toString(16)}, SPR: 0x${sprSig.toString(16)}`);
+			throw new Error(`Unknown signatures - DAT: 0x${datSig.toString(16)}, SPR: 0x${sprSig.toString(16)}`);
 		}
 	}
 
@@ -374,6 +375,17 @@ export async function loadTibiaData(
 		}, 400);
 	}
 
+	let serverItems: AssetData['serverItems'];
+	if (serverPaths?.otbPath) {
+		try {
+			if (onProgress) onProgress('Loading server items (OTB)...', 98, 100);
+			const { loadServerItems } = await import('./otb');
+			serverItems = await loadServerItems(serverPaths.otbPath, serverPaths.xmlPath);
+		} catch (err) {
+			logError('Failed to load items.otb', err);
+		}
+	}
+
 	const totalTime = performance.now();
 	console.log(`[loadTibiaData] Total loading time: ${(totalTime - startTime).toFixed(0)}ms`);
 
@@ -382,6 +394,7 @@ export async function loadTibiaData(
 	return {
 		sprites,
 		datPath,
+		serverItems,
 		items: datData.items,
 		sprPath: sprData.path,
 		version: detectedVersion,
@@ -389,6 +402,8 @@ export async function loadTibiaData(
 		effects: datData.effects,
 		missiles: datData.missiles,
 		extended: effectiveExtended,
+		otbPath: serverPaths?.otbPath,
+		xmlPath: serverPaths?.xmlPath,
 		itemsCount: datData.itemsCount,
 		transparency: sprData.transparency,
 		outfitsCount: datData.outfitsCount,

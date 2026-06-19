@@ -22,6 +22,8 @@ import {
 } from '@/usecase/util/fileBrowserUtils';
 
 export interface LoadOptions {
+	otbPath?: string;
+	xmlPath?: string;
 	extended: boolean;
 	folderPath: string;
 	frameGroups: boolean;
@@ -67,6 +69,7 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	const [computerExpanded, setComputerExpanded] = React.useState(true);
 
 	const [hasTibiaFiles, setHasTibiaFiles] = React.useState(false);
+	const [serverFiles, setServerFiles] = React.useState<{ otb: boolean; xml: boolean }>({ otb: false, xml: false });
 	const [assetLoading, setAssetLoading] = React.useState(false);
 	const [assetInfo, setAssetInfo] = React.useState<AssetInfo>({
 		otfi: null,
@@ -187,13 +190,17 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 				setLoading(false);
 			});
 
-		invoke<boolean[]>('check_files_exist', { path: target, filenames: ['Tibia.dat', 'Tibia.spr'] })
+		invoke<boolean[]>('check_files_exist', { path: target, filenames: ['Tibia.dat', 'Tibia.spr', 'items.otb', 'items.xml'] })
 			.then((res) => {
 				if (cancelled) return;
-				setHasTibiaFiles(res.length === 2 && res[0] && res[1]);
+				setHasTibiaFiles(res.length >= 2 && res[0] && res[1]);
+				setServerFiles({ otb: res[2] ?? false, xml: res[3] ?? false });
 			})
 			.catch(() => {
-				if (!cancelled) setHasTibiaFiles(false);
+				if (!cancelled) {
+					setHasTibiaFiles(false);
+					setServerFiles({ otb: false, xml: false });
+				}
 			});
 
 		return () => {
@@ -312,7 +319,9 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 			/* */
 		}
 		if (assetMode && onLoad) {
-			onLoad({ extended, frameGroups, transparency, improvedAnimations, folderPath: target });
+			const otbPath = serverFiles.otb ? await join(target, 'items.otb') : undefined;
+			const xmlPath = serverFiles.xml ? await join(target, 'items.xml') : undefined;
+			onLoad({ otbPath, xmlPath, extended, frameGroups, transparency, improvedAnimations, folderPath: target });
 		} else if (pathOnlyMode && onFolderSelected) {
 			onFolderSelected(target);
 		} else if (onSelect) {
@@ -371,6 +380,7 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		navigateTo,
 		frameGroups,
 		setExtended,
+		serverFiles,
 		assetLoading,
 		pathOnlyMode,
 		transparency,

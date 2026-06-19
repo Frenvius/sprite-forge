@@ -1029,3 +1029,18 @@ html.acrylic .bg-card.shadow-island-lg {
 		transition: none;
 	}
 }
+
+.sf-cq {
+	container-type: inline-size;
+}
+
+.sf-attr-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container (min-width: 680px) {
+	.sf-attr-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}

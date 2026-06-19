@@ -36,6 +36,9 @@ use formats::FormatManagerState;
 mod obd;
 mod pack;
 
+mod otb;
+use otb::{read_otb_file, write_otb_file};
+
 #[derive(Serialize, Deserialize)]
 struct FileBytes(#[serde(with = "serde_bytes")] Vec<u8>);
 
@@ -2531,6 +2534,8 @@ tauri::Builder::default()
             extract_pack_entries_bin,
             read_obd_manifest_bin,
             extract_obd_bin,
+            read_otb_file,
+            write_otb_file,
             set_window_acrylic
         ])
         .setup(move |app| {

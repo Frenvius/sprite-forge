@@ -303,14 +303,16 @@ export interface ClientVersion {
 export interface AssetData {
 	datPath?: string;
 	sprPath?: string;
+	otbPath?: string;
+	xmlPath?: string;
 	extended: boolean;
 	itemsCount: number;
-
 	spritesCount: number;
+
 	outfitsCount: number;
 	effectsCount: number;
-
 	transparency: boolean;
+
 	missilesCount: number;
 	version: ClientVersion;
 	sprites: Map<number, Sprite>;
@@ -318,6 +320,7 @@ export interface AssetData {
 	outfits: Map<number, ThingType>;
 	effects: Map<number, ThingType>;
 	missiles: Map<number, ThingType>;
+	serverItems?: import('./otb').ServerItemData;
 }
 
 export function isValidSpriteId(spriteId: number, spritesCount?: number): boolean {

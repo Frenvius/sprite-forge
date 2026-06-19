@@ -5,6 +5,7 @@ import { CheckerBoard } from '@/components/CheckerBoard';
 import { useItemList } from '@/usecase/hooks/useItemList';
 import { SpriteCanvas } from '@/components/commons/SpriteCanvas';
 import { ViewModeMenu } from '@/components/commons/ViewModeMenu';
+import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { ListPagination } from '@/components/commons/ListPagination';
 import { ThingCategory, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -47,6 +48,9 @@ export const ItemList = () => {
 		setSelectedCategory,
 		handleContextMenuTarget
 	} = useItemList();
+
+	const { getServerItemsForClient } = useAssetData();
+	const showServerInfo = !!data?.otbPath && selectedCategory === ThingCategory.ITEM;
 
 	const selectionCount = selectedItemIds.size;
 	const isMulti = selectionCount > 1;
@@ -130,6 +134,9 @@ export const ItemList = () => {
 							const item = getThing(id, selectedCategory);
 							if (!item) return null;
 
+							const server = showServerInfo ? getServerItemsForClient(id)[0] : undefined;
+							const displayName = server?.nameXml || server?.name || (item.isMarketItem ? item.marketName : '') || '';
+
 							return (
 								<ContextMenu key={id}>
 									<ContextMenuTrigger asChild>
@@ -195,13 +202,22 @@ export const ItemList = () => {
 													<div className="text-[9px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
 												) : (
 													<>
-														<div className="text-[11px] text-foreground font-mono font-medium leading-tight">{id}</div>
-														{((item.isMarketItem && item.marketName) || item.stackable) && (
-															<div className="text-[9px] text-muted-foreground leading-tight truncate">
-																{item.isMarketItem && item.marketName ? item.marketName : ''}
-																{item.isMarketItem && item.marketName && item.stackable ? ' • ' : ''}
-																{item.stackable && !item.marketName ? 'Stackable' : ''}
+														<div className="text-[11px] text-foreground font-mono font-medium leading-tight truncate">
+															{id}
+															{displayName ? ` - ${displayName}` : ''}
+														</div>
+														{server ? (
+															<div className="text-[9px] text-muted-foreground font-mono leading-tight truncate">
+																Server Id: {server.serverId}
 															</div>
+														) : (
+															((item.isMarketItem && item.marketName) || item.stackable) && (
+																<div className="text-[9px] text-muted-foreground leading-tight truncate">
+																	{item.isMarketItem && item.marketName ? item.marketName : ''}
+																	{item.isMarketItem && item.marketName && item.stackable ? ' • ' : ''}
+																	{item.stackable && !item.marketName ? 'Stackable' : ''}
+																</div>
+															)
 														)}
 													</>
 												)}

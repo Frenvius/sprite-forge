@@ -10,5 +10,6 @@ export interface TibiaAssetPanelProps {
 	onExtendedChange: (v: boolean) => void;
 	onFrameGroupsChange: (v: boolean) => void;
 	onTransparencyChange: (v: boolean) => void;
+	serverFiles?: { otb: boolean; xml: boolean };
 	onImprovedAnimationsChange: (v: boolean) => void;
 }
