@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { useUpdater } from '@/usecase/hooks/use-updater';
+import { type useUpdater } from '@/usecase/hooks/use-updater';
 import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+
+interface UpdateIndicatorProps {
+	updater: ReturnType<typeof useUpdater>;
+}
 
 const RELEASES_URL = 'https://github.com/Frenvius/sprite-forge/releases/latest';
 const downloadUrlFor = (version: null | string) =>
@@ -18,8 +22,8 @@ const formatBytes = (bytes: number) => {
 	return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 };
 
-export const UpdateIndicator = () => {
-	const { state, restart, dismiss, checkForUpdate, downloadAndInstall } = useUpdater();
+export const UpdateIndicator = ({ updater }: UpdateIndicatorProps) => {
+	const { state, restart, dismiss, checkForUpdate, downloadAndInstall } = updater;
 	const [open, setOpen] = useState(false);
 
 	const { notes, error, status, version, downloaded, contentLength, currentVersion } = state;

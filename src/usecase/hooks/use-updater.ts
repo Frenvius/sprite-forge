@@ -71,12 +71,12 @@ export const useUpdater = (options?: { autoCheck?: boolean; autoCheckDelayMs?: n
 	const checkingRef = useRef(false);
 	const previewRef = useRef(previewStatus);
 
-	const checkForUpdate = useCallback(async () => {
+	const checkForUpdate = useCallback(async (): Promise<UpdaterStatus> => {
 		if (previewRef.current) {
 			setState(buildPreviewState(previewRef.current));
-			return;
+			return previewRef.current;
 		}
-		if (!isTauri() || checkingRef.current) return;
+		if (!isTauri() || checkingRef.current) return 'checking';
 		checkingRef.current = true;
 
 		setState((prev) => ({ ...prev, error: null, status: 'checking' }));
@@ -86,7 +86,7 @@ export const useUpdater = (options?: { autoCheck?: boolean; autoCheckDelayMs?: n
 			if (!result) {
 				setState((prev) => ({ ...prev, status: 'up-to-date' }));
 				updateRef.current = null;
-				return;
+				return 'up-to-date';
 			}
 
 			updateRef.current = result;
@@ -98,12 +98,14 @@ export const useUpdater = (options?: { autoCheck?: boolean; autoCheckDelayMs?: n
 				notes: result.body ?? null,
 				currentVersion: result.currentVersion
 			}));
+			return 'available';
 		} catch (err) {
 			setState((prev) => ({
 				...prev,
 				status: 'error',
 				error: err instanceof Error ? err.message : String(err)
 			}));
+			return 'error';
 		} finally {
 			checkingRef.current = false;
 		}

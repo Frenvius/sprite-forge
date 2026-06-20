@@ -3,6 +3,7 @@ import { join } from '@tauri-apps/api/path';
 import { useState, useEffect } from 'react';
 import { errorToString } from '@/lib/errorMessage';
 import { useToast } from '@/usecase/hooks/use-toast';
+import { useUpdater } from '@/usecase/hooks/use-updater';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
@@ -11,8 +12,6 @@ import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
 import { loadTibiaData, type ThingType, getCategoryMap, optimizeSprites, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 import {
 	X,
-	Eye,
-	List,
 	Copy,
 	Info,
 	Minus,
@@ -24,6 +23,7 @@ import {
 	Grid3x3,
 	Sparkles,
 	Settings,
+	RefreshCw,
 	HardDrive,
 	FolderOpen,
 	HelpCircle
@@ -41,7 +41,16 @@ import { VersionHistoryDialog } from './VersionHistoryDialog';
 import { SpriteOptimizerDialog } from './SpriteOptimizerDialog';
 import { SceneEditorDialog } from './SceneEditor/SceneEditorDialog';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
+import {
+	Menubar,
+	MenubarMenu,
+	MenubarItem,
+	MenubarContent,
+	MenubarTrigger,
+	MenubarShortcut,
+	MenubarSeparator,
+	MenubarCheckboxItem
+} from './ui/menubar';
 
 export const Toolbar = () => {
 	const {
@@ -59,6 +68,7 @@ export const Toolbar = () => {
 	const { settings, togglePanel } = usePanelSettings();
 	const { showError } = useErrorDialog();
 	const { toast } = useToast();
+	const updater = useUpdater();
 	const [folderDialogOpen, setFolderDialogOpen] = useState(false);
 	const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 	const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -210,13 +220,11 @@ export const Toolbar = () => {
 		}
 	};
 
-	const handleOpenFiles = (e: React.MouseEvent) => {
-		e.stopPropagation();
+	const handleOpenFiles = () => {
 		setFolderDialogOpen(true);
 	};
 
-	const handleLoadOtb = async (e: React.MouseEvent) => {
-		e.stopPropagation();
+	const handleLoadOtb = async () => {
 		if (!data) return;
 
 		try {
@@ -290,9 +298,7 @@ export const Toolbar = () => {
 		await appWindow.close();
 	};
 
-	const handleCompile = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-
+	const handleCompile = async () => {
 		if (!hasModifiedItems() && !originalSprPath) {
 			toast({
 				title: 'No changes to compile',
@@ -367,6 +373,55 @@ export const Toolbar = () => {
 		}
 	};
 
+	const handleOpenFind = async () => {
+		try {
+			const existingWindow = await WebviewWindow.getByLabel('find');
+
+			if (existingWindow) {
+				await existingWindow.show();
+				await existingWindow.setFocus();
+			} else {
+				const newWindow = new WebviewWindow('find', {
+					width: 900,
+					height: 600,
+					center: true,
+					minWidth: 700,
+					shadow: false,
+					minHeight: 500,
+					resizable: true,
+					url: 'find.html',
+					transparent: true,
+					decorations: false,
+					title: 'Find - Sprite Forge',
+					backgroundColor: [0, 0, 0, 0]
+				});
+
+				newWindow.once('tauri://error', () => {
+					toast({ title: 'Error', variant: 'destructive', description: 'Failed to create find window' });
+				});
+			}
+		} catch (error: any) {
+			toast({
+				title: 'Error',
+				variant: 'destructive',
+				description: error instanceof Error ? error.message : String(error) || 'Failed to open find window'
+			});
+		}
+	};
+
+	const handleCheckUpdates = async () => {
+		toast({ title: 'Checking for updates...' });
+		const result = await updater.checkForUpdate();
+		if (result === 'up-to-date') {
+			toast({
+				title: "You're on the latest version",
+				description: updater.state.currentVersion ? `v${updater.state.currentVersion}` : undefined
+			});
+		}
+	};
+
+	const stop = (e: React.MouseEvent) => e.stopPropagation();
+
 	const renderWindowControls = () => {
 		if (isMac) {
 			return (
@@ -403,7 +458,7 @@ export const Toolbar = () => {
 					aria-label="Minimize"
 					onClick={handleMinimize}
 					onMouseDown={(e) => e.stopPropagation()}
-					className="h-11 w-11 inline-flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors"
+					className="h-8 w-9 inline-flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors"
 				>
 					<Minus strokeWidth={1.5} className="h-4 w-4" />
 				</button>
@@ -412,7 +467,7 @@ export const Toolbar = () => {
 					onClick={handleMaximize}
 					onMouseDown={(e) => e.stopPropagation()}
 					aria-label={isMaximized ? 'Restore' : 'Maximize'}
-					className="h-11 w-11 inline-flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors"
+					className="h-8 w-9 inline-flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors"
 				>
 					{isMaximized ? (
 						<Copy strokeWidth={1.5} className="h-3.5 w-3.5 -scale-x-100" />
@@ -425,7 +480,7 @@ export const Toolbar = () => {
 					aria-label="Close"
 					onClick={handleClose}
 					onMouseDown={(e) => e.stopPropagation()}
-					className="h-11 w-11 inline-flex items-center justify-center text-foreground/70 hover:text-white hover:bg-[#e81123] transition-colors"
+					className="h-8 w-9 inline-flex items-center justify-center text-foreground/70 hover:text-white hover:bg-[#e81123] transition-colors"
 				>
 					<X strokeWidth={1.5} className="h-4 w-4" />
 				</button>
@@ -442,214 +497,106 @@ export const Toolbar = () => {
 				current={loadingProgress?.current}
 			/>
 
-			<div data-tauri-drag-region className="h-11 bg-toolbar-bg border-b border-border/50 flex items-center px-3 gap-1">
+			<div data-tauri-drag-region className="h-8 bg-toolbar-bg border-b border-border/50 flex items-center pl-1.5 pr-3 gap-1">
 				{isMac && renderWindowControls()}
-				<div className="flex items-center gap-0.5">
-					<Button
-						size="sm"
-						variant="ghost"
-						disabled={isLoading}
-						onClick={handleOpenFiles}
-						className="h-8 text-xs font-medium"
-						onMouseDown={(e) => e.stopPropagation()}
-					>
-						<FolderOpen className="h-3.5 w-3.5 mr-1.5" />
-						Open Files
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						onClick={handleCompile}
-						disabled={!data || !hasModifiedItems()}
-						onMouseDown={(e) => e.stopPropagation()}
-						className={cn('h-8 text-xs font-medium', hasModifiedItems() && 'text-primary')}
-					>
-						<HardDrive className="h-3.5 w-3.5 mr-1.5" />
-						Compile
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						disabled={!data}
-						className="h-8 text-xs font-medium"
-						onMouseDown={(e) => e.stopPropagation()}
-						onClick={() => setVersionHistoryOpen(true)}
-					>
-						<History className="h-3.5 w-3.5 mr-1.5" />
-						History
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						onClick={handleOptimize}
-						disabled={!data || isLoading}
-						className="h-8 text-xs font-medium"
-						onMouseDown={(e) => e.stopPropagation()}
-					>
-						<Sparkles className="h-3.5 w-3.5 mr-1.5" />
-						Optimize
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						disabled={!data}
-						className="h-8 text-xs font-medium"
-						onClick={() => setSceneEditorOpen(true)}
-						onMouseDown={(e) => e.stopPropagation()}
-					>
-						<Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
-						Scene
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						disabled={!data}
-						onClick={handleLoadOtb}
-						onMouseDown={(e) => e.stopPropagation()}
-						className={cn('h-8 text-xs font-medium', data?.otbPath && 'text-primary')}
-						title={data?.otbPath ? `Server items loaded: ${data.otbPath}` : 'Load items.otb (server item database)'}
-					>
-						<Server className="h-3.5 w-3.5 mr-1.5" />
-						{data?.otbPath ? 'OTB ✓' : 'Load OTB'}
-					</Button>
-				</div>
-
-				<div className="h-5 w-px bg-border/50 flex-shrink-0" />
-
-				<Button
-					size="sm"
-					variant="ghost"
-					disabled={!data}
-					className="h-8 text-xs font-medium"
-					onMouseDown={(e) => e.stopPropagation()}
-					onClick={async () => {
-						try {
-							const existingWindow = await WebviewWindow.getByLabel('find');
-
-							if (existingWindow) {
-								await existingWindow.show();
-								await existingWindow.setFocus();
-							} else {
-								const newWindow = new WebviewWindow('find', {
-									width: 900,
-									height: 600,
-									center: true,
-									minWidth: 700,
-									shadow: false,
-									minHeight: 500,
-									resizable: true,
-									url: 'find.html',
-									transparent: true,
-									decorations: false,
-									title: 'Find - Sprite Forge',
-									backgroundColor: [0, 0, 0, 0]
-								});
-
-								newWindow.once('tauri://error', () => {
-									toast({
-										title: 'Error',
-										variant: 'destructive',
-										description: 'Failed to create find window'
-									});
-								});
-							}
-						} catch (error: any) {
-							toast({
-								title: 'Error',
-								variant: 'destructive',
-								description: error instanceof Error ? error.message : String(error) || 'Failed to open find window'
-							});
-						}
-					}}
-				>
-					<Search className="h-3.5 w-3.5 mr-1.5" />
-					Find
-				</Button>
-
-				<div className="h-5 w-px bg-border/50 flex-shrink-0" />
-
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="icon"
-								variant="ghost"
-								onMouseDown={(e) => e.stopPropagation()}
-								onClick={() => togglePanel('showVisualization')}
-								className={cn('h-8 w-8', settings.showVisualization && 'bg-primary/20 text-primary')}
+				<Menubar>
+					<MenubarMenu>
+						<MenubarTrigger onMouseDown={stop}>File</MenubarTrigger>
+						<MenubarContent onMouseDown={stop}>
+							<MenubarItem disabled={isLoading} onSelect={handleOpenFiles}>
+								<FolderOpen className="mr-2 h-3.5 w-3.5" />
+								Open Files
+								<MenubarShortcut>Ctrl+O</MenubarShortcut>
+							</MenubarItem>
+							<MenubarItem disabled={!data} onSelect={() => void handleLoadOtb()} className={cn(data?.otbPath && 'text-primary')}>
+								<Server className="mr-2 h-3.5 w-3.5" />
+								{data?.otbPath ? 'OTB loaded ✓' : 'Load OTB'}
+							</MenubarItem>
+							<MenubarSeparator />
+							<MenubarItem
+								onSelect={() => void handleCompile()}
+								disabled={!data || !hasModifiedItems()}
+								className={cn(hasModifiedItems() && 'text-primary')}
 							>
-								<Eye className="h-4 w-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Toggle Visualization Panel</p>
-						</TooltipContent>
-					</Tooltip>
+								<HardDrive className="mr-2 h-3.5 w-3.5" />
+								Compile
+								<MenubarShortcut>Ctrl+S</MenubarShortcut>
+							</MenubarItem>
+							<MenubarItem disabled={!data} onSelect={() => setVersionHistoryOpen(true)}>
+								<History className="mr-2 h-3.5 w-3.5" />
+								Version History
+							</MenubarItem>
+							<MenubarSeparator />
+							<MenubarItem onSelect={() => setSettingsDialogOpen(true)}>
+								<Settings className="mr-2 h-3.5 w-3.5" />
+								Preferences...
+							</MenubarItem>
+							<MenubarSeparator />
+							<MenubarItem onSelect={() => void getCurrentWindow().close()}>Exit</MenubarItem>
+						</MenubarContent>
+					</MenubarMenu>
 
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="icon"
-								variant="ghost"
-								onMouseDown={(e) => e.stopPropagation()}
-								onClick={() => togglePanel('showOpenedItems')}
-								className={cn('h-8 w-8', settings.showOpenedItems && 'bg-primary/20 text-primary')}
-							>
-								<List className="h-4 w-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Toggle Opened Objects Panel</p>
-						</TooltipContent>
-					</Tooltip>
+					<MenubarMenu>
+						<MenubarTrigger onMouseDown={stop}>Tools</MenubarTrigger>
+						<MenubarContent onMouseDown={stop}>
+							<MenubarItem onSelect={handleOptimize} disabled={!data || isLoading}>
+								<Sparkles className="mr-2 h-3.5 w-3.5" />
+								Optimize
+							</MenubarItem>
+							<MenubarItem disabled={!data} onSelect={() => setSceneEditorOpen(true)}>
+								<Grid3x3 className="mr-2 h-3.5 w-3.5" />
+								Scene Editor
+							</MenubarItem>
+							<MenubarItem disabled={!data} onSelect={() => void handleOpenFind()}>
+								<Search className="mr-2 h-3.5 w-3.5" />
+								Find
+							</MenubarItem>
+						</MenubarContent>
+					</MenubarMenu>
 
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="icon"
-								variant="ghost"
-								className="h-8 w-8"
-								onMouseDown={(e) => e.stopPropagation()}
-								onClick={() => setThemeDialogOpen(true)}
+					<MenubarMenu>
+						<MenubarTrigger onMouseDown={stop}>View</MenubarTrigger>
+						<MenubarContent onMouseDown={stop}>
+							<MenubarCheckboxItem
+								checked={settings.showVisualization}
+								onSelect={(e) => e.preventDefault()}
+								onCheckedChange={() => togglePanel('showVisualization')}
 							>
-								<Palette className="h-4 w-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Theme Settings</p>
-						</TooltipContent>
-					</Tooltip>
+								Visualization Panel
+							</MenubarCheckboxItem>
+							<MenubarCheckboxItem
+								checked={settings.showOpenedItems}
+								onSelect={(e) => e.preventDefault()}
+								onCheckedChange={() => togglePanel('showOpenedItems')}
+							>
+								Opened Objects
+							</MenubarCheckboxItem>
+							<MenubarSeparator />
+							<MenubarItem onSelect={() => setThemeDialogOpen(true)}>
+								<Palette className="mr-2 h-3.5 w-3.5" />
+								Theme Settings...
+							</MenubarItem>
+						</MenubarContent>
+					</MenubarMenu>
 
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								size="icon"
-								variant="ghost"
-								className="h-8 w-8"
-								onMouseDown={(e) => e.stopPropagation()}
-								onClick={() => setSettingsDialogOpen(true)}
-							>
-								<Settings className="h-4 w-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Settings</p>
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+					<MenubarMenu>
+						<MenubarTrigger onMouseDown={stop}>Help</MenubarTrigger>
+						<MenubarContent onMouseDown={stop}>
+							<MenubarItem onSelect={() => void handleCheckUpdates()}>
+								<RefreshCw className="mr-2 h-3.5 w-3.5" />
+								Check for Updates
+							</MenubarItem>
+							<MenubarSeparator />
+							<MenubarItem onSelect={() => setAboutDialogOpen(true)}>
+								<HelpCircle className="mr-2 h-3.5 w-3.5" />
+								About Sprite Forge
+							</MenubarItem>
+						</MenubarContent>
+					</MenubarMenu>
+				</Menubar>
 
 				<div className="ml-auto text-[11px] text-muted-foreground flex-shrink-0 flex items-center gap-2">
-					<UpdateIndicator />
-					<Button
-						size="icon"
-						variant="ghost"
-						title="About Sprite Forge"
-						onClick={() => setAboutDialogOpen(true)}
-						onMouseDown={(e) => e.stopPropagation()}
-						className="h-6 w-6 hover:bg-primary/20 hover:text-primary transition-colors"
-					>
-						<HelpCircle className="h-3.5 w-3.5" />
-					</Button>
+					<UpdateIndicator updater={updater} />
 					<span className="font-mono">{data ? `v${data.version.label} | ${data.itemsCount} items` : 'No files loaded'}</span>
 					{data && (
 						<Popover>
