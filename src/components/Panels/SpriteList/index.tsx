@@ -102,7 +102,8 @@ export const SpriteList = () => {
 						viewMode === 'grid' && 'grid grid-cols-2 gap-1',
 						viewMode === 'grid-3' && 'grid grid-cols-3 gap-1',
 						viewMode === 'grid-4' && 'grid grid-cols-4 gap-1',
-						viewMode === 'large' && 'grid grid-cols-1 gap-2'
+						viewMode === 'large' && 'grid grid-cols-1 gap-2',
+						viewMode === 'large-2' && 'grid grid-cols-2 gap-2'
 					)}
 				>
 					{paginatedSpriteIds.map((id) => (
@@ -130,15 +131,6 @@ export const SpriteList = () => {
 										MozUserSelect: 'none',
 										WebkitUserSelect: 'none'
 									}}
-									className={cn(
-										'w-full rounded-md transition-all hover:bg-item-hover cursor-grab active:cursor-grabbing relative',
-										(selectedSpriteIds.has(id) || highlightedSpriteId === id) && 'bg-primary/15 ring-1 ring-primary/50',
-										viewMode === 'list' && 'flex items-center gap-2 px-2 py-1',
-										viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
-										viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
-										viewMode === 'grid-4' && 'flex flex-col items-center px-0.5 py-1 gap-0.5',
-										viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5'
-									)}
 									onMouseDown={(e) => {
 										if (e.button !== 0) return;
 
@@ -156,6 +148,16 @@ export const SpriteList = () => {
 											</div>
 										));
 									}}
+									className={cn(
+										'w-full rounded-md transition-all hover:bg-item-hover cursor-grab active:cursor-grabbing relative',
+										(selectedSpriteIds.has(id) || highlightedSpriteId === id) && 'bg-primary/15 ring-1 ring-primary/50',
+										viewMode === 'list' && 'flex items-center gap-2 px-2 py-1',
+										viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
+										viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
+										viewMode === 'grid-4' && 'flex flex-col items-center px-0.5 py-1 gap-0.5',
+										viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5',
+										viewMode === 'large-2' && 'flex flex-col items-stretch gap-1 p-1.5 overflow-hidden'
+									)}
 								>
 									<div
 										className={cn(
@@ -164,13 +166,15 @@ export const SpriteList = () => {
 											viewMode === 'grid' && 'w-12 h-12',
 											viewMode === 'grid-3' && 'w-11 h-11',
 											viewMode === 'grid-4' && 'w-9 h-9',
-											viewMode === 'large' && 'w-32 h-32'
+											viewMode === 'large' && 'w-32 h-32',
+											viewMode === 'large-2' && 'w-full aspect-square'
 										)}
 									>
 										<SpriteCanvas
 											showEmpty
 											spriteId={id}
 											renderMode="list"
+											fill={viewMode === 'large-2'}
 											className="pointer-events-none select-none"
 											scale={
 												viewMode === 'list'
@@ -192,7 +196,8 @@ export const SpriteList = () => {
 											viewMode === 'grid' && 'flex-1 text-right',
 											viewMode === 'grid-3' && 'w-full text-center',
 											viewMode === 'grid-4' && 'w-full text-center',
-											viewMode === 'large' && 'flex-1 text-right'
+											viewMode === 'large' && 'flex-1 text-right',
+											viewMode === 'large-2' && 'w-full text-center'
 										)}
 									>
 										<div

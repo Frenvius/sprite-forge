@@ -127,7 +127,8 @@ export const ItemList = () => {
 							viewMode === 'grid' && 'grid grid-cols-2 gap-1',
 							viewMode === 'grid-3' && 'grid grid-cols-3 gap-1',
 							viewMode === 'grid-4' && 'grid grid-cols-4 gap-1',
-							viewMode === 'large' && 'grid grid-cols-1 gap-2'
+							viewMode === 'large' && 'grid grid-cols-1 gap-2',
+							viewMode === 'large-2' && 'grid grid-cols-2 gap-2'
 						)}
 					>
 						{paginatedItemIds.map((id) => {
@@ -152,7 +153,8 @@ export const ItemList = () => {
 												viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
 												viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
 												viewMode === 'grid-4' && 'flex flex-col items-center px-0.5 py-1 gap-0.5',
-												viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5'
+												viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5',
+												viewMode === 'large-2' && 'flex flex-col items-stretch gap-1 p-1.5 overflow-hidden'
 											)}
 										>
 											<CheckerBoard
@@ -162,7 +164,8 @@ export const ItemList = () => {
 													viewMode === 'grid' && 'w-12 h-12',
 													viewMode === 'grid-3' && 'w-11 h-11',
 													viewMode === 'grid-4' && 'w-9 h-9',
-													viewMode === 'large' && 'w-32 h-32'
+													viewMode === 'large' && 'w-24 h-24',
+													viewMode === 'large-2' && 'w-full aspect-square'
 												)}
 											>
 												<SpriteCanvas
@@ -171,16 +174,10 @@ export const ItemList = () => {
 													renderMode="list"
 													width={item.width}
 													height={item.height}
+													fill={viewMode === 'large-2'}
 													scale={
-														viewMode === 'list'
-															? 36 / (Math.max(item.width, item.height) * spriteSize)
-															: viewMode === 'grid'
-																? 48 / (Math.max(item.width, item.height) * spriteSize)
-																: viewMode === 'grid-3'
-																	? 44 / (Math.max(item.width, item.height) * spriteSize)
-																	: viewMode === 'grid-4'
-																		? 36 / (Math.max(item.width, item.height) * spriteSize)
-																		: 128 / (Math.max(item.width, item.height) * spriteSize)
+														({ list: 36, grid: 48, large: 96, 'grid-3': 44, 'grid-4': 36 }[viewMode] ?? 96) /
+														(Math.max(item.width, item.height) * spriteSize)
 													}
 												/>
 											</CheckerBoard>
@@ -191,11 +188,14 @@ export const ItemList = () => {
 													viewMode === 'grid' && 'flex-1 text-right',
 													viewMode === 'grid-3' && 'w-full text-center',
 													viewMode === 'grid-4' && 'w-full text-center',
-													viewMode === 'large' && 'flex-1 text-right'
+													viewMode === 'large' && 'flex-1 text-right',
+													viewMode === 'large-2' && 'w-full text-center'
 												)}
 											>
 												{viewMode === 'grid' || viewMode === 'large' ? (
 													<div className="text-[11px] text-foreground font-mono font-medium leading-tight">{id}</div>
+												) : viewMode === 'large-2' ? (
+													<div className="text-[11px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
 												) : viewMode === 'grid-3' ? (
 													<div className="text-[10px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
 												) : viewMode === 'grid-4' ? (

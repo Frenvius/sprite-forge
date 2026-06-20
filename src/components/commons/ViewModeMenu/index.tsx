@@ -1,7 +1,7 @@
 import type { ViewModeMenuProps } from './types';
 
 import { Button } from '@/components/ui/button';
-import { List, Square, Grid3x3, LayoutGrid, LayoutDashboard } from 'lucide-react';
+import { List, Square, Grid3x3, Columns2, LayoutGrid, LayoutDashboard } from 'lucide-react';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export const ViewModeMenu = ({ viewMode, onViewModeChange }: ViewModeMenuProps) => {
@@ -14,6 +14,7 @@ export const ViewModeMenu = ({ viewMode, onViewModeChange }: ViewModeMenuProps) 
 					{viewMode === 'grid-3' && <Grid3x3 className="h-3.5 w-3.5 text-muted-foreground" />}
 					{viewMode === 'grid-4' && <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />}
 					{viewMode === 'large' && <Square className="h-3.5 w-3.5 text-muted-foreground" />}
+					{viewMode === 'large-2' && <Columns2 className="h-3.5 w-3.5 text-muted-foreground" />}
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
@@ -36,6 +37,10 @@ export const ViewModeMenu = ({ viewMode, onViewModeChange }: ViewModeMenuProps) 
 				<DropdownMenuItem onClick={() => onViewModeChange('large')}>
 					<Square className="mr-2 h-4 w-4" />
 					<span>Large</span>
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={() => onViewModeChange('large-2')}>
+					<Columns2 className="mr-2 h-4 w-4" />
+					<span>Large (2 cols)</span>
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

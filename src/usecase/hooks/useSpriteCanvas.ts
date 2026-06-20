@@ -19,6 +19,7 @@ interface Slot {
 export interface SpriteCanvasProps {
 	panX?: number;
 	panY?: number;
+	fill?: boolean;
 	width?: number;
 	scale?: number;
 	frame?: number;
@@ -71,6 +72,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		outfitData,
 		sceneTiles,
 		onPanChange,
+		fill = false,
 		patternX = 0,
 		patternY = 0,
 		patternZ = 0,
@@ -805,14 +807,18 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		};
 
 		if (renderMode === 'list') {
+			if (fill) {
+				return { ...baseStyle, width: '100%', height: '100%', transform: 'none', boxSizing: 'border-box' as const };
+			}
+
 			const renderedWidth = canvasWidth * scale;
 			const renderedHeight = canvasHeight * scale;
 
 			return {
 				...baseStyle,
 				transform: 'none',
-				width: `${renderedWidth} px`,
-				height: `${renderedHeight} px`,
+				width: `${renderedWidth}px`,
+				height: `${renderedHeight}px`,
 				boxSizing: 'border-box' as const
 			};
 		}
@@ -840,7 +846,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 			transformOrigin: 'center center',
 			transform: `translate(${panX}px, ${panY}px) scale(${scale})`
 		};
-	}, [canvasWidth, canvasHeight, scale, exactSizeCenter, panX, panY, renderMode]);
+	}, [canvasWidth, canvasHeight, scale, exactSizeCenter, panX, panY, renderMode, fill]);
 
 	const handleDragEnter = (e: React.DragEvent) => {
 		if (e.dataTransfer.types.includes('Files')) {
