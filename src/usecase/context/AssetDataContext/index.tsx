@@ -2,7 +2,15 @@ import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItem
 
 import React from 'react';
 import { logger, EventCode } from '@/lib/debug';
-import { SpriteReader, ThingCategory, getCategoryMap, saveCachedProfile, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
+import {
+	SpriteReader,
+	ThingCategory,
+	getCategoryMap,
+	saveCachedProfile,
+	syncFromThingType,
+	TIBIA_FORMAT_CONFIG,
+	createServerItemFromThing
+} from '@/lib/formats/tibia';
 
 interface AssetDataContextType {
 	spriteSize: number;
@@ -33,9 +41,11 @@ interface AssetDataContextType {
 	setAutoSyncServer: (value: boolean) => void;
 	setServerProfile: (profileId: string) => void;
 	setOpenedSpriteId: (id: null | number) => void;
+	reloadServerAttributes: () => { synced: number };
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
 	setHighlightedSpriteId: (id: null | number) => void;
+	createMissingServerItems: () => { created: number };
 	getServerItem: (serverId: number) => null | ServerItem;
 	setSelectedCategory: (category: ThingCategory) => void;
 	attachServerItems: (serverItems: ServerItemData) => void;
@@ -361,6 +371,63 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		},
 		[data]
 	);
+
+	const createMissingServerItems = React.useCallback((): { created: number } => {
+		const sd = data?.serverItems;
+		if (!data || !sd) return { created: 0 };
+
+		let maxServerId = 0;
+		for (const id of sd.items.keys()) if (id > maxServerId) maxServerId = id;
+
+		const newIds: number[] = [];
+		for (const thing of data.items.values()) {
+			const serverIds = sd.byClientId.get(thing.id);
+			if (serverIds && serverIds.length > 0) continue;
+			const newItem = createServerItemFromThing(thing, ++maxServerId, data.version.value);
+			sd.items.set(newItem.serverId, newItem);
+			sd.byClientId.set(thing.id, [newItem.serverId]);
+			newIds.push(newItem.serverId);
+		}
+
+		if (newIds.length > 0) {
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				for (const id of newIds) next.add(id);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+		}
+
+		return { created: newIds.length };
+	}, [data]);
+
+	const reloadServerAttributes = React.useCallback((): { synced: number } => {
+		const sd = data?.serverItems;
+		if (!data || !sd) return { synced: 0 };
+
+		const ids: number[] = [];
+		for (const [clientId, serverIds] of sd.byClientId) {
+			const thing = data.items.get(clientId);
+			if (!thing) continue;
+			for (const sid of serverIds) {
+				const server = sd.items.get(sid);
+				if (!server) continue;
+				syncFromThingType(server, thing, false, data.version.value);
+				ids.push(sid);
+			}
+		}
+
+		if (ids.length > 0) {
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				for (const id of ids) next.add(id);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+		}
+
+		return { synced: ids.length };
+	}, [data]);
 
 	const setOpenedItemId = React.useCallback(
 		(id: null | number, category?: ThingCategory) => {
@@ -778,8 +845,10 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				setHighlightedItemId,
 				modifiedSinceCompile,
 				clearModifiedTracking,
+				reloadServerAttributes,
 				setHighlightedSpriteId,
 				getServerItemsForClient,
+				createMissingServerItems,
 				setSelectedCategoryAndItem,
 				formatConfig: TIBIA_FORMAT_CONFIG
 			}}

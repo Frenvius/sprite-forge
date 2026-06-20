@@ -23,10 +23,12 @@ import {
 	Grid3x3,
 	Sparkles,
 	Settings,
+	RotateCw,
 	RefreshCw,
 	HardDrive,
 	FolderOpen,
-	HelpCircle
+	HelpCircle,
+	PackagePlus
 } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -63,7 +65,9 @@ export const Toolbar = () => {
 		loadingProgress,
 		hasModifiedItems,
 		notifyDataChanged,
-		attachServerItems
+		attachServerItems,
+		reloadServerAttributes,
+		createMissingServerItems
 	} = useAssetData();
 	const { settings, togglePanel } = usePanelSettings();
 	const { showError } = useErrorDialog();
@@ -409,6 +413,22 @@ export const Toolbar = () => {
 		}
 	};
 
+	const handleCreateMissing = () => {
+		const { created } = createMissingServerItems();
+		toast({
+			description: created > 0 ? 'Compile to save items.otb.' : undefined,
+			title: created > 0 ? `Created ${created} server item${created === 1 ? '' : 's'}` : 'No missing server items'
+		});
+	};
+
+	const handleReloadAttributes = () => {
+		const { synced } = reloadServerAttributes();
+		toast({
+			description: synced > 0 ? 'Compile to save items.otb.' : undefined,
+			title: synced > 0 ? `Reloaded attributes for ${synced} item${synced === 1 ? '' : 's'}` : 'No server items to reload'
+		});
+	};
+
 	const handleCheckUpdates = async () => {
 		toast({ title: 'Checking for updates...' });
 		const result = await updater.checkForUpdate();
@@ -550,6 +570,15 @@ export const Toolbar = () => {
 							<MenubarItem disabled={!data} onSelect={() => void handleOpenFind()}>
 								<Search className="mr-2 h-3.5 w-3.5" />
 								Find
+							</MenubarItem>
+							<MenubarSeparator />
+							<MenubarItem disabled={!data?.otbPath} onSelect={handleCreateMissing}>
+								<PackagePlus className="mr-2 h-3.5 w-3.5" />
+								Create Missing OTB Items
+							</MenubarItem>
+							<MenubarItem disabled={!data?.otbPath} onSelect={handleReloadAttributes}>
+								<RotateCw className="mr-2 h-3.5 w-3.5" />
+								Reload Item Attributes
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
