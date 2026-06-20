@@ -17,7 +17,6 @@ import {
 	Minus,
 	Square,
 	Search,
-	Server,
 	Palette,
 	History,
 	Grid3x3,
@@ -65,7 +64,6 @@ export const Toolbar = () => {
 		loadingProgress,
 		hasModifiedItems,
 		notifyDataChanged,
-		attachServerItems,
 		reloadServerAttributes,
 		createMissingServerItems
 	} = useAssetData();
@@ -227,48 +225,6 @@ export const Toolbar = () => {
 
 	const handleOpenFiles = () => {
 		setFolderDialogOpen(true);
-	};
-
-	const handleLoadOtb = async () => {
-		if (!data) return;
-
-		try {
-			const { open } = await import('@tauri-apps/plugin-dialog');
-			const selected = await open({
-				multiple: false,
-				title: 'Select items.otb',
-				filters: [{ extensions: ['otb'], name: 'OTB Server Items' }]
-			});
-			if (!selected || typeof selected !== 'string') return;
-
-			setLoading(true, { total: 1, current: 0, stage: 'Loading server items...' });
-
-			const { join, dirname } = await import('@tauri-apps/api/path');
-			const { invoke } = await import('@tauri-apps/api/core');
-			const { loadServerItems } = await import('@/lib/formats/tibia');
-
-			const dir = await dirname(selected);
-			const xmlFull = await join(dir, 'items.xml');
-			let xmlExists = false;
-			try {
-				const res = await invoke<boolean[]>('check_files_exist', { path: dir, filenames: ['items.xml'] });
-				xmlExists = res[0] ?? false;
-			} catch {
-				xmlExists = false;
-			}
-
-			const sd = await loadServerItems(selected, xmlExists ? xmlFull : undefined);
-			attachServerItems(sd);
-
-			toast({
-				title: 'Server items loaded',
-				description: `${sd.items.size} items from items.otb${xmlExists ? ' + items.xml' : ' (no items.xml found alongside)'}.`
-			});
-		} catch (err) {
-			showError('Failed to load items.otb', err);
-		} finally {
-			setLoading(false);
-		}
 	};
 
 	const handleLoadWithOptions = async (options: LoadOptions) => {
@@ -529,10 +485,6 @@ export const Toolbar = () => {
 								<FolderOpen className="mr-2 h-3.5 w-3.5" />
 								Open Files
 								<MenubarShortcut>Ctrl+O</MenubarShortcut>
-							</MenubarItem>
-							<MenubarItem disabled={!data} onSelect={() => void handleLoadOtb()} className={cn(data?.otbPath && 'text-primary')}>
-								<Server className="mr-2 h-3.5 w-3.5" />
-								{data?.otbPath ? 'OTB loaded ✓' : 'Load OTB'}
 							</MenubarItem>
 							<MenubarSeparator />
 							<MenubarItem

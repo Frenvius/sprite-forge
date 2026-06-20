@@ -76,6 +76,41 @@ const resolveAssets = (entries: DirEntry[], assetBase: null | string): ResolvedA
 	return { base: null, datName: null, sprName: null };
 };
 
+interface OtbLink {
+	otbPath: string;
+	xmlPath?: string;
+	xmlFound: boolean;
+}
+
+const otbLinkKey = (datPath: string): string => `sprite-forge-otb-link:${datPath}`;
+const baseName = (p: string): string => p.split(/[\\/]/).pop() ?? p;
+
+const loadOtbLink = (datPath: string): null | OtbLink => {
+	try {
+		if (typeof window === 'undefined') return null;
+		const raw = localStorage.getItem(otbLinkKey(datPath));
+		return raw ? (JSON.parse(raw) as OtbLink) : null;
+	} catch {
+		return null;
+	}
+};
+
+const saveOtbLink = (datPath: string, link: OtbLink): void => {
+	try {
+		if (typeof window !== 'undefined') localStorage.setItem(otbLinkKey(datPath), JSON.stringify(link));
+	} catch {
+		void 0;
+	}
+};
+
+const removeOtbLink = (datPath: string): void => {
+	try {
+		if (typeof window !== 'undefined') localStorage.removeItem(otbLinkKey(datPath));
+	} catch {
+		void 0;
+	}
+};
+
 export interface AssetInfo {
 	error: null | string;
 	otfi: null | OtfiData;
@@ -342,9 +377,41 @@ export const useFolderSelectDialog = ({
 	React.useEffect(() => {
 		setPickedFile(null);
 		setAssetBase(null);
-		setCustomOtb(null);
 		setIncludeServer(true);
 	}, [currentPathString]);
+
+	React.useEffect(() => {
+		if (!assetMode) return;
+		const datName = resolved.datName;
+		if (!datName) {
+			setCustomOtb(null);
+			return;
+		}
+		let cancelled = false;
+		setCustomOtb(null);
+		(async () => {
+			const datPath = await join(currentPathString, datName);
+			const saved = loadOtbLink(datPath);
+			if (!saved) return;
+			let exists = false;
+			try {
+				const dir = await dirname(saved.otbPath);
+				const res = await invoke<boolean[]>('check_files_exist', { path: dir, filenames: [baseName(saved.otbPath)] });
+				exists = res[0] ?? false;
+			} catch {
+				exists = false;
+			}
+			if (cancelled) return;
+			if (exists) {
+				setCustomOtb({ label: saved.otbPath, otbPath: saved.otbPath, xmlPath: saved.xmlPath, xmlFound: saved.xmlFound });
+			} else {
+				removeOtbLink(datPath);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [assetMode, currentPathString, resolved.datName]);
 
 	const applyPickedOtb = async (otbPath: string) => {
 		const dir = await dirname(otbPath);
@@ -358,6 +425,10 @@ export const useFolderSelectDialog = ({
 		const xmlPath = xmlFound ? await join(dir, 'items.xml') : undefined;
 		setCustomOtb({ otbPath, xmlPath, xmlFound, label: otbPath });
 		setIncludeServer(true);
+		if (resolved.datName) {
+			const datPath = await join(currentPathString, resolved.datName);
+			saveOtbLink(datPath, { otbPath, xmlPath, xmlFound });
+		}
 	};
 
 	const navigateTo = (next: string[]) => {
