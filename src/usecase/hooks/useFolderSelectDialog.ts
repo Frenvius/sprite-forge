@@ -189,10 +189,11 @@ export const useFolderSelectDialog = ({
 	const resolved = React.useMemo(() => resolveAssets(entries, assetBase), [entries, assetBase]);
 	const hasTibiaFiles = !!(resolved.datName && resolved.sprName);
 
+	const pathSep = currentPathString.includes('\\') ? '\\' : '/';
 	const serverOtb = customOtb
 		? { custom: true, label: customOtb.label, xmlFound: customOtb.xmlFound }
 		: serverFiles.otb
-			? { custom: false, label: 'items.otb', xmlFound: serverFiles.xml }
+			? { custom: false, xmlFound: serverFiles.xml, label: `${currentPathString}${pathSep}items.otb` }
 			: null;
 
 	React.useEffect(() => {

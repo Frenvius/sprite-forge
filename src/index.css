@@ -989,29 +989,10 @@ html.acrylic .bg-card.shadow-island-lg {
 	color: hsl(var(--muted-foreground));
 }
 
-.fb-server-file {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	min-width: 0;
-}
-
-.fb-server-file-icon {
-	flex-shrink: 0;
-	color: hsl(var(--muted-foreground));
-}
-
-.fb-server-file-path {
-	flex: 1;
-	min-width: 0;
-	font-size: 11px;
-	color: hsl(var(--muted-foreground));
-	font-family: var(--font-mono, monospace);
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	direction: rtl;
-	text-align: left;
+.fb-server-files {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px 16px;
 }
 
 .fb-asset-otb-browse {

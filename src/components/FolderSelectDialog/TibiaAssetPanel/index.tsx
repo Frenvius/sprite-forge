@@ -7,6 +7,7 @@ import {
 	Image,
 	Package,
 	Loader2,
+	XCircle,
 	Settings,
 	FileText,
 	FolderOpen,
@@ -210,20 +211,23 @@ export const TibiaAssetPanel = ({
 					<div className="fb-server-box">
 						{serverOtb ? (
 							<>
-								<label className="fb-asset-toggle">
+								<label title={serverOtb.label} className="fb-asset-toggle">
 									<span>Include items.otb</span>
 									<Switch className="scale-75" checked={includeServer} onCheckedChange={onIncludeServerChange} />
 								</label>
-								<div title={serverOtb.label} className="fb-server-file">
-									<FileText size={12} className="fb-server-file-icon" />
-									<span className="fb-server-file-path">{serverOtb.custom ? serverOtb.label : 'items.otb (this folder)'}</span>
-								</div>
-								<div className="fb-asset-toggle">
-									<span>items.xml</span>
-									<span className={serverOtb.xmlFound ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
-										{serverOtb.xmlFound ? <CheckCircle2 size={13} /> : '-'}
-										{serverOtb.xmlFound ? 'Found' : 'Not found'}
-									</span>
+								<div className="fb-server-files">
+									<div className="fb-asset-toggle">
+										<span>items.otb</span>
+										<span className="fb-asset-value-ok">
+											<CheckCircle2 size={14} />
+										</span>
+									</div>
+									<div className="fb-asset-toggle">
+										<span>items.xml</span>
+										<span className={serverOtb.xmlFound ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
+											{serverOtb.xmlFound ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+										</span>
+									</div>
 								</div>
 								<button type="button" onClick={onBrowseOtb} className="fb-asset-otb-browse">
 									<FolderOpen size={13} />
