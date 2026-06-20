@@ -5,6 +5,29 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-20
+
+### Added
+- Optional auto-play of animation when opening an animated object (off by default, toggle in Settings).
+- Two-column large view mode for the item and sprite lists.
+- Editable address bar to type or paste a path.
+- Server items shown as icon-only statuses, side by side.
+- Open Recent reopens the full DAT/SPR/OTFI/OTB set.
+- Remembers the OTB per DAT/SPR, removing the manual Load OTB menu.
+- Pick `items.otb` via a dedicated in-app file dialog.
+- Detects DAT/SPR/OTFI by extension, with an asset detail panel.
+- Create-missing-OTB-items and reload-attributes actions.
+- Side-by-side server item (OTB/XML) editing.
+- Import/export dialogs with multi-selection support.
+
+### Changed
+- Compact menubar header with a check-for-updates action.
+
+### Fixed
+- Respects OTFI feature flags on save and writes the `.otfi` file.
+- Sheet import now uses explicit object geometry.
+- Imported pack items count toward the category total.
+
 ## [0.1.4] - 2026-06-18
 
 ### Added
