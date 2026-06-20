@@ -9,6 +9,7 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { useErrorDialog } from '@/usecase/context/ErrorDialogContext';
 import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
+import { addRecentLoad, getRecentLoads, type RecentLoad, clearRecentLoads } from '@/usecase/util/recentLoads';
 import { loadTibiaData, type ThingType, getCategoryMap, optimizeSprites, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 import {
 	X,
@@ -17,6 +18,7 @@ import {
 	Minus,
 	Square,
 	Search,
+	Server,
 	Palette,
 	History,
 	Grid3x3,
@@ -44,12 +46,15 @@ import { SceneEditorDialog } from './SceneEditor/SceneEditorDialog';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import {
 	Menubar,
+	MenubarSub,
 	MenubarMenu,
 	MenubarItem,
 	MenubarContent,
 	MenubarTrigger,
 	MenubarShortcut,
 	MenubarSeparator,
+	MenubarSubContent,
+	MenubarSubTrigger,
 	MenubarCheckboxItem
 } from './ui/menubar';
 
@@ -84,6 +89,7 @@ export const Toolbar = () => {
 	const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
 	const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 	const [isMaximized, setIsMaximized] = useState(false);
+	const [recentLoads, setRecentLoads] = useState<RecentLoad[]>(() => getRecentLoads());
 
 	useEffect(() => {
 		const appWindow = getCurrentWindow();
@@ -193,6 +199,22 @@ export const Toolbar = () => {
 
 			setData(tibiaData, null as any);
 
+			const folderName = selectedPath.split(/[\\/]/).filter(Boolean).pop() ?? selectedPath;
+			setRecentLoads(
+				addRecentLoad({
+					datPath,
+					sprPath,
+					transparency,
+					folderPath: selectedPath,
+					otbPath: serverPaths?.otbPath,
+					xmlPath: serverPaths?.xmlPath,
+					extended: !!overrides?.extended,
+					frameGroups: !!overrides?.frameGroups,
+					improvedAnimations: !!overrides?.frameDurations,
+					label: `${tibiaData.version?.label ?? 'Tibia'} · ${folderName}`
+				})
+			);
+
 			const protectedPaths = ['Program Files', 'Program Files (x86)', 'Windows', 'System32', 'ProgramData'];
 
 			const isProtectedLocation = protectedPaths.some((protectedPath) =>
@@ -225,6 +247,16 @@ export const Toolbar = () => {
 
 	const handleOpenFiles = () => {
 		setFolderDialogOpen(true);
+	};
+
+	const handleOpenRecent = async (entry: RecentLoad) => {
+		await handleFolderSelect(
+			entry.folderPath,
+			entry.transparency,
+			{ datPath: entry.datPath, sprPath: entry.sprPath },
+			{ extended: entry.extended, frameGroups: entry.frameGroups, frameDurations: entry.improvedAnimations },
+			{ otbPath: entry.otbPath, xmlPath: entry.xmlPath }
+		);
 	};
 
 	const handleLoadWithOptions = async (options: LoadOptions) => {
@@ -486,6 +518,28 @@ export const Toolbar = () => {
 								Open Files
 								<MenubarShortcut>Ctrl+O</MenubarShortcut>
 							</MenubarItem>
+							<MenubarSub>
+								<MenubarSubTrigger disabled={isLoading}>
+									<History className="mr-2 h-3.5 w-3.5" />
+									Open Recent
+								</MenubarSubTrigger>
+								<MenubarSubContent>
+									{recentLoads.length === 0 ? (
+										<MenubarItem disabled>No recent files</MenubarItem>
+									) : (
+										<>
+											{recentLoads.map((entry) => (
+												<MenubarItem key={entry.datPath} title={entry.folderPath} onSelect={() => void handleOpenRecent(entry)}>
+													{entry.otbPath && <Server className="mr-2 h-3.5 w-3.5 text-primary" />}
+													{entry.label}
+												</MenubarItem>
+											))}
+											<MenubarSeparator />
+											<MenubarItem onSelect={() => setRecentLoads(clearRecentLoads())}>Clear Recent</MenubarItem>
+										</>
+									)}
+								</MenubarSubContent>
+							</MenubarSub>
 							<MenubarSeparator />
 							<MenubarItem
 								onSelect={() => void handleCompile()}
