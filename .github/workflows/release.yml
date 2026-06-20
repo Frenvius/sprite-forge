@@ -96,22 +96,12 @@ jobs:
           cp "src-tauri/target/release/sprite-forge.exe" "src-tauri/target/release/sprite-forge-portable.exe"
           cp "$NSIS_DIR/sprite-forge_${VERSION}_x64-setup.exe" "$NSIS_DIR/sprite-forge-setup.exe"
 
-          cd "$NSIS_DIR"
-          7z a -tzip -mm=Deflate -mx=9 "sprite-forge_${VERSION}_x64-setup.nsis.zip" "sprite-forge_${VERSION}_x64-setup.exe"
-
-      - name: Sign update bundle
-        shell: bash
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          NSIS_DIR="src-tauri/target/release/bundle/nsis"
-          bun tauri signer sign --private-key "${{ secrets.TAURI_PRIVATE_KEY }}" --password "${{ secrets.TAURI_KEY_PASSWORD }}" "$NSIS_DIR/sprite-forge_${VERSION}_x64-setup.nsis.zip"
-
       - name: Read signature file
         id: signature
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          SIG=$(cat "src-tauri/target/release/bundle/nsis/sprite-forge_${VERSION}_x64-setup.nsis.zip.sig")
+          SIG=$(cat "src-tauri/target/release/bundle/nsis/sprite-forge_${VERSION}_x64-setup.exe.sig")
           echo "signature=$SIG" >> $GITHUB_OUTPUT
 
       - name: Create release and upload assets
@@ -122,7 +112,7 @@ jobs:
           body_path: release-notes.md
           files: |
             src-tauri/target/release/bundle/nsis/sprite-forge-setup.exe
-            src-tauri/target/release/bundle/nsis/sprite-forge_${{ steps.version.outputs.version }}_x64-setup.nsis.zip
+            src-tauri/target/release/bundle/nsis/sprite-forge_${{ steps.version.outputs.version }}_x64-setup.exe
             src-tauri/target/release/sprite-forge-portable.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,7 +122,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          URL="https://github.com/Frenvius/sprite-forge/releases/download/v${VERSION}/sprite-forge_${VERSION}_x64-setup.nsis.zip"
+          URL="https://github.com/Frenvius/sprite-forge/releases/download/v${VERSION}/sprite-forge_${VERSION}_x64-setup.exe"
           SIGNATURE='${{ steps.signature.outputs.signature }}'
 
           jq -n \
