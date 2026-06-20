@@ -189,6 +189,20 @@ export const useFolderSelectDialog = ({
 	const resolved = React.useMemo(() => resolveAssets(entries, assetBase), [entries, assetBase]);
 	const hasTibiaFiles = !!(resolved.datName && resolved.sprName);
 
+	const activeNames = React.useMemo(() => {
+		const set = new Set<string>();
+		if (resolved.datName) set.add(resolved.datName);
+		if (resolved.sprName) set.add(resolved.sprName);
+		if (resolved.base) {
+			const base = resolved.base.toLowerCase();
+			const otfi = entries.find(
+				(e) => !e.is_dir && assetExtOf(e.name) === 'otfi' && stripAssetExt(e.name).toLowerCase() === base
+			);
+			if (otfi) set.add(otfi.name);
+		}
+		return set;
+	}, [entries, resolved.datName, resolved.sprName, resolved.base]);
+
 	const pathSep = currentPathString.includes('\\') ? '\\' : '/';
 	const serverOtb = customOtb
 		? { custom: true, label: customOtb.label, xmlFound: customOtb.xmlFound }
@@ -584,6 +598,7 @@ export const useFolderSelectDialog = ({
 		systemDirs,
 		onRowClick,
 		navigateTo,
+		activeNames,
 		frameGroups,
 		setExtended,
 		serverFiles,

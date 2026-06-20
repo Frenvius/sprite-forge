@@ -670,6 +670,17 @@ html.acrylic .bg-card.shadow-island-lg {
 	font-weight: 600;
 }
 
+.fb-list-row-asset {
+	cursor: pointer;
+	opacity: 1;
+}
+
+.fb-list-row-asset .fb-row-icon,
+.fb-list-row-asset .fb-row-name {
+	color: hsl(var(--primary));
+	font-weight: 600;
+}
+
 .fb-col {
 	padding: 0 10px;
 	overflow: hidden;

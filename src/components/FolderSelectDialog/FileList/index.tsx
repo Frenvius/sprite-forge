@@ -12,6 +12,7 @@ export const FileList = ({
 	favorites,
 	onRowClick,
 	currentPath,
+	activeNames,
 	onRowDoubleClick,
 	onToggleFavorite
 }: FileListProps) => {
@@ -39,6 +40,7 @@ export const FileList = ({
 						const matchesPick = !!pickExt && !entry.is_dir && entry.name.toLowerCase().endsWith('.' + pickExt);
 						const disabled = !entry.is_dir && (pickExt ? !matchesPick : true);
 						const inert = !!pickExt && disabled;
+						const activeAsset = !pickExt && !entry.is_dir && !!activeNames?.has(entry.name);
 						return (
 							<div
 								key={entry.path}
@@ -48,7 +50,8 @@ export const FileList = ({
 									'fb-list-row' +
 									(selected === entry.path ? ' fb-list-row-active' : '') +
 									(disabled ? ' fb-list-row-disabled' : '') +
-									(matchesPick ? ' fb-list-row-pick' : '')
+									(matchesPick ? ' fb-list-row-pick' : '') +
+									(activeAsset ? ' fb-list-row-asset' : '')
 								}
 							>
 								<div className="fb-col fb-col-name">

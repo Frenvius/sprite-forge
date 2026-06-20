@@ -7,6 +7,7 @@ export interface FileListProps {
 	error: null | string;
 	currentPath: string[];
 	selected: null | string;
+	activeNames?: Set<string>;
 	favorites: FavoriteFolder[];
 	onRowClick: (e: DirEntry) => void;
 	onRowDoubleClick: (e: DirEntry) => void;

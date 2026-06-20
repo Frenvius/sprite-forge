@@ -76,6 +76,7 @@ export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 							onRowClick={c.onRowClick}
 							onRowDoubleClick={c.onRowDoubleClick}
 							onToggleFavorite={(p) => c.toggleFavorite(p)}
+							activeNames={pickExt ? undefined : c.activeNames}
 						/>
 						{c.assetMode && c.hasTibiaFiles && (
 							<TibiaAssetPanel
