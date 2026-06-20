@@ -1,7 +1,7 @@
 import type { TibiaAssetPanelProps } from './types';
 
 import { formatSignature } from '@/usecase/util/fileBrowserUtils';
-import { Info, Image, Package, Loader2, Settings, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Info, Image, Package, Loader2, Settings, FileText, FolderOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 import { Label } from '../../ui/label';
 import { Switch } from '../../ui/switch';
@@ -10,13 +10,16 @@ export const TibiaAssetPanel = ({
 	info,
 	loading,
 	extended,
-	serverFiles,
+	serverOtb,
+	onBrowseOtb,
 	frameGroups,
 	transparency,
+	includeServer,
 	onExtendedChange,
 	improvedAnimations,
 	onFrameGroupsChange,
 	onTransparencyChange,
+	onIncludeServerChange,
 	onImprovedAnimationsChange
 }: TibiaAssetPanelProps) => {
 	return (
@@ -168,30 +171,46 @@ export const TibiaAssetPanel = ({
 				</div>
 			</div>
 
-			{serverFiles && (serverFiles.otb || serverFiles.xml) && (
-				<div className="fb-asset-field">
-					<Label className="fb-asset-label">
-						<Package size={13} className="fb-asset-label-icon" />
-						Server Items
-					</Label>
-					<div className="fb-asset-options">
-						<label className="fb-asset-toggle">
-							<span>items.otb</span>
-							<span className={serverFiles.otb ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
-								{serverFiles.otb ? <CheckCircle2 size={13} /> : '-'}
-								{serverFiles.otb ? 'Found' : 'Not found'}
-							</span>
-						</label>
-						<label className="fb-asset-toggle">
-							<span>items.xml</span>
-							<span className={serverFiles.xml ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
-								{serverFiles.xml ? <CheckCircle2 size={13} /> : '-'}
-								{serverFiles.xml ? 'Found' : 'Not found'}
-							</span>
-						</label>
-					</div>
+			<div className="fb-asset-field">
+				<Label className="fb-asset-label">
+					<Package size={13} className="fb-asset-label-icon" />
+					Server Items
+					<span className="fb-asset-otfi-badge">optional</span>
+				</Label>
+				<div className="fb-server-box">
+					{serverOtb ? (
+						<>
+							<label className="fb-asset-toggle">
+								<span>Include items.otb</span>
+								<Switch className="scale-75" checked={includeServer} onCheckedChange={onIncludeServerChange} />
+							</label>
+							<div title={serverOtb.label} className="fb-server-file">
+								<FileText size={12} className="fb-server-file-icon" />
+								<span className="fb-server-file-path">{serverOtb.custom ? serverOtb.label : 'items.otb (this folder)'}</span>
+							</div>
+							<div className="fb-asset-toggle">
+								<span>items.xml</span>
+								<span className={serverOtb.xmlFound ? 'fb-asset-value-ok' : 'fb-asset-value-muted'}>
+									{serverOtb.xmlFound ? <CheckCircle2 size={13} /> : '-'}
+									{serverOtb.xmlFound ? 'Found' : 'Not found'}
+								</span>
+							</div>
+							<button type="button" onClick={onBrowseOtb} className="fb-asset-otb-browse">
+								<FolderOpen size={13} />
+								Choose a different file…
+							</button>
+						</>
+					) : (
+						<>
+							<span className="fb-server-empty">No items.otb linked.</span>
+							<button type="button" onClick={onBrowseOtb} className="fb-asset-otb-browse">
+								<FolderOpen size={13} />
+								Browse for items.otb…
+							</button>
+						</>
+					)}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 };

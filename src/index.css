@@ -646,6 +646,16 @@ html.acrylic .bg-card.shadow-island-lg {
 	opacity: 0.7;
 }
 
+.fb-list-row-pick {
+	cursor: pointer;
+}
+
+.fb-list-row-pick .fb-row-icon,
+.fb-list-row-pick .fb-row-name {
+	color: hsl(var(--primary));
+	font-weight: 600;
+}
+
 .fb-col {
 	padding: 0 10px;
 	overflow: hidden;
@@ -955,6 +965,67 @@ html.acrylic .bg-card.shadow-island-lg {
 	gap: 8px;
 	font-size: 12px;
 	cursor: pointer;
+}
+
+.fb-server-box {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px 12px;
+	background: hsl(var(--muted) / 0.2);
+	border: 1px solid hsl(var(--border) / 0.6);
+	border-radius: 6px;
+}
+
+.fb-server-empty {
+	font-size: 12px;
+	color: hsl(var(--muted-foreground));
+}
+
+.fb-server-file {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.fb-server-file-icon {
+	flex-shrink: 0;
+	color: hsl(var(--muted-foreground));
+}
+
+.fb-server-file-path {
+	flex: 1;
+	min-width: 0;
+	font-size: 11px;
+	color: hsl(var(--muted-foreground));
+	font-family: var(--font-mono, monospace);
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	direction: rtl;
+	text-align: left;
+}
+
+.fb-asset-otb-browse {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 2px;
+	padding: 7px 8px;
+	font-size: 12px;
+	color: hsl(var(--foreground));
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid hsl(var(--border));
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background 0.12s;
+}
+
+.fb-asset-otb-browse:hover {
+	background: rgba(255, 255, 255, 0.08);
 }
 
 .fb-asset-card {

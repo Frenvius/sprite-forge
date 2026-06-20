@@ -2,6 +2,7 @@ import type { DirEntry, FavoriteFolder } from '@/usecase/util/fileBrowserUtils';
 
 export interface FileListProps {
 	loading: boolean;
+	pickExt?: string;
 	entries: DirEntry[];
 	error: null | string;
 	currentPath: string[];

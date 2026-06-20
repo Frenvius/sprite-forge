@@ -5,6 +5,7 @@ import { entryType, pathString, pathsEqual, formatSize, formatModified } from '@
 
 export const FileList = ({
 	error,
+	pickExt,
 	entries,
 	loading,
 	selected,
@@ -35,16 +36,19 @@ export const FileList = ({
 					entries.map((entry) => {
 						const entryPath = currentPath.length === 0 ? entry.path : pathString([...currentPath, entry.name]);
 						const favorited = entry.is_dir && favorites.some((f) => pathsEqual(f.path, entryPath));
-						const disabled = !entry.is_dir;
+						const matchesPick = !!pickExt && !entry.is_dir && entry.name.toLowerCase().endsWith('.' + pickExt);
+						const disabled = !entry.is_dir && (pickExt ? !matchesPick : true);
+						const inert = !!pickExt && disabled;
 						return (
 							<div
 								key={entry.path}
-								onClick={() => onRowClick(entry)}
-								onDoubleClick={() => onRowDoubleClick(entry)}
+								onClick={inert ? undefined : () => onRowClick(entry)}
+								onDoubleClick={inert ? undefined : () => onRowDoubleClick(entry)}
 								className={
 									'fb-list-row' +
 									(selected === entry.path ? ' fb-list-row-active' : '') +
-									(disabled ? ' fb-list-row-disabled' : '')
+									(disabled ? ' fb-list-row-disabled' : '') +
+									(matchesPick ? ' fb-list-row-pick' : '')
 								}
 							>
 								<div className="fb-col fb-col-name">

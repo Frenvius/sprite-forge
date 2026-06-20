@@ -6,10 +6,13 @@ export interface TibiaAssetPanelProps {
 	extended: boolean;
 	frameGroups: boolean;
 	transparency: boolean;
+	includeServer: boolean;
+	onBrowseOtb: () => void;
 	improvedAnimations: boolean;
 	onExtendedChange: (v: boolean) => void;
 	onFrameGroupsChange: (v: boolean) => void;
 	onTransparencyChange: (v: boolean) => void;
-	serverFiles?: { otb: boolean; xml: boolean };
+	onIncludeServerChange: (v: boolean) => void;
 	onImprovedAnimationsChange: (v: boolean) => void;
+	serverOtb: null | { label: string; custom: boolean; xmlFound: boolean };
 }

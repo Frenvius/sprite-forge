@@ -1,6 +1,6 @@
 import React from 'react';
-import { join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
+import { join, dirname } from '@tauri-apps/api/path';
 import {
 	readOtfiFile,
 	readDatHeader,
@@ -87,6 +87,8 @@ export interface AssetInfo {
 export interface FolderSelectDialogProps {
 	open: boolean;
 	title?: string;
+	pickExt?: string;
+	onPickFile?: (path: string) => void;
 	onOpenChange: (open: boolean) => void;
 	onLoad?: (options: LoadOptions) => void;
 	onFolderSelected?: (path: string) => void;
@@ -95,9 +97,18 @@ export interface FolderSelectDialogProps {
 
 const EXIT_MS = 160;
 
-export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, onFolderSelected }: FolderSelectDialogProps) => {
+export const useFolderSelectDialog = ({
+	open,
+	onLoad,
+	pickExt,
+	onSelect,
+	onPickFile,
+	onOpenChange,
+	onFolderSelected
+}: FolderSelectDialogProps) => {
 	const assetMode = !!onLoad;
-	const pathOnlyMode = !assetMode && !!onFolderSelected && !onSelect;
+	const pickFileMode = !!onPickFile;
+	const pathOnlyMode = !assetMode && !pickFileMode && !!onFolderSelected && !onSelect;
 
 	const [mounted, setMounted] = React.useState(open);
 	const [drives, setDrives] = React.useState<DriveInfo[]>([]);
@@ -115,6 +126,14 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 
 	const [assetBase, setAssetBase] = React.useState<null | string>(null);
 	const [serverFiles, setServerFiles] = React.useState<{ otb: boolean; xml: boolean }>({ otb: false, xml: false });
+	const [includeServer, setIncludeServer] = React.useState(true);
+	const [pickedFile, setPickedFile] = React.useState<null | string>(null);
+	const [customOtb, setCustomOtb] = React.useState<null | {
+		label: string;
+		otbPath: string;
+		xmlPath?: string;
+		xmlFound: boolean;
+	}>(null);
 	const [assetLoading, setAssetLoading] = React.useState(false);
 	const [assetInfo, setAssetInfo] = React.useState<AssetInfo>({
 		otfi: null,
@@ -134,6 +153,12 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 
 	const resolved = React.useMemo(() => resolveAssets(entries, assetBase), [entries, assetBase]);
 	const hasTibiaFiles = !!(resolved.datName && resolved.sprName);
+
+	const serverOtb = customOtb
+		? { custom: true, label: customOtb.label, xmlFound: customOtb.xmlFound }
+		: serverFiles.otb
+			? { custom: false, label: 'items.otb', xmlFound: serverFiles.xml }
+			: null;
 
 	React.useEffect(() => {
 		if (open) {
@@ -315,8 +340,25 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	}, [assetMode, currentPathString, resolved.datName, resolved.sprName, resolved.base]);
 
 	React.useEffect(() => {
+		setPickedFile(null);
 		setAssetBase(null);
+		setCustomOtb(null);
+		setIncludeServer(true);
 	}, [currentPathString]);
+
+	const applyPickedOtb = async (otbPath: string) => {
+		const dir = await dirname(otbPath);
+		let xmlFound = false;
+		try {
+			const res = await invoke<boolean[]>('check_files_exist', { path: dir, filenames: ['items.xml'] });
+			xmlFound = res[0] ?? false;
+		} catch {
+			xmlFound = false;
+		}
+		const xmlPath = xmlFound ? await join(dir, 'items.xml') : undefined;
+		setCustomOtb({ otbPath, xmlPath, xmlFound, label: otbPath });
+		setIncludeServer(true);
+	};
 
 	const navigateTo = (next: string[]) => {
 		const trimmed = history.slice(0, historyIndex + 1);
@@ -347,16 +389,26 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		if (path.length > 0) navigateTo(path.slice(0, -1));
 	};
 
+	const matchesPick = (name: string): boolean => !!pickExt && name.toLowerCase().endsWith('.' + pickExt.toLowerCase());
+
 	const onRowClick = (entry: DirEntry) => {
 		setSelected(entry.path);
 		setNameInput(entry.name);
+		if (pickFileMode) {
+			if (!entry.is_dir && matchesPick(entry.name)) setPickedFile(entry.name);
+			return;
+		}
 		if (!entry.is_dir && assetExtOf(entry.name)) {
 			setAssetBase(stripAssetExt(entry.name));
 		}
 	};
 
 	const onRowDoubleClick = (entry: DirEntry) => {
-		if (!entry.is_dir) return;
+		if (pickFileMode && !entry.is_dir) {
+			if (matchesPick(entry.name)) void confirmCurrent(entry.name);
+			return;
+		}
+		if (!pickFileMode && !entry.is_dir) return;
 		if (path.length === 0) {
 			navigateTo([entry.path]);
 		} else {
@@ -364,17 +416,35 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		}
 	};
 
-	const confirmCurrent = async () => {
+	const confirmCurrent = async (pickName?: string) => {
 		const target = currentPathString;
 		if (!target) return;
+
+		if (pickFileMode && onPickFile) {
+			const name = pickName ?? pickedFile;
+			if (!name) return;
+			onPickFile(await join(target, name));
+			onOpenChange(false);
+			return;
+		}
+
 		try {
 			await invoke('set_last_folder', { path: target });
 		} catch {
 			/* */
 		}
 		if (assetMode && onLoad) {
-			const otbPath = serverFiles.otb ? await join(target, 'items.otb') : undefined;
-			const xmlPath = serverFiles.xml ? await join(target, 'items.xml') : undefined;
+			let otbPath: string | undefined;
+			let xmlPath: string | undefined;
+			if (includeServer) {
+				if (customOtb) {
+					otbPath = customOtb.otbPath;
+					xmlPath = customOtb.xmlPath;
+				} else if (serverFiles.otb) {
+					otbPath = await join(target, 'items.otb');
+					xmlPath = serverFiles.xml ? await join(target, 'items.xml') : undefined;
+				}
+			}
 			const datPath = resolved.datName ? await join(target, resolved.datName) : undefined;
 			const sprPath = resolved.sprName ? await join(target, resolved.sprName) : undefined;
 			onLoad({ otbPath, xmlPath, datPath, sprPath, extended, frameGroups, transparency, improvedAnimations, folderPath: target });
@@ -431,6 +501,8 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		assetMode,
 		assetInfo,
 		goForward,
+		serverOtb,
+		pickedFile,
 		systemDirs,
 		onRowClick,
 		navigateTo,
@@ -440,15 +512,19 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		assetLoading,
 		pathOnlyMode,
 		transparency,
+		pickFileMode,
 		setNameInput,
 		onOpenChange,
 		historyIndex,
+		includeServer,
 		hasTibiaFiles,
+		applyPickedOtb,
 		closing: !open,
 		toggleFavorite,
 		setFrameGroups,
 		confirmCurrent,
 		setTransparency,
+		setIncludeServer,
 		computerExpanded,
 		onRowDoubleClick,
 		reorderFavorites,
