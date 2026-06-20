@@ -169,6 +169,7 @@ export const Toolbar = () => {
 	const handleFolderSelect = async (
 		selectedPath: string,
 		transparency: boolean,
+		assetPaths?: { datPath?: string; sprPath?: string },
 		overrides?: { extended?: boolean; frameGroups?: boolean; frameDurations?: boolean },
 		serverPaths?: { otbPath?: string; xmlPath?: string }
 	) => {
@@ -177,8 +178,8 @@ export const Toolbar = () => {
 			setError(null);
 			setOriginalSprPath(null); // Reset original path on new load
 
-			const datPath = await join(selectedPath, 'Tibia.dat');
-			const sprPath = await join(selectedPath, 'Tibia.spr');
+			const datPath = assetPaths?.datPath ?? (await join(selectedPath, 'Tibia.dat'));
+			const sprPath = assetPaths?.sprPath ?? (await join(selectedPath, 'Tibia.spr'));
 
 			const tibiaData = await loadTibiaData(
 				datPath,
@@ -275,6 +276,7 @@ export const Toolbar = () => {
 		await handleFolderSelect(
 			options.folderPath,
 			options.transparency,
+			{ datPath: options.datPath, sprPath: options.sprPath },
 			{
 				extended: options.extended,
 				frameGroups: options.frameGroups,

@@ -24,12 +24,57 @@ import {
 export interface LoadOptions {
 	otbPath?: string;
 	xmlPath?: string;
+	datPath?: string;
+	sprPath?: string;
 	extended: boolean;
 	folderPath: string;
 	frameGroups: boolean;
 	transparency: boolean;
 	improvedAnimations: boolean;
 }
+
+const stripAssetExt = (name: string): string => name.replace(/\.dat\.otfi$/i, '').replace(/\.(dat|spr|otfi)$/i, '');
+
+const assetExtOf = (name: string): null | 'dat' | 'spr' | 'otfi' => {
+	const lower = name.toLowerCase();
+	if (lower.endsWith('.otfi')) return 'otfi';
+	if (lower.endsWith('.dat')) return 'dat';
+	if (lower.endsWith('.spr')) return 'spr';
+	return null;
+};
+
+interface ResolvedAssets {
+	base: null | string;
+	datName: null | string;
+	sprName: null | string;
+}
+
+const resolveAssets = (entries: DirEntry[], assetBase: null | string): ResolvedAssets => {
+	const datNames = entries.filter((e) => !e.is_dir && assetExtOf(e.name) === 'dat').map((e) => e.name);
+	const sprNames = entries.filter((e) => !e.is_dir && assetExtOf(e.name) === 'spr').map((e) => e.name);
+	const findByBase = (names: string[], base: string): null | string =>
+		names.find((n) => stripAssetExt(n).toLowerCase() === base.toLowerCase()) ?? null;
+
+	if (assetBase) {
+		return { base: assetBase, datName: findByBase(datNames, assetBase), sprName: findByBase(sprNames, assetBase) };
+	}
+
+	const tibiaDat = datNames.find((n) => n.toLowerCase() === 'tibia.dat');
+	const tibiaSpr = sprNames.find((n) => n.toLowerCase() === 'tibia.spr');
+	if (tibiaDat && tibiaSpr) return { base: 'Tibia', datName: tibiaDat, sprName: tibiaSpr };
+
+	for (const datName of datNames) {
+		const base = stripAssetExt(datName);
+		const sprName = findByBase(sprNames, base);
+		if (sprName) return { base, datName, sprName };
+	}
+
+	if (datNames.length === 1 && sprNames.length === 1) {
+		return { datName: datNames[0], sprName: sprNames[0], base: stripAssetExt(datNames[0]) };
+	}
+
+	return { base: null, datName: null, sprName: null };
+};
 
 export interface AssetInfo {
 	error: null | string;
@@ -68,7 +113,7 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	const [refreshTick, setRefreshTick] = React.useState(0);
 	const [computerExpanded, setComputerExpanded] = React.useState(true);
 
-	const [hasTibiaFiles, setHasTibiaFiles] = React.useState(false);
+	const [assetBase, setAssetBase] = React.useState<null | string>(null);
 	const [serverFiles, setServerFiles] = React.useState<{ otb: boolean; xml: boolean }>({ otb: false, xml: false });
 	const [assetLoading, setAssetLoading] = React.useState(false);
 	const [assetInfo, setAssetInfo] = React.useState<AssetInfo>({
@@ -86,6 +131,9 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	const path = history[historyIndex];
 	const currentPathString = pathString(path);
 	const isCurrentFavorited = favorites.some((f) => pathsEqual(f.path, currentPathString));
+
+	const resolved = React.useMemo(() => resolveAssets(entries, assetBase), [entries, assetBase]);
+	const hasTibiaFiles = !!(resolved.datName && resolved.sprName);
 
 	React.useEffect(() => {
 		if (open) {
@@ -168,7 +216,6 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 			);
 			setLoading(false);
 			setError(null);
-			setHasTibiaFiles(false);
 			return;
 		}
 
@@ -190,17 +237,13 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 				setLoading(false);
 			});
 
-		invoke<boolean[]>('check_files_exist', { path: target, filenames: ['Tibia.dat', 'Tibia.spr', 'items.otb', 'items.xml'] })
+		invoke<boolean[]>('check_files_exist', { path: target, filenames: ['items.otb', 'items.xml'] })
 			.then((res) => {
 				if (cancelled) return;
-				setHasTibiaFiles(res.length >= 2 && res[0] && res[1]);
-				setServerFiles({ otb: res[2] ?? false, xml: res[3] ?? false });
+				setServerFiles({ otb: res[0] ?? false, xml: res[1] ?? false });
 			})
 			.catch(() => {
-				if (!cancelled) {
-					setHasTibiaFiles(false);
-					setServerFiles({ otb: false, xml: false });
-				}
+				if (!cancelled) setServerFiles({ otb: false, xml: false });
 			});
 
 		return () => {
@@ -209,7 +252,7 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	}, [path, drives, refreshTick]);
 
 	React.useEffect(() => {
-		if (!assetMode || !hasTibiaFiles || !currentPathString) {
+		if (!assetMode || !resolved.datName || !resolved.sprName || !currentPathString) {
 			setAssetInfo({ otfi: null, error: null, version: null, datHeader: null, sprHeader: null });
 			setAssetLoading(false);
 			return;
@@ -219,14 +262,18 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		setAssetLoading(true);
 		setAssetInfo({ otfi: null, error: null, version: null, datHeader: null, sprHeader: null });
 
+		const datName = resolved.datName;
+		const sprName = resolved.sprName;
+		const base = resolved.base ?? 'Tibia';
+
 		(async () => {
 			try {
-				const datPath = await join(currentPathString, 'Tibia.dat');
-				const sprPath = await join(currentPathString, 'Tibia.spr');
+				const datPath = await join(currentPathString, datName);
+				const sprPath = await join(currentPathString, sprName);
 				const [datHeader, sprHeaderRaw, otfi] = await Promise.all([
 					readDatHeader(datPath),
 					readSprHeader(sprPath),
-					readOtfiFile(currentPathString)
+					readOtfiFile(currentPathString, base)
 				]);
 				if (cancelled) return;
 				const sprHeader: SprHeader = {
@@ -265,7 +312,11 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		return () => {
 			cancelled = true;
 		};
-	}, [assetMode, hasTibiaFiles, currentPathString]);
+	}, [assetMode, currentPathString, resolved.datName, resolved.sprName, resolved.base]);
+
+	React.useEffect(() => {
+		setAssetBase(null);
+	}, [currentPathString]);
 
 	const navigateTo = (next: string[]) => {
 		const trimmed = history.slice(0, historyIndex + 1);
@@ -299,6 +350,9 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 	const onRowClick = (entry: DirEntry) => {
 		setSelected(entry.path);
 		setNameInput(entry.name);
+		if (!entry.is_dir && assetExtOf(entry.name)) {
+			setAssetBase(stripAssetExt(entry.name));
+		}
 	};
 
 	const onRowDoubleClick = (entry: DirEntry) => {
@@ -321,7 +375,9 @@ export const useFolderSelectDialog = ({ open, onLoad, onSelect, onOpenChange, on
 		if (assetMode && onLoad) {
 			const otbPath = serverFiles.otb ? await join(target, 'items.otb') : undefined;
 			const xmlPath = serverFiles.xml ? await join(target, 'items.xml') : undefined;
-			onLoad({ otbPath, xmlPath, extended, frameGroups, transparency, improvedAnimations, folderPath: target });
+			const datPath = resolved.datName ? await join(target, resolved.datName) : undefined;
+			const sprPath = resolved.sprName ? await join(target, resolved.sprName) : undefined;
+			onLoad({ otbPath, xmlPath, datPath, sprPath, extended, frameGroups, transparency, improvedAnimations, folderPath: target });
 		} else if (pathOnlyMode && onFolderSelected) {
 			onFolderSelected(target);
 		} else if (onSelect) {

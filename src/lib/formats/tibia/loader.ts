@@ -104,8 +104,13 @@ function parseOtml(content: string): Record<string, string> {
 	return result;
 }
 
-export async function readOtfiFile(folderPath: string): Promise<null | OtfiData> {
-	const patterns = [await join(folderPath, 'Tibia.otfi'), await join(folderPath, 'Tibia.dat.otfi')];
+export async function readOtfiFile(folderPath: string, baseName = 'Tibia'): Promise<null | OtfiData> {
+	const patterns = [
+		await join(folderPath, `${baseName}.otfi`),
+		await join(folderPath, `${baseName}.dat.otfi`),
+		await join(folderPath, 'Tibia.otfi'),
+		await join(folderPath, 'Tibia.dat.otfi')
+	];
 
 	for (const path of patterns) {
 		try {

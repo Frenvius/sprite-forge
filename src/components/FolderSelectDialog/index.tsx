@@ -61,7 +61,18 @@ export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 						onRemoveFavorite={(p) => c.toggleFavorite(p)}
 						onToggleComputer={() => c.setComputerExpanded((v) => !v)}
 					/>
-					{c.assetMode && c.hasTibiaFiles ? (
+					<FileList
+						error={c.error}
+						loading={c.loading}
+						entries={c.entries}
+						currentPath={c.path}
+						selected={c.selected}
+						favorites={c.favorites}
+						onRowClick={c.onRowClick}
+						onRowDoubleClick={c.onRowDoubleClick}
+						onToggleFavorite={(p) => c.toggleFavorite(p)}
+					/>
+					{c.assetMode && c.hasTibiaFiles && (
 						<TibiaAssetPanel
 							info={c.assetInfo}
 							extended={c.extended}
@@ -74,18 +85,6 @@ export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 							onTransparencyChange={c.setTransparency}
 							improvedAnimations={c.improvedAnimations}
 							onImprovedAnimationsChange={c.setImprovedAnimations}
-						/>
-					) : (
-						<FileList
-							error={c.error}
-							loading={c.loading}
-							entries={c.entries}
-							currentPath={c.path}
-							selected={c.selected}
-							favorites={c.favorites}
-							onRowClick={c.onRowClick}
-							onRowDoubleClick={c.onRowDoubleClick}
-							onToggleFavorite={(p) => c.toggleFavorite(p)}
 						/>
 					)}
 				</div>
