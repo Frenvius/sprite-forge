@@ -312,6 +312,8 @@ export interface AssetData {
 	outfitsCount: number;
 	effectsCount: number;
 	transparency: boolean;
+	frameGroups: boolean;
+	frameDurations: boolean;
 
 	missilesCount: number;
 	version: ClientVersion;

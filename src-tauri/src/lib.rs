@@ -79,6 +79,11 @@ fn read_file_text(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn write_file_text(path: String, contents: String) -> Result<(), String> {
+    fs::write(&path, contents).map_err(|e| format!("Failed to write file {}: {}", path, e))
+}
+
+#[tauri::command]
 fn read_file_header(path: String, bytes: usize) -> Result<FileBytes, String> {
     use std::io::Read;
     let mut file = fs::File::open(&path)
@@ -2178,6 +2183,7 @@ tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             read_file,
             read_file_text,
+            write_file_text,
             read_file_header,
             open_spr_file,
             close_spr_file,

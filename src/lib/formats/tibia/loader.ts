@@ -84,6 +84,25 @@ export interface OtfiData {
 	spriteDataSize?: number;
 }
 
+export async function writeOtfiFile(datPath: string, data: AssetData): Promise<void> {
+	const slash = Math.max(datPath.lastIndexOf('\\'), datPath.lastIndexOf('/'));
+	const dirWithSep = slash >= 0 ? datPath.slice(0, slash + 1) : '';
+	const datName = slash >= 0 ? datPath.slice(slash + 1) : datPath;
+	const baseName = datName.replace(/\.dat$/i, '');
+	const sprName = (data.sprPath ?? '').replace(/^.*[\\/]/, '') || `${baseName}.spr`;
+	const contents = [
+		'DatSpr',
+		`  extended: ${data.extended}`,
+		`  transparency: ${data.transparency}`,
+		`  frame-durations: ${data.frameDurations}`,
+		`  frame-groups: ${data.frameGroups}`,
+		`  metadata-file: ${datName}`,
+		`  sprites-file: ${sprName}`,
+		''
+	].join('\n');
+	await invoke('write_file_text', { path: `${dirWithSep}${baseName}.otfi`, contents });
+}
+
 function parseOtml(content: string): Record<string, string> {
 	const result: Record<string, string> = {};
 	const lines = content.split('\n');
@@ -411,6 +430,8 @@ export async function loadTibiaData(
 		xmlPath: serverPaths?.xmlPath,
 		itemsCount: datData.itemsCount,
 		transparency: sprData.transparency,
+		frameGroups: overrides?.frameGroups ?? detectedVersion.value >= 1057,
+		frameDurations: overrides?.frameDurations ?? detectedVersion.supportsFrameDurations,
 		outfitsCount: datData.outfitsCount,
 		effectsCount: datData.effectsCount,
 		missilesCount: datData.missilesCount,

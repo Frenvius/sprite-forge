@@ -366,8 +366,7 @@ pub struct DatWriter<W: Write> {
 }
 
 impl<W: Write> DatWriter<W> {
-    pub fn new(writer: W, version: u32, extended: bool, frame_durations: bool) -> Self {
-        let frame_groups = version >= 1057;
+    pub fn new(writer: W, version: u32, extended: bool, frame_durations: bool, frame_groups: bool) -> Self {
         Self {
             writer,
             version,
@@ -1483,6 +1482,7 @@ pub fn write_dat_file(
     version: u32,
     extended: bool,
     frame_durations: bool,
+    frame_groups: bool,
     items_min_id: u16,
     items_max_id: u16,
     outfits_min_id: u16,
@@ -1502,7 +1502,7 @@ pub fn write_dat_file(
             .map(|t| {
                 let mut buf: Vec<u8> = Vec::with_capacity(64);
                 {
-                    let mut w = DatWriter::new(&mut buf, version, extended, frame_durations);
+                    let mut w = DatWriter::new(&mut buf, version, extended, frame_durations, frame_groups);
                     w.write_thing(t)
                         .map_err(|e| format!("Failed to write {} {}: {}", cat, t.id, e))?;
                 }
@@ -1527,7 +1527,7 @@ pub fn write_dat_file(
 
     let mut out: Vec<u8> = Vec::with_capacity(body_len + 12);
     {
-        let mut hw = DatWriter::new(&mut out, version, extended, frame_durations);
+        let mut hw = DatWriter::new(&mut out, version, extended, frame_durations, frame_groups);
         hw.write_header(
             signature,
             items_max_id,
@@ -2009,6 +2009,7 @@ pub fn write_dat_from_buffer(buffer: &[u8]) -> Result<(), String> {
     let version = r.u32()?;
     let extended = r.bool()?;
     let frame_durations = r.bool()?;
+    let frame_groups = r.bool()?;
     let items_min_id = r.u16()?;
     let items_max_id = r.u16()?;
     let outfits_min_id = r.u16()?;
@@ -2030,6 +2031,7 @@ pub fn write_dat_from_buffer(buffer: &[u8]) -> Result<(), String> {
         version,
         extended,
         frame_durations,
+        frame_groups,
         items_min_id,
         items_max_id,
         outfits_min_id,

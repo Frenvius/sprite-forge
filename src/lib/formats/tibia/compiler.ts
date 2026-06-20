@@ -2,6 +2,7 @@ import type { Sprite, AssetData, ThingType, FrameDuration } from './types';
 
 import { invoke } from '@tauri-apps/api/core';
 
+import { writeOtfiFile } from './loader';
 import { createCommit, readOnDiskSprites } from '../../versionControl';
 import { ThingCategory, getCategoryStartId, TIBIA_FORMAT_CONFIG } from './types';
 
@@ -385,7 +386,8 @@ export async function compileDatFile(path: string, data: AssetData): Promise<voi
 	w.u32(data.version.datSignature);
 	w.u32(data.version.value);
 	w.bool(data.extended);
-	w.bool(data.version.supportsFrameDurations);
+	w.bool(data.frameDurations);
+	w.bool(data.frameGroups);
 	w.u16(itemsData.minId);
 	w.u16(itemsData.maxId);
 	w.u16(outfitsData.minId);
@@ -501,6 +503,7 @@ export async function compileFiles(args: CompileFilesArgs): Promise<void> {
 
 		if (onProgress) onProgress('Writing DAT file...', 2, 5);
 		await compileDatFile(datPath, data);
+		await writeOtfiFile(datPath, data);
 
 		if (onProgress) onProgress('Updating SPR file...', 3, 5);
 		if (modifiedSprites.size > 0) {
@@ -604,6 +607,7 @@ export async function fullRecompile(
 	try {
 		if (onProgress) onProgress('Writing DAT file...', 0, 2);
 		await compileDatFile(datPath, data);
+		await writeOtfiFile(datPath, data);
 
 		if (onProgress) onProgress('Writing SPR file...', 1, 2);
 		await compileSprFile(sprPath, data, new Map());
