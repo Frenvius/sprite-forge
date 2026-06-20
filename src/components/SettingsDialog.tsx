@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 
 import { Slider } from './ui/slider';
+import { Switch } from './ui/switch';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
 
 interface SettingsDialogProps {
@@ -27,6 +28,7 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 
 	const commit = (next: { objects: number; sprites: number }) => {
 		setSettings({
+			...settings,
 			listAmountObjects: next.objects,
 			listAmountSprites: next.sprites
 		});
@@ -78,6 +80,20 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 						<p className="text-[10px] text-muted-foreground">
 							Items per page in the object and sprite lists. Affects pagination, prefetch, and scroll behavior.
 						</p>
+					</section>
+
+					<section className="space-y-3">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Preview</h3>
+						<label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 cursor-pointer">
+							<div className="space-y-0.5">
+								<div className="text-sm text-foreground">Auto-play animation</div>
+								<div className="text-[10px] text-muted-foreground">Start animating when opening an animated object.</div>
+							</div>
+							<Switch
+								checked={settings.autoPlayAnimation}
+								onCheckedChange={(checked) => setSettings({ ...settings, autoPlayAnimation: checked })}
+							/>
+						</label>
 					</section>
 				</div>
 			</DialogContent>

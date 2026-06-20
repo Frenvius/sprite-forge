@@ -417,6 +417,8 @@ struct AppConfig {
 struct GeneralSettings {
     list_amount_objects: u32,
     list_amount_sprites: u32,
+    #[serde(default)]
+    auto_play_animation: bool,
 }
 
 impl Default for GeneralSettings {
@@ -424,6 +426,7 @@ impl Default for GeneralSettings {
         Self {
             list_amount_objects: 100,
             list_amount_sprites: 100,
+            auto_play_animation: false,
         }
     }
 }

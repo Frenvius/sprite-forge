@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 export interface GeneralSettings {
 	listAmountObjects: number;
 	listAmountSprites: number;
+	autoPlayAnimation: boolean;
 }
 
 interface GeneralSettingsContextType {
@@ -13,7 +14,8 @@ interface GeneralSettingsContextType {
 
 const DEFAULT_SETTINGS: GeneralSettings = {
 	listAmountObjects: 100,
-	listAmountSprites: 100
+	listAmountSprites: 100,
+	autoPlayAnimation: false
 };
 
 const GeneralSettingsContext = React.createContext<undefined | GeneralSettingsContextType>(undefined);
@@ -22,11 +24,12 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 	const [settings, setSettingsState] = React.useState<GeneralSettings>(DEFAULT_SETTINGS);
 
 	React.useEffect(() => {
-		invoke<{ list_amount_objects: number; list_amount_sprites: number }>('get_general_settings')
+		invoke<{ list_amount_objects: number; list_amount_sprites: number; auto_play_animation: boolean }>('get_general_settings')
 			.then((saved) => {
 				setSettingsState({
 					listAmountObjects: saved.list_amount_objects,
-					listAmountSprites: saved.list_amount_sprites
+					listAmountSprites: saved.list_amount_sprites,
+					autoPlayAnimation: saved.auto_play_animation
 				});
 			})
 			.catch((err) => {
@@ -39,7 +42,8 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 		invoke('set_general_settings', {
 			settings: {
 				list_amount_objects: next.listAmountObjects,
-				list_amount_sprites: next.listAmountSprites
+				list_amount_sprites: next.listAmountSprites,
+				auto_play_animation: next.autoPlayAnimation
 			}
 		}).catch((err) => {
 			console.error('Failed to save general settings:', err);

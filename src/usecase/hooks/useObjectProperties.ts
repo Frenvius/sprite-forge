@@ -7,6 +7,7 @@ import { ThingCategory } from '@/lib/formats/tibia';
 import { useToast } from '@/usecase/hooks/use-toast';
 import { ZOOM_LEVELS } from '@/usecase/util/constants';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
+import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '@/usecase/util/itemStateUtils';
 
 export const useObjectProperties = () => {
@@ -28,6 +29,9 @@ export const useObjectProperties = () => {
 		notifySpritesLoaded,
 		setHighlightedSpriteId
 	} = useAssetData();
+	const { settings } = useGeneralSettings();
+	const autoPlayRef = React.useRef(settings.autoPlayAnimation);
+	autoPlayRef.current = settings.autoPlayAnimation;
 	const item = openedItemId && openedItemCategory ? getThing(openedItemId, openedItemCategory) : null;
 
 	const [draftItem, setDraftItem] = React.useState<typeof item>(null);
@@ -888,7 +892,8 @@ export const useObjectProperties = () => {
 				savedState?.currentFrame !== undefined ? Math.min(savedState.currentFrame, Math.max(0, draftItem.frames - 1)) : 0;
 			const currentLayerValue =
 				savedState?.currentLayer !== undefined ? Math.min(savedState.currentLayer, Math.max(0, draftItem.layers - 1)) : 0;
-			const isPlayingValue = savedState?.isPlaying !== undefined ? savedState.isPlaying : false;
+			const isPlayingValue =
+				savedState?.isPlaying !== undefined ? savedState.isPlaying : autoPlayRef.current && draftItem.frames > 1;
 			const showExactSizeValue = savedState?.showExactSize !== undefined ? savedState.showExactSize : false;
 			const showGridValue = savedState?.showGrid !== undefined ? savedState.showGrid : false;
 
