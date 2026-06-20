@@ -1,5 +1,6 @@
 import type { ToolbarProps } from './types';
 
+import { useState } from 'react';
 import { pathString, driveLabel } from '@/usecase/util/fileBrowserUtils';
 import { Star, ArrowUp, Computer, RefreshCw, ArrowLeft, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -16,8 +17,22 @@ export const Toolbar = ({
 	canForward,
 	isFavorited,
 	canFavorite,
+	onNavigatePath,
 	onToggleFavorite
 }: ToolbarProps) => {
+	const [editing, setEditing] = useState(false);
+	const [draft, setDraft] = useState('');
+
+	const beginEdit = () => {
+		setDraft(pathString(path));
+		setEditing(true);
+	};
+
+	const commitEdit = () => {
+		setEditing(false);
+		onNavigatePath(draft);
+	};
+
 	return (
 		<div className="fb-toolbar">
 			<div className="fb-nav-group">
@@ -35,24 +50,46 @@ export const Toolbar = ({
 				</button>
 			</div>
 
-			<div className="fb-breadcrumb">
-				<button type="button" className="fb-crumb" onClick={() => onCrumb(0)}>
-					<Computer size={14} />
-					<span>This PC</span>
-				</button>
-				{path.map((seg, i) => (
-					<span key={i} className="fb-crumb-wrap">
-						<ChevronRight size={14} className="fb-crumb-sep" />
-						<button type="button" className="fb-crumb" onClick={() => onCrumb(i + 1)} title={pathString(path.slice(0, i + 1))}>
-							{i === 0 ? driveLabel(seg, drives) : seg}
-						</button>
-					</span>
-				))}
-				<ChevronRight size={14} className="fb-crumb-sep" />
-				<button type="button" aria-label="History" className="fb-crumb-history">
-					<ChevronDown size={14} />
-				</button>
-			</div>
+			{editing ? (
+				<input
+					autoFocus
+					value={draft}
+					spellCheck={false}
+					className="fb-address-input"
+					onBlur={() => setEditing(false)}
+					placeholder="Enter or paste a folder path"
+					onChange={(e) => setDraft(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter') commitEdit();
+						else if (e.key === 'Escape') setEditing(false);
+					}}
+				/>
+			) : (
+				<div
+					className="fb-breadcrumb"
+					title="Click to edit path"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) beginEdit();
+					}}
+				>
+					<button type="button" className="fb-crumb" onClick={() => onCrumb(0)}>
+						<Computer size={14} />
+						<span>This PC</span>
+					</button>
+					{path.map((seg, i) => (
+						<span key={i} className="fb-crumb-wrap">
+							<ChevronRight size={14} className="fb-crumb-sep" />
+							<button type="button" className="fb-crumb" onClick={() => onCrumb(i + 1)} title={pathString(path.slice(0, i + 1))}>
+								{i === 0 ? driveLabel(seg, drives) : seg}
+							</button>
+						</span>
+					))}
+					<ChevronRight size={14} className="fb-crumb-sep" />
+					<button type="button" onClick={beginEdit} aria-label="Edit path" className="fb-crumb-history">
+						<ChevronDown size={14} />
+					</button>
+				</div>
+			)}
 
 			<button
 				type="button"

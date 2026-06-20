@@ -47,6 +47,7 @@ export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 						onRefresh={c.onRefresh}
 						canUp={c.path.length > 0}
 						canFavorite={c.path.length > 0}
+						onNavigatePath={c.navigatePath}
 						isFavorited={c.isCurrentFavorited}
 						onCrumb={(i) => c.navigateTo(c.path.slice(0, i))}
 						onToggleFavorite={() => c.toggleFavorite(c.currentPathString)}

@@ -441,6 +441,12 @@ export const useFolderSelectDialog = ({
 		setNameInput('');
 	};
 
+	const navigatePath = (raw: string) => {
+		const trimmed = raw.trim();
+		if (!trimmed) return;
+		navigateTo(pathSegments(trimmed));
+	};
+
 	const goBack = () => {
 		if (historyIndex > 0) {
 			setHistoryIndex(historyIndex - 1);
@@ -581,6 +587,7 @@ export const useFolderSelectDialog = ({
 		frameGroups,
 		setExtended,
 		serverFiles,
+		navigatePath,
 		assetLoading,
 		pathOnlyMode,
 		transparency,

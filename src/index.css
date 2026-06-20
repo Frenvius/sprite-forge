@@ -343,6 +343,20 @@ html.acrylic .bg-card.shadow-island-lg {
 	border: 1px solid hsl(var(--border));
 	border-radius: 4px;
 	overflow: hidden;
+	cursor: text;
+}
+
+.fb-address-input {
+	flex: 1;
+	min-width: 0;
+	height: 28px;
+	padding: 0 8px;
+	font-size: 13px;
+	color: hsl(var(--foreground));
+	background: hsl(var(--input));
+	border: 1px solid hsl(var(--primary));
+	border-radius: 4px;
+	outline: none;
 }
 
 .fb-crumb {

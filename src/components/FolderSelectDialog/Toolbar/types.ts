@@ -14,4 +14,5 @@ export interface ToolbarProps {
 	onRefresh: () => void;
 	onCrumb: (i: number) => void;
 	onToggleFavorite: () => void;
+	onNavigatePath: (path: string) => void;
 }
