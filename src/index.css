@@ -839,13 +839,20 @@ html.acrylic .bg-card.shadow-island-lg {
 	width: 320px;
 	flex-shrink: 0;
 	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	border-left: 1px solid hsl(var(--border));
+	background: rgba(0, 0, 0, 0.18);
+}
+
+.fb-asset-scroll {
+	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
-	padding: 0 16px 14px;
+	padding: 12px 16px 14px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	border-left: 1px solid hsl(var(--border));
-	background: rgba(0, 0, 0, 0.18);
 }
 
 .fb-asset-header {
@@ -853,13 +860,9 @@ html.acrylic .bg-card.shadow-island-lg {
 	align-items: center;
 	gap: 8px;
 	height: 30px;
-	margin: 0 -16px 2px;
 	padding: 0 16px;
 	border-bottom: 1px solid hsl(var(--border));
-	background: rgba(255, 255, 255, 0.02);
-	position: sticky;
-	top: 0;
-	z-index: 1;
+	background: hsl(var(--background));
 	flex-shrink: 0;
 }
 
@@ -879,6 +882,10 @@ html.acrylic .bg-card.shadow-island-lg {
 	grid-template-columns: 1fr;
 	gap: 12px;
 	align-items: stretch;
+}
+
+.fb-asset-row-split {
+	grid-template-columns: 1fr 1fr;
 }
 
 .fb-asset-field {
@@ -1039,6 +1046,24 @@ html.acrylic .bg-card.shadow-island-lg {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+}
+
+.fb-asset-card-toggle {
+	width: 100%;
+	padding: 0;
+	border: none;
+	background: none;
+	cursor: pointer;
+	text-align: left;
+}
+
+.fb-asset-card-chevron {
+	color: hsl(var(--muted-foreground));
+	transition: transform 0.15s ease;
+}
+
+.fb-asset-card-chevron.fb-collapsed {
+	transform: rotate(-90deg);
 }
 
 .fb-asset-card-title {
