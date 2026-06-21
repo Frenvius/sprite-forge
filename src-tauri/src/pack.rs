@@ -100,10 +100,14 @@ pub fn render_thing_thumb(thing: &ThingType, rgba_by_id: &HashMap<u32, Vec<u8>>)
 
     let mut sheet = RgbaImage::new(canvas_w, canvas_h);
 
-    for layer in 0..(g.layers as u32).max(1) {
+    let is_outfit = thing.category == "outfit";
+    let pattern_x = if is_outfit && g.pattern_x > 2 { 2u32 } else { 0u32 };
+    let layer_count = if is_outfit { 1u32 } else { (g.layers as u32).max(1) };
+
+    for layer in 0..layer_count {
         for h in 0..height {
             for w in 0..width {
-                let idx = group_sprite_index(&g, w, h, layer, 0, 0, 0, 0);
+                let idx = group_sprite_index(&g, w, h, layer, pattern_x, 0, 0, 0);
                 if idx >= g.sprite_index.len() {
                     continue;
                 }

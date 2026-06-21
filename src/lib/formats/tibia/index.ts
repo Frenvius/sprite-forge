@@ -28,14 +28,9 @@ export {
 	exportObd,
 	exportPack,
 	readFileBytes,
-	readObdManifest,
-	readSfpManifest,
-	type ImportEntry,
 	extractObdEntries,
-	extractSfpEntries,
 	type ExportFormat,
 	type ImportSource,
 	type ExtractResult,
-	type ImportManifest,
 	collectReferencedSpriteIds
 } from './transfer';

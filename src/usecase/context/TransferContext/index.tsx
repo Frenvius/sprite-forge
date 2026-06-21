@@ -1,21 +1,24 @@
 import type { ImportPreset, TransferContextValue } from './types';
 
 import React from 'react';
-import { readFileBytes } from '@/lib/formats/tibia';
 import { ExportDialog } from '@/components/ExportDialog';
 import { ImportDialog } from '@/components/ImportDialog';
+import { ObdViewerDialog } from '@/components/ObdViewerDialog';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 const TransferContext = React.createContext<null | TransferContextValue>(null);
 
 export const TransferProvider = ({ children }: { children: React.ReactNode }) => {
 	const [importOpen, setImportOpen] = React.useState(false);
+	const [obdViewerOpen, setObdViewerOpen] = React.useState(false);
 	const [exportIds, setExportIds] = React.useState<null | number[]>(null);
 	const [importPreset, setImportPreset] = React.useState<null | ImportPreset>(null);
 
 	const closeExport = React.useCallback(() => setExportIds(null), []);
 	const closeImport = React.useCallback(() => setImportOpen(false), []);
 	const openExport = React.useCallback((ids: number[]) => setExportIds(ids), []);
+	const openObdViewer = React.useCallback(() => setObdViewerOpen(true), []);
+	const closeObdViewer = React.useCallback(() => setObdViewerOpen(false), []);
 	const openImport = React.useCallback((preset?: ImportPreset) => {
 		setImportPreset(preset ?? null);
 		setImportOpen(true);
@@ -26,14 +29,15 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 		let cancelled = false;
 
 		getCurrentWebviewWindow()
-			.onDragDropEvent(async (event) => {
+			.onDragDropEvent((event) => {
 				if (event.payload.type !== 'drop') return;
+				if (obdViewerOpen) return;
 				const paths = event.payload.paths;
 				const sfp = paths.find((p) => /\.sfp$/i.test(p));
 				const obds = paths.filter((p) => /\.obd$/i.test(p));
 				if (!sfp && obds.length === 0) return;
-				if (sfp) openImport({ source: 'sfp', files: [await readFileBytes(sfp)] });
-				else openImport({ source: 'obd', files: await Promise.all(obds.map(readFileBytes)) });
+				if (sfp) openImport({ paths: [sfp], source: 'sfp' });
+				else openImport({ paths: obds, source: 'obd' });
 			})
 			.then((fn) => {
 				if (cancelled) fn();
@@ -44,11 +48,33 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 			cancelled = true;
 			unlisten?.();
 		};
-	}, [openImport]);
+	}, [openImport, obdViewerOpen]);
 
 	const value = React.useMemo(
-		() => ({ exportIds, importOpen, openImport, openExport, closeImport, closeExport, importPreset }),
-		[importOpen, exportIds, importPreset, openImport, openExport, closeImport, closeExport]
+		() => ({
+			exportIds,
+			importOpen,
+			openImport,
+			openExport,
+			closeImport,
+			closeExport,
+			importPreset,
+			obdViewerOpen,
+			openObdViewer,
+			closeObdViewer
+		}),
+		[
+			importOpen,
+			exportIds,
+			importPreset,
+			openImport,
+			openExport,
+			closeImport,
+			closeExport,
+			obdViewerOpen,
+			openObdViewer,
+			closeObdViewer
+		]
 	);
 
 	return (
@@ -56,6 +82,7 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 			{children}
 			<ExportDialog />
 			<ImportDialog />
+			<ObdViewerDialog />
 		</TransferContext.Provider>
 	);
 };

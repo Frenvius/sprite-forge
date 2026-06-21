@@ -6,6 +6,7 @@ import { useToast } from '@/usecase/hooks/use-toast';
 import { useUpdater } from '@/usecase/hooks/use-updater';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { useTransfer } from '@/usecase/context/TransferContext';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { useErrorDialog } from '@/usecase/context/ErrorDialogContext';
 import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
@@ -16,6 +17,7 @@ import {
 	Copy,
 	Info,
 	Minus,
+	Boxes,
 	Square,
 	Search,
 	Server,
@@ -76,6 +78,7 @@ export const Toolbar = () => {
 	} = useAssetData();
 	const { settings, togglePanel } = usePanelSettings();
 	const { showError } = useErrorDialog();
+	const { openObdViewer } = useTransfer();
 	const { toast } = useToast();
 	const updater = useUpdater();
 	const [folderDialogOpen, setFolderDialogOpen] = useState(false);
@@ -590,6 +593,10 @@ export const Toolbar = () => {
 							<MenubarItem disabled={!data} onSelect={() => void handleOpenFind()}>
 								<Search className="mr-2 h-3.5 w-3.5" />
 								Find
+							</MenubarItem>
+							<MenubarItem disabled={!data} onSelect={openObdViewer}>
+								<Boxes className="mr-2 h-3.5 w-3.5" />
+								OBD Viewer
 							</MenubarItem>
 							<MenubarSeparator />
 							<MenubarItem disabled={!data?.otbPath} onSelect={handleCreateMissing}>

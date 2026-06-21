@@ -4,8 +4,8 @@ import * as lz4 from 'lz4js';
 import { invoke } from '@tauri-apps/api/core';
 
 import { parseRgbaSprites } from './loader';
+import { THING_CATEGORY_VALUES } from './types';
 import { ByteWriter, encodeThing } from './compiler';
-import { ThingCategory, THING_CATEGORY_VALUES } from './types';
 
 export type ExportFormat = 'png' | 'bmp' | 'jpg' | 'obd' | 'sfp';
 
@@ -14,35 +14,6 @@ export type ImportSource = 'sfp' | 'obd';
 const FLAG_TRANSPARENCY = 0b0000_0010;
 
 const SPRITE_DATA_SIZE = 4096;
-
-const CATEGORY_BY_VALUE: Record<number, ThingCategory> = {
-	1: ThingCategory.ITEM,
-	2: ThingCategory.OUTFIT,
-	3: ThingCategory.EFFECT,
-	4: ThingCategory.MISSILE
-};
-
-export interface ImportEntry {
-	name: string;
-	index: number;
-	width: number;
-	height: number;
-	frames: number;
-	layers: number;
-	thumbW: number;
-	thumbH: number;
-	sourceId: number;
-	thumb: Uint8Array;
-	spriteCount: number;
-	category: ThingCategory;
-}
-
-export interface ImportManifest {
-	flags: number;
-	source: ImportSource;
-	clientVersion: number;
-	entries: ImportEntry[];
-}
 
 function writeFileList(w: ByteWriter, files: Uint8Array[]): void {
 	w.u32(files.length);
@@ -191,87 +162,12 @@ export async function exportObd(thing: ThingType, data: AssetData, outPath: stri
 	await invoke('export_obd_bin', w.finish());
 }
 
-function parseManifest(buffer: Uint8Array, source: ImportSource): ImportManifest {
-	const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-	const decoder = new TextDecoder();
-	let offset = 0;
-
-	offset += 1;
-	const clientVersion = view.getUint16(offset, true);
-	offset += 2;
-	const flags = view.getUint8(offset);
-	offset += 1;
-	const entryCount = view.getUint32(offset, true);
-	offset += 4;
-
-	const entries: ImportEntry[] = [];
-	for (let i = 0; i < entryCount; i++) {
-		const categoryValue = view.getUint8(offset);
-		offset += 1;
-		const sourceId = view.getUint32(offset, true);
-		offset += 4;
-		const width = view.getUint8(offset);
-		offset += 1;
-		const height = view.getUint8(offset);
-		offset += 1;
-		const layers = view.getUint8(offset);
-		offset += 1;
-		const frames = view.getUint8(offset);
-		offset += 1;
-		const nameLen = view.getUint16(offset, true);
-		offset += 2;
-		const name = decoder.decode(buffer.subarray(offset, offset + nameLen));
-		offset += nameLen;
-		const thumbW = view.getUint16(offset, true);
-		offset += 2;
-		const thumbH = view.getUint16(offset, true);
-		offset += 2;
-		const thumbLen = view.getUint32(offset, true);
-		offset += 4;
-		const thumb = buffer.slice(offset, offset + thumbLen);
-		offset += thumbLen;
-		const spriteCount = view.getUint32(offset, true);
-		offset += 4;
-
-		entries.push({
-			name,
-			width,
-			thumb,
-			frames,
-			height,
-			layers,
-			thumbW,
-			thumbH,
-			index: i,
-			sourceId,
-			spriteCount,
-			category: CATEGORY_BY_VALUE[categoryValue] ?? ThingCategory.ITEM
-		});
-	}
-
-	return { flags, source, entries, clientVersion };
-}
-
-export async function readSfpManifest(bytes: Uint8Array): Promise<ImportManifest> {
-	const response = await invoke<Uint8Array>('read_pack_manifest_bin', bytes);
-	const buffer = response instanceof Uint8Array ? response : new Uint8Array(response);
-	return parseManifest(buffer, 'sfp');
-}
-
-export async function readObdManifest(files: Uint8Array[]): Promise<ImportManifest> {
-	const w = new ByteWriter(1 << 16);
-	writeFileList(w, files);
-	const response = await invoke<Uint8Array>('read_obd_manifest_bin', w.finish());
-	const buffer = response instanceof Uint8Array ? response : new Uint8Array(response);
-	return parseManifest(buffer, 'obd');
-}
-
 export interface ExtractResult {
 	sprites: Sprite[];
 	things: ThingType[];
 }
 
-function parseExtractResponse(buffer: Uint8Array, transparency: boolean): ExtractResult {
+export function parseExtractResponse(buffer: Uint8Array, transparency: boolean): ExtractResult {
 	const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	const decoder = new TextDecoder();
 	let offset = 0;
@@ -293,23 +189,6 @@ function parseExtractResponse(buffer: Uint8Array, transparency: boolean): Extrac
 	const sprites = parseRgbaSprites(decompressed, transparency);
 
 	return { things, sprites };
-}
-
-export async function extractSfpEntries(
-	bytes: Uint8Array,
-	indices: number[],
-	baseSpriteId: number,
-	transparency: boolean
-): Promise<ExtractResult> {
-	const w = new ByteWriter(bytes.length + 1024);
-	w.u32(baseSpriteId);
-	w.u32(indices.length);
-	for (const index of indices) w.u32(index);
-	w.bytes(bytes);
-
-	const response = await invoke<Uint8Array>('extract_pack_entries_bin', w.finish());
-	const buffer = response instanceof Uint8Array ? response : new Uint8Array(response);
-	return parseExtractResponse(buffer, transparency);
 }
 
 export async function extractObdEntries(

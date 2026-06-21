@@ -1,11 +1,11 @@
 import React from 'react';
 import { logger, EventCode } from '@/lib/debug';
 import { open } from '@tauri-apps/plugin-dialog';
+import { importObjectSheet } from '@/lib/formats/tibia';
 import { useTransfer } from '@/usecase/context/TransferContext';
 import { useListViewMode } from '@/usecase/hooks/useListViewMode';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { getThumbnailSpriteIds } from '@/usecase/util/thumbnailUtils';
-import { readFileBytes, importObjectSheet } from '@/lib/formats/tibia';
 import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 import {
 	ThingCategory,
@@ -544,13 +544,13 @@ export const useItemList = () => {
 
 		const sfp = paths.find((p) => /\.sfp$/i.test(p));
 		if (sfp) {
-			openImport({ source: 'sfp', files: [await readFileBytes(sfp)] });
+			openImport({ paths: [sfp], source: 'sfp' });
 			return;
 		}
 
 		const obds = paths.filter((p) => /\.obd$/i.test(p));
 		if (obds.length > 0) {
-			openImport({ source: 'obd', files: await Promise.all(obds.map(readFileBytes)) });
+			openImport({ paths: obds, source: 'obd' });
 			return;
 		}
 
