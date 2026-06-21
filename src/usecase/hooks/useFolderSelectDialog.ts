@@ -22,6 +22,8 @@ import {
 } from '@/usecase/util/fileBrowserUtils';
 
 export interface LoadOptions {
+	formatId?: string;
+	filePath?: string;
 	otbPath?: string;
 	xmlPath?: string;
 	datPath?: string;

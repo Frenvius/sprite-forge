@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 // Initialize debug control (exposes window.__debugControl)
 import './lib/debugControl';
+import './lib/formats/tibia/handler';
 
 if (typeof window !== 'undefined') {
 	document.addEventListener('contextmenu', (e) => {

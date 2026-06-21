@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import { join } from '@tauri-apps/api/path';
 import { useState, useEffect } from 'react';
 import { errorToString } from '@/lib/errorMessage';
+import { getFormat } from '@/lib/formats/registry';
 import { useToast } from '@/usecase/hooks/use-toast';
 import { useUpdater } from '@/usecase/hooks/use-updater';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -9,8 +9,8 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { useErrorDialog } from '@/usecase/context/ErrorDialogContext';
 import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
+import { type ThingType, getCategoryMap, optimizeSprites } from '@/lib/formats/tibia';
 import { addRecentLoad, getRecentLoads, type RecentLoad, clearRecentLoads } from '@/usecase/util/recentLoads';
-import { loadTibiaData, type ThingType, getCategoryMap, optimizeSprites, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 import {
 	X,
 	Copy,
@@ -66,6 +66,8 @@ export const Toolbar = () => {
 		isLoading,
 		setLoading,
 		compileFiles,
+		formatConfig,
+		setFormatConfig,
 		loadingProgress,
 		hasModifiedItems,
 		notifyDataChanged,
@@ -173,45 +175,53 @@ export const Toolbar = () => {
 	const handleFolderSelect = async (
 		selectedPath: string,
 		transparency: boolean,
-		assetPaths?: { datPath?: string; sprPath?: string },
+		assetPaths?: { datPath?: string; sprPath?: string; filePath?: string },
 		overrides?: { extended?: boolean; frameGroups?: boolean; frameDurations?: boolean },
-		serverPaths?: { otbPath?: string; xmlPath?: string }
+		serverPaths?: { otbPath?: string; xmlPath?: string },
+		formatId = 'tibia'
 	) => {
 		try {
 			setLoading(true);
 			setError(null);
 			setOriginalSprPath(null); // Reset original path on new load
 
-			const datPath = assetPaths?.datPath ?? (await join(selectedPath, 'Tibia.dat'));
-			const sprPath = assetPaths?.sprPath ?? (await join(selectedPath, 'Tibia.spr'));
+			const handler = getFormat(formatId);
+			if (!handler) throw new Error(`No format handler registered for '${formatId}'`);
 
-			const tibiaData = await loadTibiaData(
-				datPath,
-				sprPath,
-				undefined,
-				transparency ? true : undefined,
-				(stage, current, total) => {
+			const { data: loaded, formatConfig: loadedConfig } = await handler.load({
+				transparency,
+				folderPath: selectedPath,
+				datPath: assetPaths?.datPath,
+				sprPath: assetPaths?.sprPath,
+				otbPath: serverPaths?.otbPath,
+				xmlPath: serverPaths?.xmlPath,
+				extended: overrides?.extended,
+				filePath: assetPaths?.filePath,
+				frameGroups: overrides?.frameGroups,
+				improvedAnimations: overrides?.frameDurations,
+				onProgress: (stage, current, total) => {
 					setLoading(true, { stage, total, current });
-				},
-				overrides,
-				serverPaths
-			);
+				}
+			});
 
-			setData(tibiaData, null as any);
+			setData(loaded, null as any);
+			setFormatConfig(loadedConfig);
 
 			const folderName = selectedPath.split(/[\\/]/).filter(Boolean).pop() ?? selectedPath;
 			setRecentLoads(
 				addRecentLoad({
-					datPath,
-					sprPath,
 					transparency,
+					formatId: handler.id,
+					datPath: loaded.datPath,
+					sprPath: loaded.sprPath,
 					folderPath: selectedPath,
 					otbPath: serverPaths?.otbPath,
 					xmlPath: serverPaths?.xmlPath,
 					extended: !!overrides?.extended,
 					frameGroups: !!overrides?.frameGroups,
 					improvedAnimations: !!overrides?.frameDurations,
-					label: `${tibiaData.version?.label ?? 'Tibia'} · ${folderName}`
+					primaryPath: assetPaths?.filePath ?? loaded.datPath ?? selectedPath,
+					label: `${loaded.version?.label ?? handler.config.name} · ${folderName}`
 				})
 			);
 
@@ -253,9 +263,10 @@ export const Toolbar = () => {
 		await handleFolderSelect(
 			entry.folderPath,
 			entry.transparency,
-			{ datPath: entry.datPath, sprPath: entry.sprPath },
+			{ datPath: entry.datPath, sprPath: entry.sprPath, filePath: entry.formatId === 'tibia' ? undefined : entry.primaryPath },
 			{ extended: entry.extended, frameGroups: entry.frameGroups, frameDurations: entry.improvedAnimations },
-			{ otbPath: entry.otbPath, xmlPath: entry.xmlPath }
+			{ otbPath: entry.otbPath, xmlPath: entry.xmlPath },
+			entry.formatId
 		);
 	};
 
@@ -264,13 +275,14 @@ export const Toolbar = () => {
 		await handleFolderSelect(
 			options.folderPath,
 			options.transparency,
-			{ datPath: options.datPath, sprPath: options.sprPath },
+			{ datPath: options.datPath, sprPath: options.sprPath, filePath: options.filePath },
 			{
 				extended: options.extended,
 				frameGroups: options.frameGroups,
 				frameDurations: options.improvedAnimations
 			},
-			{ otbPath: options.otbPath, xmlPath: options.xmlPath }
+			{ otbPath: options.otbPath, xmlPath: options.xmlPath },
+			options.formatId
 		);
 	};
 
@@ -664,7 +676,7 @@ export const Toolbar = () => {
 											{data.version.datSignature.toString(16).toUpperCase()}
 										</span>
 									</div>
-									{TIBIA_FORMAT_CONFIG.categories.map((cat) => (
+									{formatConfig.categories.map((cat) => (
 										<div key={cat.id} className="flex justify-between items-center gap-4">
 											<span className="text-muted-foreground whitespace-nowrap">{cat.label}s:</span>
 											<span className="font-mono text-foreground text-right">{getCategoryMap(data, cat.id).size}</span>
