@@ -87,7 +87,7 @@ export const useExportDialog = () => {
 			let count = 0;
 			for (const thing of list) {
 				const path = await join(outputFolder, fileName(thing, ext));
-				await invoke('export_object_sheet_rust', { path, thing, sprPath: data.sprPath, transparent: transparentBg });
+				await invoke('export_object_sheet_rust', { path, thing, sprPath: data.sprPath, transparent: data.transparency });
 				count++;
 			}
 			return count;
