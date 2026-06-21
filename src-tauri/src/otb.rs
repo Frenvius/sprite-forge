@@ -248,10 +248,70 @@ pub fn decode_otb(bytes: &[u8]) -> Result<OtbFile, String> {
     Ok(file)
 }
 
+fn pack_flags(it: &OtbItem) -> u32 {
+    let mut f = 0u32;
+    if it.unpassable { f |= 1 << 0; }
+    if it.block_missiles { f |= 1 << 1; }
+    if it.block_pathfinder { f |= 1 << 2; }
+    if it.has_elevation { f |= 1 << 3; }
+    if it.multi_use { f |= 1 << 4; }
+    if it.pickupable { f |= 1 << 5; }
+    if it.movable { f |= 1 << 6; }
+    if it.stackable { f |= 1 << 7; }
+    if it.floor_change_down { f |= 1 << 8; }
+    if it.floor_change_north { f |= 1 << 9; }
+    if it.floor_change_east { f |= 1 << 10; }
+    if it.floor_change_south { f |= 1 << 11; }
+    if it.floor_change_west { f |= 1 << 12; }
+    if it.has_stack_order { f |= 1 << 13; }
+    if it.readable { f |= 1 << 14; }
+    if it.rotatable { f |= 1 << 15; }
+    if it.hangable { f |= 1 << 16; }
+    if it.hook_south { f |= 1 << 17; }
+    if it.hook_east { f |= 1 << 18; }
+    if it.can_not_decay { f |= 1 << 19; }
+    if it.allow_distance_read { f |= 1 << 20; }
+    if it.client_charges { f |= 1 << 22; }
+    if it.ignore_look { f |= 1 << 23; }
+    if it.is_animation { f |= 1 << 24; }
+    if it.full_ground { f |= 1 << 25; }
+    if it.force_use { f |= 1 << 26; }
+    f
+}
+
+pub fn encode_otb_bin(f: &OtbFile) -> Vec<u8> {
+    let mut o = Vec::with_capacity(16 + f.items.len() * 40);
+    o.extend_from_slice(&f.major_version.to_le_bytes());
+    o.extend_from_slice(&f.minor_version.to_le_bytes());
+    o.extend_from_slice(&f.build_number.to_le_bytes());
+    o.extend_from_slice(&(f.items.len() as u32).to_le_bytes());
+    for it in &f.items {
+        o.extend_from_slice(&it.server_id.to_le_bytes());
+        o.extend_from_slice(&it.client_id.to_le_bytes());
+        o.push(it.group);
+        o.extend_from_slice(&pack_flags(it).to_le_bytes());
+        o.extend_from_slice(&it.ground_speed.to_le_bytes());
+        o.extend_from_slice(&it.light_level.to_le_bytes());
+        o.extend_from_slice(&it.light_color.to_le_bytes());
+        o.extend_from_slice(&it.minimap_color.to_le_bytes());
+        o.extend_from_slice(&it.max_read_chars.to_le_bytes());
+        o.extend_from_slice(&it.max_read_write_chars.to_le_bytes());
+        o.extend_from_slice(&it.trade_as.to_le_bytes());
+        o.push(it.stack_order);
+        o.push(it.sprite_hash.len().min(255) as u8);
+        o.extend_from_slice(&it.sprite_hash);
+        let nb = it.name.as_bytes();
+        o.extend_from_slice(&(nb.len() as u16).to_le_bytes());
+        o.extend_from_slice(nb);
+    }
+    o
+}
+
 #[tauri::command]
-pub fn read_otb_file(path: String) -> Result<OtbFile, String> {
+pub fn read_otb_file(path: String) -> Result<tauri::ipc::Response, String> {
     let bytes = fs::read(&path).map_err(|e| format!("Failed to read OTB {}: {}", path, e))?;
-    decode_otb(&bytes)
+    let file = decode_otb(&bytes)?;
+    Ok(tauri::ipc::Response::new(encode_otb_bin(&file)))
 }
 
 fn push_escaped(out: &mut Vec<u8>, b: u8) {

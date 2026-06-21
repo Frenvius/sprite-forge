@@ -139,8 +139,104 @@ interface ItemsXmlEntry {
 	attributes: XmlAttr[];
 }
 
+function decodeOtbResponse(buf: Uint8Array): OtbFileRaw {
+	const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+	let o = 0;
+	const majorVersion = view.getUint32(o, true);
+	o += 4;
+	const minorVersion = view.getUint32(o, true);
+	o += 4;
+	const buildNumber = view.getUint32(o, true);
+	o += 4;
+	const count = view.getUint32(o, true);
+	o += 4;
+
+	const decoder = new TextDecoder();
+	const items: ServerItem[] = new Array(count);
+	for (let i = 0; i < count; i++) {
+		const serverId = view.getUint16(o, true);
+		o += 2;
+		const clientId = view.getUint16(o, true);
+		o += 2;
+		const group = buf[o];
+		o += 1;
+		const flags = view.getUint32(o, true);
+		o += 4;
+		const groundSpeed = view.getUint16(o, true);
+		o += 2;
+		const lightLevel = view.getUint16(o, true);
+		o += 2;
+		const lightColor = view.getUint16(o, true);
+		o += 2;
+		const minimapColor = view.getUint16(o, true);
+		o += 2;
+		const maxReadChars = view.getUint16(o, true);
+		o += 2;
+		const maxReadWriteChars = view.getUint16(o, true);
+		o += 2;
+		const tradeAs = view.getUint16(o, true);
+		o += 2;
+		const stackOrder = buf[o];
+		o += 1;
+		const hashLen = buf[o];
+		o += 1;
+		const spriteHash = Array.from(buf.subarray(o, o + hashLen));
+		o += hashLen;
+		const nameLen = view.getUint16(o, true);
+		o += 2;
+		const name = nameLen ? decoder.decode(buf.subarray(o, o + nameLen)) : '';
+		o += nameLen;
+
+		items[i] = {
+			name,
+			tradeAs,
+			serverId,
+			clientId,
+			lightLevel,
+			lightColor,
+			stackOrder,
+			spriteHash,
+			type: group,
+			groundSpeed,
+			minimapColor,
+			maxReadChars,
+			maxReadWriteChars,
+			movable: !!(flags & (1 << 6)),
+			multiUse: !!(flags & (1 << 4)),
+			stackable: !!(flags & (1 << 7)),
+			readable: !!(flags & (1 << 14)),
+			hangable: !!(flags & (1 << 16)),
+			hookEast: !!(flags & (1 << 18)),
+			forceUse: !!(flags & (1 << 26)),
+			unpassable: !!(flags & (1 << 0)),
+			pickupable: !!(flags & (1 << 5)),
+			rotatable: !!(flags & (1 << 15)),
+			hookSouth: !!(flags & (1 << 17)),
+			ignoreLook: !!(flags & (1 << 23)),
+			fullGround: !!(flags & (1 << 25)),
+			hasElevation: !!(flags & (1 << 3)),
+			canNotDecay: !!(flags & (1 << 19)),
+			isAnimation: !!(flags & (1 << 24)),
+			blockMissiles: !!(flags & (1 << 1)),
+			hasStackOrder: !!(flags & (1 << 13)),
+			clientCharges: !!(flags & (1 << 22)),
+			blockPathfinder: !!(flags & (1 << 2)),
+			floorChangeDown: !!(flags & (1 << 8)),
+			floorChangeNorth: !!(flags & (1 << 9)),
+			floorChangeEast: !!(flags & (1 << 10)),
+			floorChangeWest: !!(flags & (1 << 12)),
+			floorChangeSouth: !!(flags & (1 << 11)),
+			allowDistanceRead: !!(flags & (1 << 20))
+		};
+	}
+
+	return { items, buildNumber, majorVersion, minorVersion };
+}
+
 export async function readOtbRaw(path: string): Promise<OtbFileRaw> {
-	return await invoke<OtbFileRaw>('read_otb_file', { path });
+	const response = await invoke<Uint8Array | ArrayBuffer>('read_otb_file', { path });
+	const buf = response instanceof Uint8Array ? response : new Uint8Array(response);
+	return decodeOtbResponse(buf);
 }
 
 export async function writeOtbFile(path: string, meta: OtbMeta, items: ServerItem[]): Promise<void> {
