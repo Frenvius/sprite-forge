@@ -2,6 +2,7 @@ import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItem
 
 import React from 'react';
 import { logger, EventCode } from '@/lib/debug';
+import { getFormat, formatByConfigName } from '@/lib/formats/registry';
 import {
 	SpriteReader,
 	ThingCategory,
@@ -41,6 +42,7 @@ interface AssetDataContextType {
 	setAutoSyncServer: (value: boolean) => void;
 	setServerProfile: (profileId: string) => void;
 	setOpenedSpriteId: (id: null | number) => void;
+	setFormatConfig: (config: FormatConfig) => void;
 	reloadServerAttributes: () => { synced: number };
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
@@ -110,7 +112,8 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	const hasPreloadedRef = React.useRef(false);
 	const [openedSpriteId, setOpenedSpriteId] = React.useState<null | number>(null);
 	const [highlightedSpriteId, setHighlightedSpriteId] = React.useState<null | number>(null);
-	const [spriteSize, _setSpriteSize] = React.useState(32);
+	const [formatConfig, setFormatConfig] = React.useState<FormatConfig>(TIBIA_FORMAT_CONFIG);
+	const spriteSize = formatConfig.spriteSize;
 	const [spriteLoadVersion, setSpriteLoadVersion] = React.useState(0);
 	const [unsavedChanges, setUnsavedChanges] = React.useState<Set<string>>(new Set());
 	const [newItemKeys, setNewItemKeys] = React.useState<Set<string>>(new Set());
@@ -677,46 +680,30 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	}, []);
 
 	const compileFiles = React.useCallback(async (): Promise<null | { synced: number; created: number }> => {
-		if (!data || !data.datPath || !data.sprPath) {
-			throw new Error('No data or file paths available for compilation');
+		if (!data) {
+			throw new Error('No data available for compilation');
 		}
 
-		const datChanged = modifiedSinceCompile.size > 0 || modifiedSprites.size > 0;
-		const hasOtb = !!data.otbPath && !!data.serverItems;
-		const serverChanged = hasOtb && (modifiedServerIds.size > 0 || (autoSyncServer && datChanged));
-
-		if (!datChanged && !serverChanged) {
-			console.log('No modifications to compile');
-			return null;
+		const handler = formatByConfigName(formatConfig.name) ?? getFormat('tibia');
+		if (!handler) {
+			throw new Error(`No format handler registered for '${formatConfig.name}'`);
 		}
 
 		let compileSucceeded = false;
-		let otbResult: null | { synced: number; created: number } = null;
 		try {
-			if (datChanged) {
-				const { compileFiles: doCompile } = await import('@/lib/formats/tibia/compiler');
-				await doCompile({
-					data,
-					datPath: data.datPath,
-					sprPath: data.sprPath,
-					modifiedItems: modifiedSinceCompile,
-					directlyModifiedSprites: modifiedSprites,
-					originalItems: originalItemsSinceCompile,
-					onProgress: (stage, current, total) => {
-						setLoading(true, { stage, total, current });
-					}
-				});
-			}
-
-			if (hasOtb && (datChanged || serverChanged)) {
-				setLoading(true, { total: 1, current: 1, stage: 'Writing server items (OTB/XML)...' });
-				const { compileServerItems } = await import('@/lib/formats/tibia/otb');
-				otbResult = await compileServerItems(data, autoSyncServer, data.version.value);
-				console.log(`[OTB] synced ${otbResult.synced} server items, created ${otbResult.created} missing`);
-			}
-
+			const result = await handler.compile({
+				data,
+				autoSyncServer,
+				modifiedSprites,
+				modifiedServerIds,
+				modifiedItems: modifiedSinceCompile,
+				originalItems: originalItemsSinceCompile,
+				onProgress: (stage, current, total) => {
+					setLoading(true, { stage, total, current });
+				}
+			});
 			compileSucceeded = true;
-			return otbResult;
+			return result;
 		} finally {
 			if (compileSucceeded) {
 				clearModifiedTracking();
@@ -725,6 +712,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		}
 	}, [
 		data,
+		formatConfig,
 		modifiedSinceCompile,
 		modifiedSprites,
 		modifiedServerIds,
@@ -814,6 +802,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				openedItemId,
 				compileFiles,
 				clearNewItem,
+				formatConfig,
 				restoreCommit,
 				updateCounter,
 				markAsNewItem,
@@ -823,6 +812,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				loadingProgress,
 				setOpenedItemId,
 				modifiedSprites,
+				setFormatConfig,
 				removeOpenedItem,
 				selectedCategory,
 				hasModifiedItems,
@@ -849,8 +839,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				setHighlightedSpriteId,
 				getServerItemsForClient,
 				createMissingServerItems,
-				setSelectedCategoryAndItem,
-				formatConfig: TIBIA_FORMAT_CONFIG
+				setSelectedCategoryAndItem
 			}}
 		>
 			{children}

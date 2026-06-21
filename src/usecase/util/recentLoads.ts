@@ -1,11 +1,13 @@
 export interface RecentLoad {
 	label: string;
-	datPath: string;
-	sprPath: string;
+	formatId: string;
+	datPath?: string;
+	sprPath?: string;
 	otbPath?: string;
 	xmlPath?: string;
 	extended: boolean;
 	folderPath: string;
+	primaryPath: string;
 	frameGroups: boolean;
 	transparency: boolean;
 	improvedAnimations: boolean;
@@ -18,14 +20,20 @@ export function getRecentLoads(): RecentLoad[] {
 	try {
 		if (typeof window === 'undefined') return [];
 		const raw = localStorage.getItem(KEY);
-		return raw ? (JSON.parse(raw) as RecentLoad[]) : [];
+		if (!raw) return [];
+		const parsed = JSON.parse(raw) as RecentLoad[];
+		return parsed.map((e) => ({
+			...e,
+			formatId: e.formatId ?? 'tibia',
+			primaryPath: e.primaryPath ?? e.datPath ?? ''
+		}));
 	} catch {
 		return [];
 	}
 }
 
 export function addRecentLoad(entry: RecentLoad): RecentLoad[] {
-	const next = [entry, ...getRecentLoads().filter((e) => e.datPath !== entry.datPath)].slice(0, MAX);
+	const next = [entry, ...getRecentLoads().filter((e) => e.primaryPath !== entry.primaryPath)].slice(0, MAX);
 	try {
 		if (typeof window !== 'undefined') localStorage.setItem(KEY, JSON.stringify(next));
 	} catch {

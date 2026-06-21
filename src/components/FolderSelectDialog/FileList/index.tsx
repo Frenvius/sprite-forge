@@ -1,7 +1,10 @@
 import type { FileListProps } from './types';
 
+import { allFormats } from '@/lib/formats/registry';
 import { Star, Folder, FileText } from 'lucide-react';
 import { entryType, pathString, pathsEqual, formatSize, formatModified } from '@/usecase/util/fileBrowserUtils';
+
+const singleFileExts = (): string[] => allFormats().flatMap((h) => (h.kind === 'file' ? h.exts : []));
 
 export const FileList = ({
 	error,
@@ -38,7 +41,9 @@ export const FileList = ({
 						const entryPath = currentPath.length === 0 ? entry.path : pathString([...currentPath, entry.name]);
 						const favorited = entry.is_dir && favorites.some((f) => pathsEqual(f.path, entryPath));
 						const matchesPick = !!pickExt && !entry.is_dir && entry.name.toLowerCase().endsWith('.' + pickExt);
-						const disabled = !entry.is_dir && (pickExt ? !matchesPick : true);
+						const singleLoadable =
+							!entry.is_dir && singleFileExts().some((ext) => entry.name.toLowerCase().endsWith('.' + ext.toLowerCase()));
+						const disabled = !entry.is_dir && (pickExt ? !matchesPick : !singleLoadable);
 						const inert = !!pickExt && disabled;
 						const activeAsset = !pickExt && !entry.is_dir && !!activeNames?.has(entry.name);
 						return (
