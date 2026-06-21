@@ -1,8 +1,10 @@
 import type { ImportPreset, TransferContextValue } from './types';
 
 import React from 'react';
+import { readFileBytes } from '@/lib/formats/tibia';
 import { ExportDialog } from '@/components/ExportDialog';
 import { ImportDialog } from '@/components/ImportDialog';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 const TransferContext = React.createContext<null | TransferContextValue>(null);
 
@@ -20,19 +22,28 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 	}, []);
 
 	React.useEffect(() => {
-		const onDrop = async (e: DragEvent) => {
-			const files = Array.from(e.dataTransfer?.files ?? []);
-			const sfp = files.find((f) => /\.sfp$/i.test(f.name));
-			const obds = files.filter((f) => /\.obd$/i.test(f.name));
-			if (!sfp && obds.length === 0) return;
-			e.preventDefault();
-			e.stopPropagation();
-			const toBytes = async (f: File) => new Uint8Array(await f.arrayBuffer());
-			if (sfp) openImport({ source: 'sfp', files: [await toBytes(sfp)] });
-			else openImport({ source: 'obd', files: await Promise.all(obds.map(toBytes)) });
+		let unlisten: undefined | (() => void);
+		let cancelled = false;
+
+		getCurrentWebviewWindow()
+			.onDragDropEvent(async (event) => {
+				if (event.payload.type !== 'drop') return;
+				const paths = event.payload.paths;
+				const sfp = paths.find((p) => /\.sfp$/i.test(p));
+				const obds = paths.filter((p) => /\.obd$/i.test(p));
+				if (!sfp && obds.length === 0) return;
+				if (sfp) openImport({ source: 'sfp', files: [await readFileBytes(sfp)] });
+				else openImport({ source: 'obd', files: await Promise.all(obds.map(readFileBytes)) });
+			})
+			.then((fn) => {
+				if (cancelled) fn();
+				else unlisten = fn;
+			});
+
+		return () => {
+			cancelled = true;
+			unlisten?.();
 		};
-		window.addEventListener('drop', onDrop);
-		return () => window.removeEventListener('drop', onDrop);
 	}, [openImport]);
 
 	const value = React.useMemo(

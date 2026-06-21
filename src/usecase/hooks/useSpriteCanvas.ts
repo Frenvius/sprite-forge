@@ -7,6 +7,7 @@ import { blendOutfit } from '@/lib/formats/tibia/outfit';
 import { useDragDrop } from '@/usecase/context/DragDropContext';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { computeSpriteLayout } from '@/usecase/util/spriteLayoutUtils';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { getSpriteIndex, isValidSpriteId, importObjectSheet, getCategoryRenderConfig } from '@/lib/formats/tibia';
 
 interface Slot {
@@ -710,91 +711,64 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		const containerElement = containerRef.current;
 		if (!containerElement || !allowFileDrop) return;
 
-		const dragHasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).some((t) => t === 'Files');
-
-		let windowDragDepth = 0;
-
-		const onWindowDragEnter = (e: DragEvent) => {
-			if (!dragHasFiles(e)) return;
-			windowDragDepth++;
-			if (windowDragDepth === 1) {
-				isDraggingImageRef.current = true;
-				setIsFileDragging(true);
-			}
+		const isImagePath = (p: string) => /\.(png|bmp|jpg|jpeg)$/i.test(p);
+		const overContainer = (x: number, y: number) => {
+			const r = containerElement.getBoundingClientRect();
+			const dpr = window.devicePixelRatio || 1;
+			const cx = x / dpr;
+			const cy = y / dpr;
+			return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
 		};
 
-		const onWindowDragLeave = (e: DragEvent) => {
-			if (!dragHasFiles(e)) return;
-			windowDragDepth--;
-			if (windowDragDepth <= 0) {
-				windowDragDepth = 0;
-				isDraggingImageRef.current = false;
-				setIsFileDragging(false);
-				setIsFileDragOver(false);
-			}
-		};
+		let unlisten: undefined | (() => void);
+		let cancelled = false;
 
-		const onWindowDrop = () => {
-			windowDragDepth = 0;
-			isDraggingImageRef.current = false;
-			setIsFileDragging(false);
-			setIsFileDragOver(false);
-		};
+		getCurrentWebviewWindow()
+			.onDragDropEvent(async (event) => {
+				const p = event.payload;
+				if (p.type === 'enter') {
+					isDraggingImageRef.current = p.paths.some(isImagePath);
+					if (!isDraggingImageRef.current) return;
+					setIsFileDragging(true);
+					setIsFileDragOver(overContainer(p.position.x, p.position.y));
+				} else if (p.type === 'over') {
+					if (!isDraggingImageRef.current) return;
+					setIsFileDragOver(overContainer(p.position.x, p.position.y));
+				} else if (p.type === 'leave') {
+					isDraggingImageRef.current = false;
+					setIsFileDragging(false);
+					setIsFileDragOver(false);
+				} else if (p.type === 'drop') {
+					const wasImage = isDraggingImageRef.current;
+					const onTarget = overContainer(p.position.x, p.position.y);
+					isDraggingImageRef.current = false;
+					setIsFileDragging(false);
+					setIsFileDragOver(false);
+					if (!wasImage || !onTarget || !thing || !data) return;
 
-		const onDragOver = (e: DragEvent) => {
-			if (!dragHasFiles(e)) return;
-			e.preventDefault();
-			e.stopPropagation();
-			if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-			setIsFileDragOver(true);
-		};
+					const imagePath = p.paths.find(isImagePath);
+					if (!imagePath) return;
 
-		const onDragLeave = (e: DragEvent) => {
-			if (e.relatedTarget && containerElement.contains(e.relatedTarget as Node)) return;
-			setIsFileDragOver(false);
-		};
-
-		const onDrop = async (e: DragEvent) => {
-			if (!dragHasFiles(e)) return;
-			e.preventDefault();
-			e.stopPropagation();
-			windowDragDepth = 0;
-			isDraggingImageRef.current = false;
-			setIsFileDragging(false);
-			setIsFileDragOver(false);
-
-			const files = Array.from(e.dataTransfer?.files ?? []);
-			const imageFile = files.find((f) => /\.(png|bmp|jpg|jpeg)$/i.test(f.name));
-			if (!imageFile || !thing || !data) return;
-
-			const result = await importObjectSheet(thing, data, imageFile, { isNew: isNewItem(thing.id, thing.category) });
-			if (result.success && result.updatedThing) {
-				notifySpritesLoaded();
-				if (notifyDataChanged && result.spriteIds) {
-					notifyDataChanged(result.spriteIds);
+					const result = await importObjectSheet(thing, data, imagePath, { isNew: isNewItem(thing.id, thing.category) });
+					if (result.success && result.updatedThing) {
+						notifySpritesLoaded();
+						if (notifyDataChanged && result.spriteIds) {
+							notifyDataChanged(result.spriteIds);
+						}
+						notifySpriteImport();
+					} else if (result.error) {
+						console.error('Sheet import rejected:', result.error);
+					}
 				}
-				notifySpriteImport();
-			} else if (result.error) {
-				console.error('Sheet import rejected:', result.error);
-			}
-		};
-
-		window.addEventListener('dragenter', onWindowDragEnter);
-		window.addEventListener('dragleave', onWindowDragLeave);
-		window.addEventListener('drop', onWindowDrop);
-
-		containerElement.addEventListener('dragover', onDragOver);
-		containerElement.addEventListener('dragleave', onDragLeave);
-		containerElement.addEventListener('drop', onDrop);
+			})
+			.then((fn) => {
+				if (cancelled) fn();
+				else unlisten = fn;
+			});
 
 		return () => {
-			window.removeEventListener('dragenter', onWindowDragEnter);
-			window.removeEventListener('dragleave', onWindowDragLeave);
-			window.removeEventListener('drop', onWindowDrop);
-
-			containerElement.removeEventListener('dragover', onDragOver);
-			containerElement.removeEventListener('dragleave', onDragLeave);
-			containerElement.removeEventListener('drop', onDrop);
+			cancelled = true;
+			unlisten?.();
 		};
 	}, [thing, data, allowFileDrop, isNewItem, notifySpritesLoaded, notifyDataChanged, notifySpriteImport]);
 
@@ -847,63 +821,6 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 			transform: `translate(${panX}px, ${panY}px) scale(${scale})`
 		};
 	}, [canvasWidth, canvasHeight, scale, exactSizeCenter, panX, panY, renderMode, fill]);
-
-	const handleDragEnter = (e: React.DragEvent) => {
-		if (e.dataTransfer.types.includes('Files')) {
-			return;
-		}
-	};
-
-	const handleDragOver = (e: React.DragEvent) => {
-		if (e.dataTransfer.types.includes('Files')) {
-			return;
-		}
-
-		if (!onSpriteDrop || !thing || !canvasRef.current) {
-			return;
-		}
-		e.preventDefault();
-		e.dataTransfer.dropEffect = 'copy';
-
-		const canvas = canvasRef.current;
-		const rect = canvas.getBoundingClientRect();
-		const relX = e.clientX - rect.left;
-		const relY = e.clientY - rect.top;
-
-		const canvasX = relX * (canvasWidth / rect.width);
-		const canvasY = relY * (canvasHeight / rect.height);
-
-		if (canvasX < 0 || canvasX >= canvasWidth || canvasY < 0 || canvasY >= canvasHeight) {
-			setHighlightedSlot(null);
-			return;
-		}
-
-		const pixelsWidth = thing.width * spriteSize;
-		const pixelsHeight = thing.height * spriteSize;
-
-		const col = Math.floor(canvasX / pixelsWidth);
-		const row = Math.floor(canvasY / pixelsHeight);
-
-		const cellX = canvasX % pixelsWidth;
-		const cellY = canvasY % pixelsHeight;
-
-		const slotX = Math.floor(cellX / spriteSize) * spriteSize;
-		const slotY = Math.floor(cellY / spriteSize) * spriteSize;
-
-		const highlightX = col * pixelsWidth + slotX;
-		const highlightY = row * pixelsHeight + slotY;
-
-		setHighlightedSlot({
-			x: highlightX,
-			y: highlightY,
-			w: spriteSize,
-			h: spriteSize
-		});
-	};
-
-	const handleDragLeave = () => {
-		setHighlightedSlot(null);
-	};
 
 	const handleMouseDoubleClick = React.useCallback(
 		(e: React.MouseEvent) => {
@@ -966,60 +883,6 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		setHoveredSlot(null);
 	}, [onSpriteHover]);
 
-	const handleDrop = async (e: React.DragEvent) => {
-		if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-			e.preventDefault();
-			return;
-		}
-
-		if (!onSpriteDrop || !thing || !canvasRef.current || !highlightedSlot) return;
-		e.preventDefault();
-		setHighlightedSlot(null);
-
-		let spriteIdStr = e.dataTransfer.getData('application/x-sprite-id');
-		if (!spriteIdStr) {
-			spriteIdStr = e.dataTransfer.getData('text/plain');
-		}
-		if (!spriteIdStr) return;
-
-		const newSpriteId = parseInt(spriteIdStr, 10);
-		if (isNaN(newSpriteId)) return;
-
-		const pixelsWidth = thing.width * spriteSize;
-		const pixelsHeight = thing.height * spriteSize;
-
-		const col = Math.floor(highlightedSlot.x / pixelsWidth);
-		const row = Math.floor(highlightedSlot.y / pixelsHeight);
-
-		const cellX = highlightedSlot.x % pixelsWidth;
-		const cellY = highlightedSlot.y % pixelsHeight;
-
-		const w = thing.width - 1 - Math.floor(cellX / spriteSize);
-		const h = thing.height - 1 - Math.floor(cellY / spriteSize);
-
-		let pX, pY, pZ;
-
-		if (renderMode === 'preview') {
-			pX = patternX || 0;
-			pY = patternY || 0;
-			pZ = patternZ || 0;
-		} else {
-			pY = row;
-			pZ = Math.floor(col / thing.patternX);
-			pX = col % thing.patternX;
-		}
-
-		const currentFrame = thing.frames > 1 ? frame : 0;
-
-		const targetLayer = layer || 0;
-
-		const index = getSpriteIndex(thing, w, h, targetLayer, pX, pY, pZ, currentFrame);
-
-		if (index >= 0 && index < thing.spriteIndex.length) {
-			onSpriteDrop(index, newSpriteId);
-		}
-	};
-
 	const overlayCanvasRef = React.useRef<HTMLCanvasElement>(null);
 
 	React.useEffect(() => {
@@ -1057,7 +920,6 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		isLoading,
 		isPanning,
 		renderMode,
-		handleDrop,
 		onPanChange,
 		canvasWidth,
 		isPanEnabled,
@@ -1067,9 +929,6 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		transformStyle,
 		isFileDragging,
 		isFileDragOver,
-		handleDragOver,
-		handleDragEnter,
-		handleDragLeave,
 		handleMouseDown,
 		handleMouseMove,
 		overlayCanvasRef,

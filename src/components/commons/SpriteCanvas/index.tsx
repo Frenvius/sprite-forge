@@ -12,7 +12,6 @@ export const SpriteCanvas = React.memo((props: SpriteCanvasProps) => {
 		isLoading,
 		isPanning,
 		renderMode,
-		handleDrop,
 		onPanChange,
 		canvasWidth,
 		isPanEnabled,
@@ -22,9 +21,6 @@ export const SpriteCanvas = React.memo((props: SpriteCanvasProps) => {
 		transformStyle,
 		isFileDragging,
 		isFileDragOver,
-		handleDragOver,
-		handleDragEnter,
-		handleDragLeave,
 		handleMouseDown,
 		handleMouseMove,
 		overlayCanvasRef,
@@ -35,10 +31,6 @@ export const SpriteCanvas = React.memo((props: SpriteCanvasProps) => {
 	return (
 		<div
 			ref={containerRef}
-			onDrop={handleDrop}
-			onDragOver={handleDragOver}
-			onDragEnter={handleDragEnter}
-			onDragLeave={handleDragLeave}
 			className={cn('relative flex items-center justify-center', 'w-full h-full')}
 			style={{ cursor: isPanning ? 'grabbing' : onPanChange && (isPanEnabled || isPanning) ? 'grab' : 'default' }}
 		>

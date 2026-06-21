@@ -1,10 +1,13 @@
 import type { SidebarProps } from './types';
 
-import React from 'react';
-import { X, Folder, Computer, HardDrive } from 'lucide-react';
+import { Folder, Computer, HardDrive } from 'lucide-react';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { pathString, pathsEqual, pathSegments } from '@/usecase/util/fileBrowserUtils';
+import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, type DragEndEvent } from '@dnd-kit/core';
 
 import { Caret } from './Caret';
+import { FavoriteRow } from './FavoriteRow';
 import { quickAccessIcons } from './constants';
 
 export const Sidebar = ({
@@ -19,102 +22,39 @@ export const Sidebar = ({
 	onReorderFavorites
 }: SidebarProps) => {
 	const currentString = pathString(currentPath);
-	const dragIdxRef = React.useRef<null | number>(null);
-	const [dragIdx, setDragIdx] = React.useState<null | number>(null);
-	const [dropIdx, setDropIdx] = React.useState<null | number>(null);
-	const [dropAfter, setDropAfter] = React.useState(false);
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-	const onDragStart = (e: React.DragEvent, idx: number) => {
-		dragIdxRef.current = idx;
-		setDragIdx(idx);
-		e.dataTransfer.effectAllowed = 'move';
-		e.dataTransfer.setData('text/plain', String(idx));
-	};
-
-	const onDragOver = (e: React.DragEvent, idx: number) => {
-		if (dragIdxRef.current === null) return;
-		e.preventDefault();
-		e.dataTransfer.dropEffect = 'move';
-		const rect = e.currentTarget.getBoundingClientRect();
-		const after = e.clientY - rect.top > rect.height / 2;
-		if (dropIdx !== idx || dropAfter !== after) {
-			setDropIdx(idx);
-			setDropAfter(after);
-		}
-	};
-
-	const onDrop = (e: React.DragEvent, idx: number) => {
-		e.preventDefault();
-		const from = dragIdxRef.current;
-		if (from === null) return;
-		const target = dropAfter ? idx + 1 : idx;
-		if (from !== idx) onReorderFavorites(from, target);
-		dragIdxRef.current = null;
-		setDragIdx(null);
-		setDropIdx(null);
-	};
-
-	const onDragEnd = () => {
-		dragIdxRef.current = null;
-		setDragIdx(null);
-		setDropIdx(null);
+	const onDragEnd = (e: DragEndEvent) => {
+		const { over, active } = e;
+		if (!over || active.id === over.id) return;
+		const from = favorites.findIndex((f) => f.path === active.id);
+		const to = favorites.findIndex((f) => f.path === over.id);
+		if (from === -1 || to === -1) return;
+		onReorderFavorites(from, from < to ? to + 1 : to);
 	};
 
 	return (
 		<aside className="fb-sidebar">
 			<ul className="fb-tree">
-				{favorites.map((fav, idx) => {
-					const isDragging = dragIdx === idx;
-					const showBefore = dropIdx === idx && !dropAfter && dragIdx !== null && dragIdx !== idx;
-					const showAfter = dropIdx === idx && dropAfter && dragIdx !== null && dragIdx !== idx;
-					return (
-						<li key={fav.path}>
-							<div
-								draggable
-								tabIndex={0}
-								role="button"
-								title={fav.path}
-								onDragEnd={onDragEnd}
-								onDrop={(e) => onDrop(e, idx)}
-								onDragOver={(e) => onDragOver(e, idx)}
-								onDragStart={(e) => onDragStart(e, idx)}
-								onClick={() => onNavigate(pathSegments(fav.path))}
-								onDragEnter={(e) => {
-									if (dragIdxRef.current !== null) e.preventDefault();
-								}}
-								onKeyDown={(e) => {
-									if (e.key === 'Enter' || e.key === ' ') {
-										e.preventDefault();
-										onNavigate(pathSegments(fav.path));
-									}
-								}}
-								className={
-									'fb-tree-row' +
-									(pathsEqual(fav.path, currentString) ? ' fb-tree-row-active' : '') +
-									(isDragging ? ' fb-tree-row-dragging' : '') +
-									(showBefore ? ' fb-tree-row-drop-before' : '') +
-									(showAfter ? ' fb-tree-row-drop-after' : '')
-								}
-							>
-								<span className="fb-caret-spacer" />
-								<Folder size={15} className="fb-tree-icon fb-icon-folder" />
-								<span className="fb-tree-label">{fav.name}</span>
-								<button
-									type="button"
-									title="Remove from favorites"
-									className="fb-tree-pin-button"
-									aria-label="Remove from favorites"
-									onClick={(e) => {
-										e.stopPropagation();
-										onRemoveFavorite(fav.path);
-									}}
-								>
-									<X size={11} />
-								</button>
-							</div>
-						</li>
-					);
-				})}
+				<DndContext
+					sensors={sensors}
+					onDragEnd={onDragEnd}
+					collisionDetection={closestCenter}
+					modifiers={[restrictToVerticalAxis]}
+					accessibility={{ container: document.body }}
+				>
+					<SortableContext items={favorites.map((f) => f.path)} strategy={verticalListSortingStrategy}>
+						{favorites.map((fav) => (
+							<FavoriteRow
+								fav={fav}
+								key={fav.path}
+								onNavigate={onNavigate}
+								onRemoveFavorite={onRemoveFavorite}
+								isActive={pathsEqual(fav.path, currentString)}
+							/>
+						))}
+					</SortableContext>
+				</DndContext>
 
 				{systemDirs.length > 0 && (
 					<li className="fb-tree-section">

@@ -87,14 +87,7 @@ export const SpriteList = () => {
 				</div>
 			</div>
 
-			<div
-				ref={scrollViewportRef}
-				className="flex-1 overflow-y-auto custom-scrollbar"
-				onDragOver={(e) => {
-					e.preventDefault();
-					e.dataTransfer.dropEffect = 'move';
-				}}
-			>
+			<div ref={scrollViewportRef} className="flex-1 overflow-y-auto custom-scrollbar">
 				<div
 					className={cn(
 						'p-2 pb-16',
