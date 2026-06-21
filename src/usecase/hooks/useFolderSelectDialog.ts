@@ -1,5 +1,6 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { allFormats } from '@/lib/formats/registry';
 import { join, dirname } from '@tauri-apps/api/path';
 import {
 	readOtfiFile,
@@ -22,12 +23,12 @@ import {
 } from '@/usecase/util/fileBrowserUtils';
 
 export interface LoadOptions {
-	formatId?: string;
-	filePath?: string;
 	otbPath?: string;
 	xmlPath?: string;
 	datPath?: string;
 	sprPath?: string;
+	formatId?: string;
+	filePath?: string;
 	extended: boolean;
 	folderPath: string;
 	frameGroups: boolean;
@@ -42,6 +43,15 @@ const assetExtOf = (name: string): null | 'dat' | 'spr' | 'otfi' => {
 	if (lower.endsWith('.otfi')) return 'otfi';
 	if (lower.endsWith('.dat')) return 'dat';
 	if (lower.endsWith('.spr')) return 'spr';
+	return null;
+};
+
+const singleFormatOf = (name: string): null | string => {
+	const lower = name.toLowerCase();
+	for (const handler of allFormats()) {
+		if (handler.kind !== 'file') continue;
+		if (handler.exts.some((ext) => lower.endsWith('.' + ext.toLowerCase()))) return handler.id;
+	}
 	return null;
 };
 
@@ -165,6 +175,7 @@ export const useFolderSelectDialog = ({
 	const [serverFiles, setServerFiles] = React.useState<{ otb: boolean; xml: boolean }>({ otb: false, xml: false });
 	const [includeServer, setIncludeServer] = React.useState(true);
 	const [pickedFile, setPickedFile] = React.useState<null | string>(null);
+	const [pickedSingle, setPickedSingle] = React.useState<null | { name: string; formatId: string }>(null);
 	const [customOtb, setCustomOtb] = React.useState<null | {
 		label: string;
 		otbPath: string;
@@ -393,6 +404,7 @@ export const useFolderSelectDialog = ({
 
 	React.useEffect(() => {
 		setPickedFile(null);
+		setPickedSingle(null);
 		setAssetBase(null);
 		setIncludeServer(true);
 	}, [currentPathString]);
@@ -492,14 +504,20 @@ export const useFolderSelectDialog = ({
 			if (!entry.is_dir && matchesPick(entry.name)) setPickedFile(entry.name);
 			return;
 		}
-		if (!entry.is_dir && assetExtOf(entry.name)) {
-			setAssetBase(stripAssetExt(entry.name));
+		if (!entry.is_dir) {
+			const formatId = singleFormatOf(entry.name);
+			setPickedSingle(formatId ? { formatId, name: entry.name } : null);
+			if (assetExtOf(entry.name)) setAssetBase(stripAssetExt(entry.name));
 		}
 	};
 
 	const onRowDoubleClick = (entry: DirEntry) => {
 		if (pickFileMode && !entry.is_dir) {
 			if (matchesPick(entry.name)) void confirmCurrent(entry.name);
+			return;
+		}
+		if (assetMode && !entry.is_dir && singleFormatOf(entry.name)) {
+			void confirmCurrent(entry.name);
 			return;
 		}
 		if (!pickFileMode && !entry.is_dir) return;
@@ -520,6 +538,29 @@ export const useFolderSelectDialog = ({
 			onPickFile(await join(target, name));
 			onOpenChange(false);
 			return;
+		}
+
+		const singleName = pickName && singleFormatOf(pickName) ? pickName : pickedSingle?.name;
+		if (assetMode && onLoad && singleName) {
+			const formatId = singleFormatOf(singleName);
+			if (formatId) {
+				try {
+					await invoke('set_last_folder', { path: target });
+				} catch {
+					/* */
+				}
+				onLoad({
+					formatId,
+					extended,
+					frameGroups,
+					transparency,
+					folderPath: target,
+					improvedAnimations,
+					filePath: await join(target, singleName)
+				});
+				onOpenChange(false);
+				return;
+			}
 		}
 
 		try {
@@ -550,7 +591,9 @@ export const useFolderSelectDialog = ({
 		onOpenChange(false);
 	};
 
-	const canLoad = assetMode && hasTibiaFiles && !!assetInfo.datHeader && !!assetInfo.sprHeader && !assetLoading;
+	const canLoad =
+		(assetMode && !!pickedSingle) ||
+		(assetMode && hasTibiaFiles && !!assetInfo.datHeader && !!assetInfo.sprHeader && !assetLoading);
 
 	const saveFavorites = async (next: FavoriteFolder[]) => {
 		setFavorites(next);
@@ -604,6 +647,7 @@ export const useFolderSelectDialog = ({
 		frameGroups,
 		setExtended,
 		serverFiles,
+		pickedSingle,
 		navigatePath,
 		assetLoading,
 		pathOnlyMode,
