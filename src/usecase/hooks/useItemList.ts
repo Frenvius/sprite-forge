@@ -1,7 +1,7 @@
 import React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 import { importObjectSheet } from '~/lib/formats/tibia';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useListViewMode } from '~/usecase/hooks/useListViewMode';

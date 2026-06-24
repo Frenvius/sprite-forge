@@ -1,7 +1,7 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 import { type Sprite } from '~/lib/formats/tibia';
 import { useDragDrop } from '~/usecase/context/DragDropContext';
 import { useListViewMode } from '~/usecase/hooks/useListViewMode';

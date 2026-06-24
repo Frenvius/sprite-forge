@@ -6,7 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { obdOpen, obdClear, obdQuery, obdStats, obdThumbs, obdGetPaths } from '~/lib/formats/tibia/obdViewer';
