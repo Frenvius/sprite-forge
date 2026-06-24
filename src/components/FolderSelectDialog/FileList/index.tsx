@@ -1,8 +1,9 @@
 import type { FileListProps } from './types';
 
-import { allFormats } from '@/lib/formats/registry';
 import { Star, Folder, FileText } from 'lucide-react';
-import { entryType, pathString, pathsEqual, formatSize, formatModified } from '@/usecase/util/fileBrowserUtils';
+
+import { allFormats } from '~/lib/formats/registry';
+import { entryType, pathString, pathsEqual, formatSize, formatModified } from '~/usecase/util/fileBrowserUtils';
 
 const singleFileExts = (): string[] => allFormats().flatMap((h) => (h.kind === 'file' ? h.exts : []));
 

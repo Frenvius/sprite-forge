@@ -1,12 +1,12 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { type Sprite } from '@/lib/formats/tibia';
-import { useDragDrop } from '@/usecase/context/DragDropContext';
-import { useListViewMode } from '@/usecase/hooks/useListViewMode';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 
 import { useToast } from './use-toast';
+import { type Sprite } from '~/lib/formats/tibia';
+import { useDragDrop } from '~/usecase/context/DragDropContext';
+import { useListViewMode } from '~/usecase/hooks/useListViewMode';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 
 export const useSpriteList = () => {
 	const {
@@ -91,7 +91,7 @@ export const useSpriteList = () => {
 		let cancelled = false;
 
 		const loadSpritesForCurrentPage = async () => {
-			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('~/lib/formats/tibia');
 
 			if (cancelled) return;
 
@@ -397,7 +397,7 @@ export const useSpriteList = () => {
 			if (!data || !data.sprPath) return null;
 			const cached = data.sprites.get(id);
 			if (cached) return cached;
-			const { loadSpriteIds } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds } = await import('~/lib/formats/tibia');
 			await loadSpriteIds(data.sprPath, [id], data.transparency, data.sprites);
 			notifySpritesLoaded();
 			return data.sprites.get(id) ?? null;

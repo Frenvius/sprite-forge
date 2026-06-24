@@ -1,7 +1,8 @@
 import React from 'react';
 import { Undo2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePropertiesContext } from '@/usecase/context/PropertiesContext';
+
+import { Button } from '~/components/ui/button';
+import { usePropertiesContext } from '~/usecase/context/PropertiesContext';
 
 interface PropertyWithUndoProps {
 	property: string;

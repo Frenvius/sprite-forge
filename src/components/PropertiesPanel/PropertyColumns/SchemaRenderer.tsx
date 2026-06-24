@@ -1,16 +1,15 @@
-import type { ThingType } from '@/lib/formats/tibia';
-import type { Visibility } from '@/usecase/context/PropertiesContext/types';
-import type { SectionField, PropertyField, PropertySection, PropertyFieldGrid } from '@/lib/formats/tibia/propertySchema';
+import type { ThingType } from '~/lib/formats/tibia';
+import type { Visibility } from '~/usecase/context/PropertiesContext/types';
+import type { SectionField, PropertyField, PropertySection, PropertyFieldGrid } from '~/lib/formats/tibia/propertySchema';
 
-import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { NumberInput } from '@/components/ui/number-input';
-import { EightBitColorPicker } from '@/components/EightBitColorPicker';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '@/components/ui/select';
-
+import { cn } from '~/lib/utils';
+import { Label } from '~/components/ui/label';
+import { Input } from '~/components/ui/input';
+import { Switch } from '~/components/ui/switch';
 import { PropertyWithUndo } from '../PropertyWithUndo';
+import { NumberInput } from '~/components/ui/number-input';
+import { EightBitColorPicker } from '~/components/EightBitColorPicker';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 
 interface FieldProps {
 	inGrid?: boolean;

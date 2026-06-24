@@ -1,8 +1,9 @@
 import type { ToolbarProps } from './types';
 
 import { useState } from 'react';
-import { pathString, driveLabel } from '@/usecase/util/fileBrowserUtils';
 import { Star, ArrowUp, Computer, RefreshCw, ArrowLeft, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
+
+import { pathString, driveLabel } from '~/usecase/util/fileBrowserUtils';
 
 export const Toolbar = ({
 	path,

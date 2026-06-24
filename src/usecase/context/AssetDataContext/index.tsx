@@ -1,7 +1,8 @@
-import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItemData } from '@/lib/formats/tibia';
+import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItemData } from '~/lib/formats/tibia';
 
 import React from 'react';
-import { getFormat, formatByConfigName } from '@/lib/formats/registry';
+
+import { getFormat, formatByConfigName } from '~/lib/formats/registry';
 import {
 	SpriteReader,
 	ThingCategory,
@@ -10,7 +11,7 @@ import {
 	syncFromThingType,
 	TIBIA_FORMAT_CONFIG,
 	createServerItemFromThing
-} from '@/lib/formats/tibia';
+} from '~/lib/formats/tibia';
 
 interface AssetDataContextType {
 	spriteSize: number;
@@ -711,7 +712,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				throw new Error('No project open');
 			}
 
-			const { getCommitState, decodeCommitSpritePayload } = await import('@/lib/versionControl');
+			const { getCommitState, decodeCommitSpritePayload } = await import('~/lib/versionControl');
 			const commit = await getCommitState(hash);
 			if (!commit) {
 				throw new Error('Commit not found or unreadable');

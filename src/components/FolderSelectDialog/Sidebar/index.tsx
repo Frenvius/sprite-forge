@@ -3,12 +3,12 @@ import type { SidebarProps } from './types';
 import { Folder, Computer, HardDrive } from 'lucide-react';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { pathString, pathsEqual, pathSegments } from '@/usecase/util/fileBrowserUtils';
 import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, type DragEndEvent } from '@dnd-kit/core';
 
 import { Caret } from './Caret';
 import { FavoriteRow } from './FavoriteRow';
 import { quickAccessIcons } from './constants';
+import { pathString, pathsEqual, pathSegments } from '~/usecase/util/fileBrowserUtils';
 
 export const Sidebar = ({
 	drives,

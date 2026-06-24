@@ -1,13 +1,13 @@
-import type { AssetData } from '@/lib/formats/tibia';
+import type { AssetData } from '~/lib/formats/tibia';
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { selectDatFile, selectSprFile, loadTibiaData } from '@/lib/formats/tibia';
 
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
+import { selectDatFile, selectSprFile, loadTibiaData } from '~/lib/formats/tibia';
 import { Card, CardTitle, CardHeader, CardContent, CardDescription } from './ui/card';
 
 export const FileLoader = () => {

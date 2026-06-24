@@ -1,6 +1,6 @@
-import type { OutfitData } from '@/usecase/context/PropertiesContext/types';
+import type { OutfitData } from '~/usecase/context/PropertiesContext/types';
 
-import { getSpriteIndex, type ThingType, type CategoryRenderConfig } from '@/lib/formats/tibia';
+import { getSpriteIndex, type ThingType, type CategoryRenderConfig } from '~/lib/formats/tibia';
 
 export interface SceneItem {
 	id: number;

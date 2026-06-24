@@ -1,17 +1,19 @@
-import type { ThingType, ThingCategory } from '@/lib/formats/tibia';
-import type { ImportRow, ImportThumb, ImportStats, ImportProgress } from '@/lib/formats/tibia/importViewer';
+import type { ThingType, ThingCategory } from '~/lib/formats/tibia';
+import type { ImportRow, ImportThumb, ImportStats, ImportProgress } from '~/lib/formats/tibia/importViewer';
 
 import React from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useTransfer } from '@/usecase/context/TransferContext';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
+
+import { useToast } from './use-toast';
+import { useTransfer } from '~/usecase/context/TransferContext';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 import {
 	setCategoryCount,
 	getCategoryStartId,
 	TIBIA_FORMAT_CONFIG,
 	getCategoryMap as getCategoryMapUtil
-} from '@/lib/formats/tibia';
+} from '~/lib/formats/tibia';
 import {
 	importClear,
 	importQuery,
@@ -21,9 +23,7 @@ import {
 	importOpenObd,
 	importOpenSfp,
 	importDupIndices
-} from '@/lib/formats/tibia/importViewer';
-
-import { useToast } from './use-toast';
+} from '~/lib/formats/tibia/importViewer';
 
 const CELL = 150;
 const WINDOW_ROWS = 6;

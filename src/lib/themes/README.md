@@ -72,7 +72,7 @@ The system includes several built-in themes:
 ### Using the Theme Hook
 
 ```tsx
-import { useTheme } from '@/lib/themes';
+import { useTheme } from '~/lib/themes';
 
 function MyComponent() {
   const { 

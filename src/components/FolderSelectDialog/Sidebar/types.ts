@@ -1,4 +1,4 @@
-import type { DriveInfo, FavoriteFolder, SystemDirectory } from '@/usecase/util/fileBrowserUtils';
+import type { DriveInfo, FavoriteFolder, SystemDirectory } from '~/usecase/util/fileBrowserUtils';
 
 export interface SidebarProps {
 	drives: DriveInfo[];

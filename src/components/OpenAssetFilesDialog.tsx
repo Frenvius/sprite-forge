@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { join } from '@tauri-apps/api/path';
 import { X, Info, Image, Loader2, Package, Settings, FileText, FolderOpen, AlertCircle, CheckCircle2 } from 'lucide-react';
+
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Switch } from './ui/switch';
+import { Dialog, DialogTitle, DialogContent, DialogDescription } from './ui/dialog';
 import {
 	readOtfiFile,
 	readDatHeader,
@@ -9,13 +15,7 @@ import {
 	type OtfiData,
 	type DatHeader,
 	type SprHeader
-} from '@/lib/formats/tibia';
-
-import { Label } from './ui/label';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { Switch } from './ui/switch';
-import { Dialog, DialogTitle, DialogContent, DialogDescription } from './ui/dialog';
+} from '~/lib/formats/tibia';
 
 export interface LoadOptions {
 	extended: boolean;

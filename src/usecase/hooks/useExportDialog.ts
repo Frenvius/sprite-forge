@@ -1,14 +1,14 @@
-import type { ThingType, ExportFormat } from '@/lib/formats/tibia';
+import type { ThingType, ExportFormat } from '~/lib/formats/tibia';
 
 import React from 'react';
 import { join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useTransfer } from '@/usecase/context/TransferContext';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { exportObd, exportPack, loadSpriteIdsLz4, collectReferencedSpriteIds } from '@/lib/formats/tibia';
 
 import { useToast } from './use-toast';
+import { useTransfer } from '~/usecase/context/TransferContext';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { exportObd, exportPack, loadSpriteIdsLz4, collectReferencedSpriteIds } from '~/lib/formats/tibia';
 
 const SHEET_FORMATS: ExportFormat[] = ['png', 'bmp', 'jpg'];
 

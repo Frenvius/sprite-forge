@@ -1,14 +1,14 @@
-import type { Visibility } from '@/usecase/context/PropertiesContext/types';
+import type { Visibility } from '~/usecase/context/PropertiesContext/types';
 
 import { Shuffle } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { TibiaColorPicker } from '@/components/TibiaColorPicker';
-import { usePropertiesContext } from '@/usecase/context/PropertiesContext';
-import { TIBIA_PROPERTY_SCHEMA } from '@/lib/formats/tibia/propertySchema';
 
+import { Label } from '~/components/ui/label';
+import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
 import { SchemaSection } from './SchemaRenderer';
+import { TibiaColorPicker } from '~/components/TibiaColorPicker';
+import { usePropertiesContext } from '~/usecase/context/PropertiesContext';
+import { TIBIA_PROPERTY_SCHEMA } from '~/lib/formats/tibia/propertySchema';
 
 export const PropertyColumns = () => {
 	const {

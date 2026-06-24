@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { X, Loader2, ChevronDown } from 'lucide-react';
-import { useFolderSelectDialog, type FolderSelectDialogProps } from '@/usecase/hooks/useFolderSelectDialog';
 
 import { Toolbar } from './Toolbar';
 import { Sidebar } from './Sidebar';
 import { FileList } from './FileList';
 import { TibiaAssetPanel } from './TibiaAssetPanel';
+import { useFolderSelectDialog, type FolderSelectDialogProps } from '~/usecase/hooks/useFolderSelectDialog';
 
-export type { LoadOptions } from '@/usecase/hooks/useFolderSelectDialog';
+export type { LoadOptions } from '~/usecase/hooks/useFolderSelectDialog';
 
 export const FolderSelectDialog = (props: FolderSelectDialogProps) => {
 	const { pickExt, title = 'Select Folder' } = props;

@@ -1,12 +1,13 @@
-import { Toolbar } from '@/components/Toolbar';
-import { ItemList } from '@/components/Panels/ItemList';
-import { useTheme } from '@/usecase/context/ThemeContext';
-import { SpriteList } from '@/components/Panels/SpriteList';
-import { PropertiesPanel } from '@/components/PropertiesPanel';
-import { OpenedItemsPanel } from '@/components/OpenedItemsPanel';
-import { VisualizationPanel } from '@/components/VisualizationPanel';
-import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+
+import { Toolbar } from '~/components/Toolbar';
+import { ItemList } from '~/components/Panels/ItemList';
+import { useTheme } from '~/usecase/context/ThemeContext';
+import { SpriteList } from '~/components/Panels/SpriteList';
+import { PropertiesPanel } from '~/components/PropertiesPanel';
+import { OpenedItemsPanel } from '~/components/OpenedItemsPanel';
+import { VisualizationPanel } from '~/components/VisualizationPanel';
+import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
 
 const ResizeHandle = () => (
 	<PanelResizeHandle className="group relative w-2 flex-shrink-0 outline-none">

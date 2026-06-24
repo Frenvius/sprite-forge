@@ -1,11 +1,7 @@
-import { cn } from '@/lib/utils';
 import { invoke } from '@tauri-apps/api/core';
-import { isValidSpriteId } from '@/lib/formats/tibia';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia/types';
 import {
 	X,
 	Edit,
@@ -23,14 +19,18 @@ import {
 	ClipboardPaste
 } from 'lucide-react';
 
+import { cn } from '~/lib/utils';
 import { Input } from './ui/input';
 import { Switch } from './ui/switch';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { CheckerBoard } from './CheckerBoard';
 import { ScrollArea } from './ui/scroll-area';
+import { isValidSpriteId } from '~/lib/formats/tibia';
 import { SpriteCanvas } from './commons/SpriteCanvas';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia/types';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from './ui/select';
 import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from './ui/context-menu';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -539,7 +539,7 @@ export const FindWindow = () => {
 		const loadSprites = async () => {
 			if (!data || !data.sprPath || searchResults.length === 0) return;
 
-			const { loadSpriteIds } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds } = await import('~/lib/formats/tibia');
 			const idsToLoad: number[] = [];
 
 			for (const result of searchResults) {

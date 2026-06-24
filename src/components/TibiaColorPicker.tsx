@@ -1,8 +1,8 @@
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { generateOutfitColorPalette } from '@/lib/formats/tibia/outfit';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '~/lib/utils';
+import { Input } from '~/components/ui/input';
+import { Button } from '~/components/ui/button';
+import { generateOutfitColorPalette } from '~/lib/formats/tibia/outfit';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 interface TibiaColorPickerProps {
 	value: number;

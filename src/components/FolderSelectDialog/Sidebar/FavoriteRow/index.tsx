@@ -3,7 +3,8 @@ import type { FavoriteRowProps } from './types';
 import { X, Folder } from 'lucide-react';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';
-import { pathSegments } from '@/usecase/util/fileBrowserUtils';
+
+import { pathSegments } from '~/usecase/util/fileBrowserUtils';
 
 export const FavoriteRow = ({ fav, isActive, onNavigate, onRemoveFavorite }: FavoriteRowProps) => {
 	const { listeners, transform, attributes, setNodeRef, transition, isDragging } = useSortable({ id: fav.path });

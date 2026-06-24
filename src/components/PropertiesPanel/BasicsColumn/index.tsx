@@ -1,16 +1,16 @@
-import type { useObjectProperties } from '@/usecase/hooks/useObjectProperties';
+import type { useObjectProperties } from '~/usecase/hooks/useObjectProperties';
 
 import { X, Plus } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { NumberInput } from '@/components/ui/number-input';
-import { TibiaColorPicker } from '@/components/TibiaColorPicker';
-import { EightBitColorPicker } from '@/components/EightBitColorPicker';
-import { usePropertiesContext } from '@/usecase/context/PropertiesContext';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '@/components/ui/select';
 
+import { Label } from '~/components/ui/label';
+import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
 import { PropertyWithUndo } from '../PropertyWithUndo';
+import { NumberInput } from '~/components/ui/number-input';
+import { TibiaColorPicker } from '~/components/TibiaColorPicker';
+import { EightBitColorPicker } from '~/components/EightBitColorPicker';
+import { usePropertiesContext } from '~/usecase/context/PropertiesContext';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 
 interface BasicsColumnProps {
 	preview: ReturnType<typeof useObjectProperties>['preview'];

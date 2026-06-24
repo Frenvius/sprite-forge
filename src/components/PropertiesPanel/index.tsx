@@ -1,11 +1,18 @@
-import type { PropertiesContextValue } from '@/usecase/context/PropertiesContext/types';
+import type { PropertiesContextValue } from '~/usecase/context/PropertiesContext/types';
 
-import { Button } from '@/components/ui/button';
 import { X, Save, RotateCcw } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { PropertiesContext } from '@/usecase/context/PropertiesContext';
-import { useObjectProperties } from '@/usecase/hooks/useObjectProperties';
+
+import { EmptyState } from './EmptyState';
+import { categoryTitle } from './constants';
+import { PreviewPanel } from './PreviewPanel';
+import { BasicsColumn } from './BasicsColumn';
+import { Button } from '~/components/ui/button';
+import { ServerSection } from './ServerSection';
+import { PropertyColumns } from './PropertyColumns';
+import { Separator } from '~/components/ui/separator';
+import { ScrollArea } from '~/components/ui/scroll-area';
+import { PropertiesContext } from '~/usecase/context/PropertiesContext';
+import { useObjectProperties } from '~/usecase/hooks/useObjectProperties';
 import {
 	AlertDialog,
 	AlertDialogTitle,
@@ -15,14 +22,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogContent,
 	AlertDialogDescription
-} from '@/components/ui/alert-dialog';
-
-import { EmptyState } from './EmptyState';
-import { categoryTitle } from './constants';
-import { PreviewPanel } from './PreviewPanel';
-import { BasicsColumn } from './BasicsColumn';
-import { ServerSection } from './ServerSection';
-import { PropertyColumns } from './PropertyColumns';
+} from '~/components/ui/alert-dialog';
 
 export const PropertiesPanel = () => {
 	const c = useObjectProperties();

@@ -1,11 +1,13 @@
 import React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { importObjectSheet } from '@/lib/formats/tibia';
-import { useTransfer } from '@/usecase/context/TransferContext';
-import { useListViewMode } from '@/usecase/hooks/useListViewMode';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { getThumbnailSpriteIds } from '@/usecase/util/thumbnailUtils';
-import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
+
+import { useToast } from './use-toast';
+import { importObjectSheet } from '~/lib/formats/tibia';
+import { useTransfer } from '~/usecase/context/TransferContext';
+import { useListViewMode } from '~/usecase/hooks/useListViewMode';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { getThumbnailSpriteIds } from '~/usecase/util/thumbnailUtils';
+import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import {
 	ThingCategory,
 	type ThingType,
@@ -15,9 +17,7 @@ import {
 	setCategoryCount,
 	getCategoryStartId,
 	getCategoryMap as getCategoryMapUtil
-} from '@/lib/formats/tibia';
-
-import { useToast } from './use-toast';
+} from '~/lib/formats/tibia';
 
 export const useItemList = () => {
 	const {
@@ -166,7 +166,7 @@ export const useItemList = () => {
 		let cancelled = false;
 
 		const loadSpritesProgressively = async () => {
-			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('~/lib/formats/tibia');
 			if (cancelled) return;
 
 			const thumbIds: number[] = [];

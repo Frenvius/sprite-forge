@@ -1,13 +1,15 @@
-import type { ThingType } from '@/lib/formats/tibia';
-import type { ObdRow, ObdStats, ObdThumb, ObdProgress } from '@/lib/formats/tibia/obdViewer';
+import type { ThingType } from '~/lib/formats/tibia';
+import type { ObdRow, ObdStats, ObdThumb, ObdProgress } from '~/lib/formats/tibia/obdViewer';
 
 import React from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useTransfer } from '@/usecase/context/TransferContext';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { obdOpen, obdClear, obdQuery, obdStats, obdThumbs, obdGetPaths } from '@/lib/formats/tibia/obdViewer';
+
+import { useToast } from './use-toast';
+import { useTransfer } from '~/usecase/context/TransferContext';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { obdOpen, obdClear, obdQuery, obdStats, obdThumbs, obdGetPaths } from '~/lib/formats/tibia/obdViewer';
 import {
 	ThingCategory,
 	readFileBytes,
@@ -16,9 +18,7 @@ import {
 	extractObdEntries,
 	getCategoryStartId,
 	TIBIA_FORMAT_CONFIG
-} from '@/lib/formats/tibia';
-
-import { useToast } from './use-toast';
+} from '~/lib/formats/tibia';
 
 const CELL = 96;
 const WINDOW_ROWS = 8;

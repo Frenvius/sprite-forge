@@ -1,17 +1,17 @@
-import type { AttrDef, XmlAttr, ServerItem, ServerProfile } from '@/lib/formats/tibia';
+import type { AttrDef, XmlAttr, ServerItem, ServerProfile } from '~/lib/formats/tibia';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Trash2, Server } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { defaultValueFor, getServerProfile, getServerProfiles } from '@/lib/formats/tibia';
-import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from '@/components/ui/select';
 
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
+import { Textarea } from '~/components/ui/textarea';
 import { AddAttributesPopover } from './AddAttributesPopover';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { defaultValueFor, getServerProfile, getServerProfiles } from '~/lib/formats/tibia';
+import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from '~/components/ui/select';
 
 const TYPE_OPTIONS = [
 	{ value: 0, label: 'None' },

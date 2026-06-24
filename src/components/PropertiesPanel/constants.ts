@@ -1,4 +1,4 @@
-import { ThingCategory } from '@/lib/formats/tibia';
+import { ThingCategory } from '~/lib/formats/tibia';
 
 export const categoryNoun = (category: ThingCategory): string =>
 	category === ThingCategory.ITEM

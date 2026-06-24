@@ -1,7 +1,6 @@
-import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
-
 import { Label } from './ui/label';
 import { Switch } from './ui/switch';
+import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
 import { Dialog, DialogTitle, DialogHeader, DialogContent } from './ui/dialog';
 
 interface PanelSettingsDialogProps {

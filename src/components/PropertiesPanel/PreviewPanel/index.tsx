@@ -1,11 +1,5 @@
-import type { useObjectProperties } from '@/usecase/hooks/useObjectProperties';
+import type { useObjectProperties } from '~/usecase/hooks/useObjectProperties';
 
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ZOOM_LEVELS } from '@/usecase/util/constants';
-import { CheckerBoard } from '@/components/CheckerBoard';
-import { SpriteCanvas } from '@/components/commons/SpriteCanvas';
-import { usePropertiesContext } from '@/usecase/context/PropertiesContext';
 import {
 	Copy,
 	Play,
@@ -33,6 +27,13 @@ import {
 	ArrowDownLeft,
 	ArrowDownRight
 } from 'lucide-react';
+
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { ZOOM_LEVELS } from '~/usecase/util/constants';
+import { CheckerBoard } from '~/components/CheckerBoard';
+import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
+import { usePropertiesContext } from '~/usecase/context/PropertiesContext';
 
 interface PreviewPanelProps {
 	preview: ReturnType<typeof useObjectProperties>['preview'];

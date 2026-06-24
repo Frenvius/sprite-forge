@@ -1,5 +1,6 @@
 import { Copy } from 'lucide-react';
-import { useToast } from '@/usecase/hooks/use-toast';
+
+import { useToast } from '~/usecase/hooks/use-toast';
 import {
 	Toast,
 	ToastClose,
@@ -8,7 +9,7 @@ import {
 	ToastProvider,
 	ToastViewport,
 	ToastDescription
-} from '@/components/ui/toast';
+} from '~/components/ui/toast';
 
 export function Toaster() {
 	const { toasts } = useToast();

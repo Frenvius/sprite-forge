@@ -1,18 +1,19 @@
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { useSpriteList } from '@/usecase/hooks/useSpriteList';
-import { SpriteCanvas } from '@/components/commons/SpriteCanvas';
-import { ViewModeMenu } from '@/components/commons/ViewModeMenu';
-import { ListPagination } from '@/components/commons/ListPagination';
 import { Copy, Plus, Image, Search, Trash2, Upload, Download, ClipboardPaste } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { useSpriteList } from '~/usecase/hooks/useSpriteList';
+import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
+import { ViewModeMenu } from '~/components/commons/ViewModeMenu';
+import { ListPagination } from '~/components/commons/ListPagination';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip';
 import {
 	ContextMenu,
 	ContextMenuItem,
 	ContextMenuContent,
 	ContextMenuTrigger,
 	ContextMenuSeparator
-} from '@/components/ui/context-menu';
+} from '~/components/ui/context-menu';
 
 export const SpriteList = () => {
 	const {

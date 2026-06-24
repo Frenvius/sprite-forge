@@ -1,10 +1,11 @@
 import type { ImportPreset, TransferContextValue } from './types';
 
 import React from 'react';
-import { ExportDialog } from '@/components/ExportDialog';
-import { ImportDialog } from '@/components/ImportDialog';
-import { ObdViewerDialog } from '@/components/ObdViewerDialog';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+
+import { ExportDialog } from '~/components/ExportDialog';
+import { ImportDialog } from '~/components/ImportDialog';
+import { ObdViewerDialog } from '~/components/ObdViewerDialog';
 
 const TransferContext = React.createContext<null | TransferContextValue>(null);
 

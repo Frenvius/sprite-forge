@@ -1,18 +1,18 @@
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Toaster as Sonner } from '@/components/ui/sonner';
-import { ThemeProvider } from '@/usecase/context/ThemeContext';
 import { Route, Routes, BrowserRouter } from 'react-router-dom';
-import { DragDropProvider } from '@/usecase/context/DragDropContext';
-import { TransferProvider } from '@/usecase/context/TransferContext';
-import { AssetDataProvider } from '@/usecase/context/AssetDataContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ErrorDialogProvider } from '@/usecase/context/ErrorDialogContext';
-import { PanelSettingsProvider } from '@/usecase/context/PanelSettingsContext';
-import { GeneralSettingsProvider } from '@/usecase/context/GeneralSettingsContext';
 
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
+import { Toaster } from '~/components/ui/toaster';
+import { TooltipProvider } from '~/components/ui/tooltip';
+import { Toaster as Sonner } from '~/components/ui/sonner';
+import { ThemeProvider } from '~/usecase/context/ThemeContext';
+import { DragDropProvider } from '~/usecase/context/DragDropContext';
+import { TransferProvider } from '~/usecase/context/TransferContext';
+import { AssetDataProvider } from '~/usecase/context/AssetDataContext';
+import { ErrorDialogProvider } from '~/usecase/context/ErrorDialogContext';
+import { PanelSettingsProvider } from '~/usecase/context/PanelSettingsContext';
+import { GeneralSettingsProvider } from '~/usecase/context/GeneralSettingsContext';
 
 const queryClient = new QueryClient();
 

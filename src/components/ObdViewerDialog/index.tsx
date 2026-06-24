@@ -1,13 +1,13 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useObdViewer } from '@/usecase/hooks/useObdViewer';
 import { Search, FolderOpen, PackageOpen, FolderSearch } from 'lucide-react';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '@/components/ui/dialog';
 
+import { cn } from '~/lib/utils';
 import { ObdCard } from './ObdCard';
+import { Input } from '~/components/ui/input';
+import { Button } from '~/components/ui/button';
+import { useObdViewer } from '~/usecase/hooks/useObdViewer';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 const ROW_H = 120;
 

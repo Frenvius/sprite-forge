@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
 
 import { Slider } from './ui/slider';
 import { Switch } from './ui/switch';
+import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
 
 interface SettingsDialogProps {

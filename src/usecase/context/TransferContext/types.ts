@@ -1,4 +1,4 @@
-import type { ImportSource } from '@/lib/formats/tibia';
+import type { ImportSource } from '~/lib/formats/tibia';
 
 export interface ImportPreset {
 	paths: string[];

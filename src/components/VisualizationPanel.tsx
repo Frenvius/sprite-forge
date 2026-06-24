@@ -1,12 +1,12 @@
 import { Play, Pause, FileQuestion } from 'lucide-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { loadSpriteIds, getCategoryRenderConfig } from '@/lib/formats/tibia';
-import { getPingPongFrame, AnimationDirection } from '@/lib/formats/tibia/animation';
 
 import { Button } from './ui/button';
 import { CheckerBoard } from './CheckerBoard';
 import { SpriteCanvas } from './commons/SpriteCanvas';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { loadSpriteIds, getCategoryRenderConfig } from '~/lib/formats/tibia';
+import { getPingPongFrame, AnimationDirection } from '~/lib/formats/tibia/animation';
 
 export const VisualizationPanel = () => {
 	const { data, getThing, formatConfig, selectedCategory, highlightedItemId, notifySpritesLoaded } = useAssetData();

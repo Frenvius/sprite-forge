@@ -4,7 +4,7 @@ import {
 	isValidSpriteId,
 	TIBIA_FORMAT_CONFIG,
 	getCategoryRenderConfig
-} from '@/lib/formats/tibia';
+} from '~/lib/formats/tibia';
 
 export const getThumbnailSpriteIds = (thing: ThingType): number[] => {
 	const ids: number[] = [];

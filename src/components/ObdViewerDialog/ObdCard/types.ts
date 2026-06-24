@@ -1,4 +1,4 @@
-import type { ObdRow, ObdThumb } from '@/lib/formats/tibia/obdViewer';
+import type { ObdRow, ObdThumb } from '~/lib/formats/tibia/obdViewer';
 
 export interface ObdCardProps {
 	row: ObdRow;

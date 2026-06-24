@@ -1,10 +1,10 @@
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { ThingCategory, TIBIA_FORMAT_CONFIG } from '@/lib/formats/tibia';
 
+import { cn } from '~/lib/utils';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
 
 export const OpenedItemsPanel = () => {
 	const { data, openedItems, openedItemId, setOpenedItemId, removeOpenedItem, selectedCategory, setSelectedCategoryAndItem } =

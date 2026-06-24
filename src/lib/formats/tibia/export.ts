@@ -1,7 +1,7 @@
-import { log } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 
+import { log } from '~/lib/log';
 import { AssetData, ThingType } from './types';
 
 export async function exportObjectSheets(things: ThingType[], data: AssetData): Promise<number> {

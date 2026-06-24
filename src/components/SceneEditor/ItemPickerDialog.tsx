@@ -1,15 +1,16 @@
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CheckerBoard } from '@/components/CheckerBoard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { SpriteCanvas } from '@/components/commons/SpriteCanvas';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { Dialog, DialogTitle, DialogHeader, DialogContent } from '@/components/ui/dialog';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '@/components/ui/select';
+
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Button } from '~/components/ui/button';
+import { Checkbox } from '~/components/ui/checkbox';
+import { CheckerBoard } from '~/components/CheckerBoard';
+import { ScrollArea } from '~/components/ui/scroll-area';
+import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { Dialog, DialogTitle, DialogHeader, DialogContent } from '~/components/ui/dialog';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 import {
 	ThingCategory,
 	type ThingType,
@@ -17,7 +18,7 @@ import {
 	isValidSpriteId,
 	getCategoryCount,
 	getCategoryStartId
-} from '@/lib/formats/tibia';
+} from '~/lib/formats/tibia';
 
 interface ItemPickerDialogProps {
 	open: boolean;
@@ -93,7 +94,7 @@ export const ItemPickerDialog = ({ open, onOpenChange, onItemSelect }: ItemPicke
 		let cancelled = false;
 
 		const loadSprites = async () => {
-			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('~/lib/formats/tibia');
 
 			const collectSpriteIds = (items: ThingType[]) => {
 				const ids: number[] = [];

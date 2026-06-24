@@ -1,12 +1,13 @@
-import type { AttrDef, ServerProfile } from '@/lib/formats/tibia';
+import type { AttrDef, ServerProfile } from '~/lib/formats/tibia';
 
 import { useMemo, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DEDICATED_KEYS } from '@/lib/formats/tibia';
 import { Plus, Search, ChevronDown } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+import { Input } from '~/components/ui/input';
+import { Button } from '~/components/ui/button';
+import { Checkbox } from '~/components/ui/checkbox';
+import { DEDICATED_KEYS } from '~/lib/formats/tibia';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 const TYPE_TAG: Record<string, string> = {
 	number: 'num',

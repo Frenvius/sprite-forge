@@ -1,4 +1,4 @@
-import type { FavoriteFolder } from '@/usecase/util/fileBrowserUtils';
+import type { FavoriteFolder } from '~/usecase/util/fileBrowserUtils';
 
 export interface FavoriteRowProps {
 	isActive: boolean;

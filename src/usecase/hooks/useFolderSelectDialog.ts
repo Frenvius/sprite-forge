@@ -1,7 +1,8 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { allFormats } from '@/lib/formats/registry';
 import { join, dirname } from '@tauri-apps/api/path';
+
+import { allFormats } from '~/lib/formats/registry';
 import {
 	readOtfiFile,
 	readDatHeader,
@@ -10,7 +11,7 @@ import {
 	type DatHeader,
 	type SprHeader,
 	type ClientVersion
-} from '@/lib/formats/tibia';
+} from '~/lib/formats/tibia';
 import {
 	pathString,
 	pathsEqual,
@@ -20,7 +21,7 @@ import {
 	type DriveInfo,
 	type FavoriteFolder,
 	type SystemDirectory
-} from '@/usecase/util/fileBrowserUtils';
+} from '~/usecase/util/fileBrowserUtils';
 
 export interface LoadOptions {
 	otbPath?: string;

@@ -1,13 +1,14 @@
-import type { ThingType } from '@/lib/formats/tibia';
-import type { SceneTile } from '@/usecase/util/spriteLayoutUtils';
+import type { ThingType } from '~/lib/formats/tibia';
+import type { SceneTile } from '~/usecase/util/spriteLayoutUtils';
 
 import React from 'react';
-import { blendOutfit } from '@/lib/formats/tibia/outfit';
-import { useDragDrop } from '@/usecase/context/DragDropContext';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { computeSpriteLayout } from '@/usecase/util/spriteLayoutUtils';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { getSpriteIndex, isValidSpriteId, importObjectSheet, getCategoryRenderConfig } from '@/lib/formats/tibia';
+
+import { blendOutfit } from '~/lib/formats/tibia/outfit';
+import { useDragDrop } from '~/usecase/context/DragDropContext';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { computeSpriteLayout } from '~/usecase/util/spriteLayoutUtils';
+import { getSpriteIndex, isValidSpriteId, importObjectSheet, getCategoryRenderConfig } from '~/lib/formats/tibia';
 
 interface Slot {
 	x: number;
@@ -199,7 +200,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 			const missingIds = Array.from(sceneSpriteIds).filter((id) => !data.sprites.has(id));
 			if (missingIds.length === 0) return;
 
-			const { loadSpriteIds } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds } = await import('~/lib/formats/tibia');
 			await loadSpriteIds(data.sprPath, missingIds, data.transparency, data.sprites);
 			notifySpritesLoaded();
 		};

@@ -1,11 +1,11 @@
-import type { Theme } from '@/lib/themes/types';
+import type { Theme } from '~/lib/themes/types';
 
-import { cn } from '@/lib/utils';
-import { useToast } from '@/usecase/hooks/use-toast';
-import { useTheme } from '@/usecase/context/ThemeContext';
 import { Sun, Moon, Check, Upload, Sparkles, Download } from 'lucide-react';
 
+import { cn } from '~/lib/utils';
 import { Button } from './ui/button';
+import { useToast } from '~/usecase/hooks/use-toast';
+import { useTheme } from '~/usecase/context/ThemeContext';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
 
 interface ThemeSettingsDialogProps {

@@ -5,7 +5,7 @@
  * Uses a dark themed color that matches the UI design.
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '~/lib/utils';
 
 interface CheckerBoardProps {
 	className?: string;

@@ -1,9 +1,10 @@
 import type { ObdCardProps } from './types';
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { Copy, Check } from 'lucide-react';
-import { CATEGORY_NAME } from '@/lib/formats/tibia/obdViewer';
+
+import { cn } from '~/lib/utils';
+import { CATEGORY_NAME } from '~/lib/formats/tibia/obdViewer';
 
 export const ObdCard = ({ row, fill, thumb, selected, onToggle }: ObdCardProps) => {
 	const canvasRef = React.useRef<null | HTMLCanvasElement>(null);

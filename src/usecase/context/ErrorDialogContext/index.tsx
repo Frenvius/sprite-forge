@@ -1,6 +1,7 @@
 import React from 'react';
-import { errorToString } from '@/lib/errorMessage';
-import { ErrorDialog, type ErrorInfo } from '@/components/ErrorDialog';
+
+import { errorToString } from '~/lib/errorMessage';
+import { ErrorDialog, type ErrorInfo } from '~/components/ErrorDialog';
 
 interface ErrorDialogContextValue {
 	showError: (title: string, error: unknown) => void;

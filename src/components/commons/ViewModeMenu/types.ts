@@ -1,4 +1,4 @@
-import type { ViewMode } from '@/usecase/util/listViewMode';
+import type { ViewMode } from '~/usecase/util/listViewMode';
 
 export interface ViewModeMenuProps {
 	viewMode: ViewMode;

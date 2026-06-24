@@ -1,4 +1,4 @@
-import type { ThingType } from '@/lib/formats/tibia';
+import type { ThingType } from '~/lib/formats/tibia';
 
 export interface OutfitData {
 	head: number;

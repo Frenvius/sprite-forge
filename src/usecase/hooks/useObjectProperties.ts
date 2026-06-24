@@ -1,14 +1,15 @@
-import type { SceneTile } from '@/usecase/util/spriteLayoutUtils';
-import type { OutfitData, Visibility } from '@/usecase/context/PropertiesContext/types';
+import type { SceneTile } from '~/usecase/util/spriteLayoutUtils';
+import type { OutfitData, Visibility } from '~/usecase/context/PropertiesContext/types';
 
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ThingCategory } from '@/lib/formats/tibia';
-import { useToast } from '@/usecase/hooks/use-toast';
-import { ZOOM_LEVELS } from '@/usecase/util/constants';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { useGeneralSettings } from '@/usecase/context/GeneralSettingsContext';
-import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '@/usecase/util/itemStateUtils';
+
+import { ThingCategory } from '~/lib/formats/tibia';
+import { useToast } from '~/usecase/hooks/use-toast';
+import { ZOOM_LEVELS } from '~/usecase/util/constants';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
+import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '~/usecase/util/itemStateUtils';
 
 export const useObjectProperties = () => {
 	const {
@@ -1015,7 +1016,7 @@ export const useObjectProperties = () => {
 
 		const loadItemSprites = async () => {
 			try {
-				const { loadSpriteIds } = await import('@/lib/formats/tibia');
+				const { loadSpriteIds } = await import('~/lib/formats/tibia');
 				await loadSpriteIds(data.sprPath!, spriteIds, data.transparency, data.sprites);
 				notifySpritesLoaded();
 			} catch (err) {

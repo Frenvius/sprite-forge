@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Label } from '@/components/ui/label';
 import { invoke } from '@tauri-apps/api/core';
-import { Button } from '@/components/ui/button';
-import { type ThingType } from '@/lib/formats/tibia';
-import { CheckerBoard } from '@/components/CheckerBoard';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { SpriteCanvas } from '@/components/commons/SpriteCanvas';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '@/components/ui/select';
 import { X, Save, Star, Plus, Trash2, Search, Eraser, Pencil, Pipette, Maximize2, Minimize2 } from 'lucide-react';
 
 import { SceneCanvas } from './SceneCanvas';
+import { Label } from '~/components/ui/label';
+import { Button } from '~/components/ui/button';
+import { type ThingType } from '~/lib/formats/tibia';
 import { ItemPickerDialog } from './ItemPickerDialog';
+import { CheckerBoard } from '~/components/CheckerBoard';
+import { Dialog, DialogContent } from '~/components/ui/dialog';
+import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 
 interface SceneItem {
 	id: number;

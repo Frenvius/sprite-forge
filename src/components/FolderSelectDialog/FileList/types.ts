@@ -1,4 +1,4 @@
-import type { DirEntry, FavoriteFolder } from '@/usecase/util/fileBrowserUtils';
+import type { DirEntry, FavoriteFolder } from '~/usecase/util/fileBrowserUtils';
 
 export interface FileListProps {
 	loading: boolean;

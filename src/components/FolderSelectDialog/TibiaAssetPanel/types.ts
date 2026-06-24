@@ -1,4 +1,4 @@
-import type { AssetInfo } from '@/usecase/hooks/useFolderSelectDialog';
+import type { AssetInfo } from '~/usecase/hooks/useFolderSelectDialog';
 
 export interface TibiaAssetPanelProps {
 	info: AssetInfo;

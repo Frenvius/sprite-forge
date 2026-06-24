@@ -1,10 +1,11 @@
-import type { Theme } from '@/lib/themes/types';
+import type { Theme } from '~/lib/themes/types';
 
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import themesData from '@/lib/themes/themes.json';
-import { defaultTheme } from '@/lib/themes/default';
-import { applyTheme, exportTheme, importTheme, validateTheme } from '@/lib/themes/utils';
+
+import themesData from '~/lib/themes/themes.json';
+import { defaultTheme } from '~/lib/themes/default';
+import { applyTheme, exportTheme, importTheme, validateTheme } from '~/lib/themes/utils';
 
 interface ThemeContextType {
 	themes: Theme[];

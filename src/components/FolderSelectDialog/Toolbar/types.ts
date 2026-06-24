@@ -1,4 +1,4 @@
-import type { DriveInfo } from '@/usecase/util/fileBrowserUtils';
+import type { DriveInfo } from '~/usecase/util/fileBrowserUtils';
 
 export interface ToolbarProps {
 	path: string[];

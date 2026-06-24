@@ -1,6 +1,7 @@
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { VIEW_MODES, type ViewMode } from '@/usecase/util/listViewMode';
+
+import { VIEW_MODES, type ViewMode } from '~/usecase/util/listViewMode';
 
 export const useListViewMode = (getCommand: string, setCommand: string) => {
 	const [viewMode, setViewModeState] = React.useState<ViewMode>('list');

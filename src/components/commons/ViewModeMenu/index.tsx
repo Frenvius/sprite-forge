@@ -1,8 +1,9 @@
 import type { ViewModeMenuProps } from './types';
 
-import { Button } from '@/components/ui/button';
 import { List, Square, Grid3x3, Columns2, LayoutGrid, LayoutDashboard } from 'lucide-react';
-import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+import { Button } from '~/components/ui/button';
+import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from '~/components/ui/dropdown-menu';
 
 export const ViewModeMenu = ({ viewMode, onViewModeChange }: ViewModeMenuProps) => {
 	return (

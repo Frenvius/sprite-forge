@@ -1,17 +1,6 @@
-import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { errorToString } from '@/lib/errorMessage';
-import { getFormat } from '@/lib/formats/registry';
-import { useToast } from '@/usecase/hooks/use-toast';
-import { useUpdater } from '@/usecase/hooks/use-updater';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { useTransfer } from '@/usecase/context/TransferContext';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { useErrorDialog } from '@/usecase/context/ErrorDialogContext';
-import { usePanelSettings } from '@/usecase/context/PanelSettingsContext';
-import { type ThingType, getCategoryMap, optimizeSprites } from '@/lib/formats/tibia';
-import { addRecentLoad, getRecentLoads, type RecentLoad, clearRecentLoads } from '@/usecase/util/recentLoads';
 import {
 	X,
 	Copy,
@@ -34,18 +23,29 @@ import {
 	PackagePlus
 } from 'lucide-react';
 
+import { cn } from '~/lib/utils';
 import { Button } from './ui/button';
 import { AboutDialog } from './AboutDialog';
 import { LoadingDialog } from './LoadingDialog';
 import { SettingsDialog } from './SettingsDialog';
+import { errorToString } from '~/lib/errorMessage';
+import { getFormat } from '~/lib/formats/registry';
 import { LoadOptions } from './FolderSelectDialog';
 import { UpdateIndicator } from './UpdateIndicator';
+import { useToast } from '~/usecase/hooks/use-toast';
+import { useUpdater } from '~/usecase/hooks/use-updater';
 import { FolderSelectDialog } from './FolderSelectDialog';
 import { ThemeSettingsDialog } from './ThemeSettingsDialog';
 import { VersionHistoryDialog } from './VersionHistoryDialog';
+import { useTransfer } from '~/usecase/context/TransferContext';
 import { SpriteOptimizerDialog } from './SpriteOptimizerDialog';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { SceneEditorDialog } from './SceneEditor/SceneEditorDialog';
+import { useErrorDialog } from '~/usecase/context/ErrorDialogContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
+import { type ThingType, getCategoryMap, optimizeSprites } from '~/lib/formats/tibia';
+import { addRecentLoad, getRecentLoads, type RecentLoad, clearRecentLoads } from '~/usecase/util/recentLoads';
 import {
 	Menubar,
 	MenubarSub,

@@ -1,7 +1,6 @@
 import type { TibiaAssetPanelProps } from './types';
 
 import { useState } from 'react';
-import { formatSignature } from '@/usecase/util/fileBrowserUtils';
 import {
 	Info,
 	Image,
@@ -18,6 +17,7 @@ import {
 
 import { Label } from '../../ui/label';
 import { Switch } from '../../ui/switch';
+import { formatSignature } from '~/usecase/util/fileBrowserUtils';
 
 export const TibiaAssetPanel = ({
 	info,

@@ -1,9 +1,9 @@
 import type { ThingType, AssetData } from './types';
 
-import { log } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
+import { log } from '~/lib/log';
 import { parseImportResponse } from './loader';
 import { ByteWriter, encodeThing } from './compiler';
 

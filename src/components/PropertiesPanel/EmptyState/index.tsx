@@ -1,4 +1,4 @@
-import type { ThingCategory } from '@/lib/formats/tibia';
+import type { ThingCategory } from '~/lib/formats/tibia';
 
 import { FileQuestion } from 'lucide-react';
 

@@ -1,9 +1,9 @@
 import * as lz4 from 'lz4js';
-import { log } from '@/lib/log';
 import { join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
+import { log } from '~/lib/log';
 import { loadDatFile } from './datReader';
 import { SpriteReader } from './spriteReader';
 import { decodeDatResponse } from './datDecoder';

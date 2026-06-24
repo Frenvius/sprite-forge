@@ -1,6 +1,7 @@
 import { memo, useRef, useEffect } from 'react';
-import { isValidSpriteId } from '@/lib/formats/tibia';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
+
+import { isValidSpriteId } from '~/lib/formats/tibia';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 
 function collectSceneSpriteIds(
 	tiles: SceneTile[][],
@@ -59,7 +60,7 @@ export const SceneCanvas = memo(({ width, tiles, height, scale = 1, onTileClick 
 			const missingIds = spriteIds.filter((id) => !data.sprites.has(id));
 			if (missingIds.length === 0) return;
 
-			const { loadSpriteIds } = await import('@/lib/formats/tibia');
+			const { loadSpriteIds } = await import('~/lib/formats/tibia');
 			await loadSpriteIds(data.sprPath, missingIds, data.transparency, data.sprites);
 			notifySpritesLoaded();
 		};

@@ -1,17 +1,17 @@
-import type { CommitLog } from '@/lib/versionControl';
+import type { CommitLog } from '~/lib/versionControl';
 
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useToast } from '@/usecase/hooks/use-toast';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { useAssetData } from '@/usecase/context/AssetDataContext';
-import { getCommitHistory, cleanOldVersions } from '@/lib/versionControl';
 import { Clock, Trash2, Package, RotateCcw, FolderOpen } from 'lucide-react';
 
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
+import { useToast } from '~/usecase/hooks/use-toast';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { getCommitHistory, cleanOldVersions } from '~/lib/versionControl';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
 
 interface VersionHistoryDialogProps {

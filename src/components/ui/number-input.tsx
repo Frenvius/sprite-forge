@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+
+import { cn } from '~/lib/utils';
 
 export interface NumberInputProps extends Omit<React.ComponentProps<'input'>, 'type' | 'onChange'> {
 	step?: number;
