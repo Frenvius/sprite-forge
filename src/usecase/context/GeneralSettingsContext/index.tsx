@@ -2,6 +2,7 @@ import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface GeneralSettings {
+	backupOnSave: boolean;
 	listAmountObjects: number;
 	listAmountSprites: number;
 	autoPlayAnimation: boolean;
@@ -13,6 +14,7 @@ interface GeneralSettingsContextType {
 }
 
 const DEFAULT_SETTINGS: GeneralSettings = {
+	backupOnSave: true,
 	listAmountObjects: 100,
 	listAmountSprites: 100,
 	autoPlayAnimation: false
@@ -24,9 +26,15 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 	const [settings, setSettingsState] = React.useState<GeneralSettings>(DEFAULT_SETTINGS);
 
 	React.useEffect(() => {
-		invoke<{ list_amount_objects: number; list_amount_sprites: number; auto_play_animation: boolean }>('get_general_settings')
+		invoke<{
+			backup_on_save: boolean;
+			list_amount_objects: number;
+			list_amount_sprites: number;
+			auto_play_animation: boolean;
+		}>('get_general_settings')
 			.then((saved) => {
 				setSettingsState({
+					backupOnSave: saved.backup_on_save ?? true,
 					listAmountObjects: saved.list_amount_objects,
 					listAmountSprites: saved.list_amount_sprites,
 					autoPlayAnimation: saved.auto_play_animation
@@ -41,6 +49,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 		setSettingsState(next);
 		invoke('set_general_settings', {
 			settings: {
+				backup_on_save: next.backupOnSave,
 				list_amount_objects: next.listAmountObjects,
 				list_amount_sprites: next.listAmountSprites,
 				auto_play_animation: next.autoPlayAnimation

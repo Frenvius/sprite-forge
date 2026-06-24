@@ -502,11 +502,13 @@ export async function compileFiles(args: CompileFilesArgs): Promise<void> {
 		const beforeSprites = await captureBeforeSprites(data, sprPath, modifiedSprites);
 
 		if (onProgress) onProgress('Writing DAT file...', 2, 5);
+		await invoke('backup_file', { path: datPath });
 		await compileDatFile(datPath, data);
 		await writeOtfiFile(datPath, data);
 
 		if (onProgress) onProgress('Updating SPR file...', 3, 5);
 		if (modifiedSprites.size > 0) {
+			await invoke('backup_file', { path: sprPath });
 			await updateSpritesInSpr(sprPath, data, modifiedSprites, data.spritesCount);
 		}
 
@@ -606,10 +608,12 @@ export async function fullRecompile(
 
 	try {
 		if (onProgress) onProgress('Writing DAT file...', 0, 2);
+		await invoke('backup_file', { path: datPath });
 		await compileDatFile(datPath, data);
 		await writeOtfiFile(datPath, data);
 
 		if (onProgress) onProgress('Writing SPR file...', 1, 2);
+		await invoke('backup_file', { path: sprPath });
 		await compileSprFile(sprPath, data, new Map());
 
 		if (onProgress) onProgress('Full recompile complete', 2, 2);

@@ -370,12 +370,18 @@ struct AppConfig {
     general_settings: Option<GeneralSettings>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GeneralSettings {
     list_amount_objects: u32,
     list_amount_sprites: u32,
     #[serde(default)]
     auto_play_animation: bool,
+    #[serde(default = "default_true")]
+    backup_on_save: bool,
 }
 
 impl Default for GeneralSettings {
@@ -384,6 +390,7 @@ impl Default for GeneralSettings {
             list_amount_objects: 100,
             list_amount_sprites: 100,
             auto_play_animation: false,
+            backup_on_save: true,
         }
     }
 }
@@ -542,6 +549,36 @@ fn set_general_settings(settings: GeneralSettings) -> Result<(), String> {
     let mut config = get_config()?;
     config.general_settings = Some(settings);
     save_config(config)
+}
+
+#[tauri::command]
+fn backup_file(path: String) -> Result<(), String> {
+    let enabled = get_config()
+        .ok()
+        .and_then(|c| c.general_settings)
+        .map(|g| g.backup_on_save)
+        .unwrap_or(true);
+    if !enabled {
+        return Ok(());
+    }
+
+    let src = std::path::Path::new(&path);
+    if !src.exists() {
+        return Ok(());
+    }
+
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let file_name = src
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("backup");
+    let dest = src.with_file_name(format!("{}.{}.bak", file_name, millis));
+
+    fs::copy(src, &dest).map_err(|e| format!("Failed to back up {}: {}", path, e))?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -2871,6 +2908,7 @@ pub fn run() {
             set_find_list_view_mode,
             get_general_settings,
             set_general_settings,
+            backup_file,
             get_config_dir_path,
             ensure_versions_dir,
             write_json_file,

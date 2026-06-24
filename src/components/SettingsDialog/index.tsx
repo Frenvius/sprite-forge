@@ -95,6 +95,22 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 							/>
 						</label>
 					</section>
+
+					<section className="space-y-3">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Saving</h3>
+						<label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 cursor-pointer">
+							<div className="space-y-0.5">
+								<div className="text-sm text-foreground">Back up files on save</div>
+								<div className="text-[10px] text-muted-foreground">
+									Copy the existing .dat/.spr to a timestamped .bak before overwriting.
+								</div>
+							</div>
+							<Switch
+								checked={settings.backupOnSave}
+								onCheckedChange={(checked) => setSettings({ ...settings, backupOnSave: checked })}
+							/>
+						</label>
+					</section>
 				</div>
 			</DialogContent>
 		</Dialog>
