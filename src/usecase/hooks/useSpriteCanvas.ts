@@ -2,7 +2,6 @@ import type { ThingType } from '@/lib/formats/tibia';
 import type { SceneTile } from '@/usecase/util/spriteLayoutUtils';
 
 import React from 'react';
-import { logger, EventCode } from '@/lib/debug';
 import { blendOutfit } from '@/lib/formats/tibia/outfit';
 import { useDragDrop } from '@/usecase/context/DragDropContext';
 import { useAssetData } from '@/usecase/context/AssetDataContext';
@@ -507,18 +506,6 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 					ctx.strokeRect(x + 0.5, y + 0.5, exactSize - 1, exactSize - 1);
 				}
 			}
-		}
-
-		if (spriteLayout.length > 0) {
-			try {
-				logger.log(EventCode.CANVAS_DRAW, {
-					v: spriteLoadVersion,
-					loaded: loadedSprites,
-					n: spriteLayout.length,
-					miss: missingSprites > 0,
-					ids: spriteLayout.slice(0, 3).map((s) => s.spriteId)
-				});
-			} catch {}
 		}
 	}, [
 		spriteLayout,

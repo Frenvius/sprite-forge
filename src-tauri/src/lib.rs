@@ -8,7 +8,6 @@ mod spr_manager;
 use spr_manager::{SprManager, SprManagerState, SprHeader, SpriteData, compress_to_rle, decompress_to_rgba};
 
 mod logger;
-use logger::{Logger, LoggerState, EventCode};
 
 mod dat_writer;
 use dat_writer::{write_dat_from_buffer, read_thing, Reader, ThingType, FrameGroup};
@@ -107,19 +106,13 @@ fn open_spr_file(
     path: String,
     extended: bool,
     spr_state: tauri::State<SprManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<SprHeader, String> {
     let mut manager = spr_state.lock().map_err(|e| format!("Lock error: {}", e))?;
     let result = manager.open_file(path.clone(), extended);
-
-    if let Ok(ref header) = result {
-        let mut logger = log_state.lock().unwrap();
-        logger.log(
-            EventCode::SprOpen,
-            serde_json::json!({"p": &path, "c": header.sprite_count, "ex": extended})
-        );
+    match &result {
+        Ok(header) => logger::log("INFO", &format!("Opened SPR {} ({} sprites)", path, header.sprite_count)),
+        Err(e) => logger::log("ERROR", &format!("Failed to open SPR {}: {}", path, e)),
     }
-
     result
 }
 
@@ -140,17 +133,9 @@ fn read_sprites_rgba(
     ids: Vec<u32>,
     transparent: bool,
     spr_state: tauri::State<SprManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
     let mut manager = spr_state.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let bytes = manager.read_sprites_rgba(&path, ids.clone(), transparent)?;
-
-    let mut logger = log_state.lock().unwrap();
-    logger.log(
-        EventCode::SprBatch,
-        serde_json::json!({"sz": bytes.len(), "rgba": true, "n": ids.len()})
-    );
-
+    let bytes = manager.read_sprites_rgba(&path, ids, transparent)?;
     Ok(Response::new(bytes))
 }
 
@@ -161,17 +146,9 @@ fn read_sprites_batch_rgba(
     count: u32,
     transparent: bool,
     spr_state: tauri::State<SprManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
     let mut manager = spr_state.lock().map_err(|e| format!("Lock error: {}", e))?;
     let bytes = manager.read_sprites_batch_rgba(&path, start_id, count, transparent)?;
-
-    let mut logger = log_state.lock().unwrap();
-    logger.log(
-        EventCode::SprBatch,
-        serde_json::json!({"sz": bytes.len(), "rgba": true, "batch": true, "s": start_id, "c": count})
-    );
-
     Ok(Response::new(bytes))
 }
 
@@ -181,17 +158,9 @@ fn read_sprites_rgba_lz4(
     ids: Vec<u32>,
     transparent: bool,
     spr_state: tauri::State<SprManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
     let mut manager = spr_state.lock().map_err(|e| format!("Lock error: {}", e))?;
-    let bytes = manager.read_sprites_rgba_lz4(&path, ids.clone(), transparent)?;
-
-    let mut logger = log_state.lock().unwrap();
-    logger.log(
-        EventCode::SprBatch,
-        serde_json::json!({"sz": bytes.len(), "lz4": true, "n": ids.len()})
-    );
-
+    let bytes = manager.read_sprites_rgba_lz4(&path, ids, transparent)?;
     Ok(Response::new(bytes))
 }
 
@@ -207,24 +176,6 @@ fn compress_sprite_rgba(request: tauri::ipc::Request) -> Result<Response, String
     let transparent = bytes[0] != 0;
     let pixels = &bytes[1..];
     Ok(Response::new(compress_to_rle(pixels, transparent)))
-}
-
-#[tauri::command]
-fn set_debug_logging(
-    enabled: bool,
-    log_state: tauri::State<LoggerState>,
-) -> Result<(), String> {
-    let mut logger = log_state.lock().map_err(|e| format!("Lock error: {}", e))?;
-    logger.set_enabled(enabled);
-    Ok(())
-}
-
-#[tauri::command]
-fn get_debug_logging(
-    log_state: tauri::State<LoggerState>,
-) -> Result<bool, String> {
-    let logger = log_state.lock().map_err(|e| format!("Lock error: {}", e))?;
-    Ok(logger.is_enabled())
 }
 
 #[derive(Serialize)]
@@ -971,20 +922,24 @@ fn parse_dat_file_bin(
     frame_durations: Option<bool>,
     frame_groups: Option<bool>,
     dat_state: tauri::State<DatManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
-    let start = std::time::Instant::now();
-
     let mut reader = DatReader::open(&path)?;
     reader.set_version(version);
     reader.apply_overrides(extended, frame_durations, frame_groups);
     let (signature, items, outfits, effects, missiles) = reader.read_dat()
-        .map_err(|e| format!("DAT parse error (version {}): {}", version, e))?;
+        .map_err(|e| {
+            let msg = format!("DAT parse error (version {}): {}", version, e);
+            logger::log("ERROR", &msg);
+            msg
+        })?;
 
-    let items_count = items.len();
-    let outfits_count = outfits.len();
-    let effects_count = effects.len();
-    let missiles_count = missiles.len();
+    logger::log(
+        "INFO",
+        &format!(
+            "Loaded DAT {} (v{}): {} items, {} outfits, {} effects, {} missiles",
+            path, version, items.len(), outfits.len(), effects.len(), missiles.len()
+        ),
+    );
 
     {
         let mut manager = dat_state.lock().map_err(|e| format!("Lock error: {}", e))?;
@@ -992,23 +947,6 @@ fn parse_dat_file_bin(
     }
 
     let buffer = encode_dat_to_binary(signature, &items, &outfits, &effects, &missiles);
-
-    {
-        let mut logger = log_state.lock().unwrap();
-        logger.log(
-            EventCode::SprBatch, // Reuse event code for now
-            serde_json::json!({
-                "op": "parse_dat_bin",
-                "ms": start.elapsed().as_millis(),
-                "items": items_count,
-                "outfits": outfits_count,
-                "effects": effects_count,
-                "missiles": missiles_count,
-                "bytes": buffer.len()
-            })
-        );
-    }
-
     Ok(Response::new(buffer))
 }
 
@@ -1039,10 +977,8 @@ fn find_similar_bin(
     request: tauri::ipc::Request,
     spr_state: tauri::State<SprManagerState>,
     dat_state: tauri::State<DatManagerState>,
-    log_state: tauri::State<LoggerState>,
 ) -> Result<Response, String> {
     use std::collections::HashMap;
-    let start = std::time::Instant::now();
 
     let bytes = match request.body() {
         tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
@@ -1152,20 +1088,6 @@ fn find_similar_bin(
             max_results,
         )?
     };
-
-    {
-        let mut logger = log_state.lock().unwrap();
-        logger.log(
-            EventCode::SprBatch,
-            serde_json::json!({
-                "op": "find_similar",
-                "ms": start.elapsed().as_millis(),
-                "refs": refs.len(),
-                "hashed": sig_map.len(),
-                "bytes": buffer.len()
-            })
-        );
-    }
 
     Ok(Response::new(buffer))
 }
@@ -2877,8 +2799,6 @@ fn import_clear(store: tauri::State<ImportStoreState>) {
 pub fn run() {
     let spr_manager: SprManagerState = Arc::new(Mutex::new(SprManager::new()));
 
-    let logger: LoggerState = Arc::new(Mutex::new(Logger::new()));
-
     let dat_manager: DatManagerState = Arc::new(Mutex::new(DatManager::new()));
 
     let obd_store: ObdStoreState = Arc::new(Mutex::new(ObdStore::new()));
@@ -2899,17 +2819,9 @@ pub fn run() {
         }
     };
 
-    {
-        let mut log = logger.lock().unwrap();
-        let log_path = "sprite-forge-debug.jsonl";
-        if let Err(e) = log.init(log_path) {
-            eprintln!("Warning: Could not initialize logger: {}", e);
-        } else {
-            println!("Debug logs: {}", log_path);
-        }
-    }
+    logger::session_start();
 
-tauri::Builder::default()
+    tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -2919,7 +2831,6 @@ tauri::Builder::default()
             sprite_protocol::handle,
         )
         .manage(spr_manager)
-        .manage(logger)
         .manage(dat_manager)
         .manage(format_manager)
         .manage(obd_store)
@@ -2935,8 +2846,10 @@ tauri::Builder::default()
             read_sprites_batch_rgba,
             read_sprites_rgba_lz4,
             compress_sprite_rgba,
-            set_debug_logging,
-            get_debug_logging,
+            logger::log_message,
+            logger::get_log_path,
+            logger::read_log,
+            logger::clear_log,
             list_directory,
             list_drives,
             get_home_dir,

@@ -1,81 +1,71 @@
-use std::fs::{File, OpenOptions};
+use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
-use serde::Serialize;
-use serde_json;
+use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum EventCode {
-    SprOpen,
-    SprBatch,
+use chrono::Local;
+
+fn log_path() -> Option<PathBuf> {
+    dirs::config_dir().map(|mut p| {
+        p.push("sprite-forge");
+        p.push("sprite-forge.log");
+        p
+    })
 }
 
-#[derive(Debug, Serialize)]
-pub struct LogEntry {
-    #[serde(rename = "t")]
-    pub timestamp: u64,
-    #[serde(rename = "e")]
-    pub event: EventCode,
-    #[serde(rename = "d")]
-    pub data: serde_json::Value,
-}
-
-pub struct Logger {
-    file: Option<File>,
-    enabled: bool,
-}
-
-impl Logger {
-    pub fn new() -> Self {
-        Self {
-            file: None,
-            enabled: true
-        }
+fn write_line(line: &str) {
+    let Some(path) = log_path() else { return };
+    if let Some(dir) = path.parent() {
+        let _ = fs::create_dir_all(dir);
     }
-
-    pub fn init(&mut self, path: &str) -> Result<(), String> {
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)
-            .map_err(|e| format!("Failed to open log file: {}", e))?;
-
-        self.file = Some(file);
-        Ok(())
-    }
-
-    pub fn log(&mut self, event: EventCode, data: serde_json::Value) {
-        if !self.enabled {
-            return;
-        }
-
-        if let Some(file) = &mut self.file {
-            let timestamp = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64;
-
-            let entry = LogEntry {
-                timestamp,
-                event,
-                data,
-            };
-
-            if let Ok(json) = serde_json::to_string(&entry) {
-                let _ = writeln!(file, "{}", json);
-            }
-        }
-    }
-
-    pub fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
-
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
+    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(f, "{}", line);
     }
 }
 
-pub type LoggerState = Arc<Mutex<Logger>>;
+pub fn log(level: &str, message: &str) {
+    let ts = Local::now().format("%Y-%m-%d %H:%M:%S");
+    write_line(&format!("[{}] [{}] {}", ts, level, message));
+}
+
+pub fn session_start() {
+    let ts = Local::now().format("%Y-%m-%d %H:%M:%S");
+    write_line(&format!(
+        "\n=== Sprite Forge {} started at {} ===",
+        env!("CARGO_PKG_VERSION"),
+        ts
+    ));
+}
+
+#[tauri::command]
+pub fn log_message(level: String, message: String) {
+    log(&level, &message);
+}
+
+#[tauri::command]
+pub fn get_log_path() -> Result<String, String> {
+    log_path()
+        .map(|p| p.to_string_lossy().to_string())
+        .ok_or_else(|| "Log path unavailable".to_string())
+}
+
+#[tauri::command]
+pub fn read_log() -> Result<String, String> {
+    let Some(path) = log_path() else {
+        return Err("Log path unavailable".to_string());
+    };
+    if !path.exists() {
+        return Ok(String::new());
+    }
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read log: {}", e))
+}
+
+#[tauri::command]
+pub fn clear_log() -> Result<(), String> {
+    let Some(path) = log_path() else {
+        return Err("Log path unavailable".to_string());
+    };
+    if path.exists() {
+        fs::write(&path, "").map_err(|e| format!("Failed to clear log: {}", e))?;
+    }
+    Ok(())
+}

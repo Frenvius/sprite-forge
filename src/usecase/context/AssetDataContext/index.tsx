@@ -1,7 +1,6 @@
 import type { Sprite, AssetData, ThingType, ServerItem, FormatConfig, ServerItemData } from '@/lib/formats/tibia';
 
 import React from 'react';
-import { logger, EventCode } from '@/lib/debug';
 import { getFormat, formatByConfigName } from '@/lib/formats/registry';
 import {
 	SpriteReader,
@@ -604,12 +603,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	}, []);
 
 	const notifySpritesLoaded = React.useCallback(() => {
-		setSpriteLoadVersion((v) => {
-			try {
-				logger.log(EventCode.CTX_LOAD_END, { v: v + 1 });
-			} catch {}
-			return v + 1;
-		});
+		setSpriteLoadVersion((v) => v + 1);
 	}, []);
 
 	const notifySpriteImport = React.useCallback(() => {
@@ -648,23 +642,13 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		(id: number): null | Sprite => {
 			if (!data || !data.sprPath) return null;
 
-			try {
-				logger.log(EventCode.CTX_SPRITE_REQ, { id });
-			} catch {}
-
 			if (data.sprites.has(id)) {
-				try {
-					logger.log(EventCode.CTX_SPRITE_HIT, { id });
-				} catch {}
 				return data.sprites.get(id)!;
 			}
 
-			try {
-				logger.log(EventCode.CTX_SPRITE_MISS, { id, v: spriteLoadVersion, sz: data.sprites.size });
-			} catch {}
 			return null;
 		},
-		[data, spriteLoadVersion]
+		[data]
 	);
 
 	const hasModifiedItems = React.useCallback(() => {

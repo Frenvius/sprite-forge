@@ -1,7 +1,7 @@
 import type { ThingType, AssetData } from './types';
 
+import { log } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
-import { logger, EventCode } from '@/lib/debug';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { parseImportResponse } from './loader';
@@ -24,10 +24,7 @@ export async function importObjectSheet(
 	file?: File | string,
 	options?: ImportOptions
 ): Promise<ImportResult> {
-	if (!data?.sprPath) {
-		logger.log(EventCode.ERROR, { msg: 'Cannot import: no data loaded' });
-		return { success: false };
-	}
+	if (!data?.sprPath) return { success: false };
 
 	let imageBytes: Uint8Array;
 
@@ -49,8 +46,7 @@ export async function importObjectSheet(
 			imageBytes = result instanceof Uint8Array ? result : new Uint8Array(result as ArrayLike<number>);
 		}
 	} catch (e) {
-		logger.log(EventCode.ERROR, { err: e, msg: 'Failed to read image file' });
-		console.error('Failed to read image file:', e);
+		log.error('Failed to read image file', e);
 		return { success: false };
 	}
 
@@ -125,22 +121,10 @@ export async function importObjectSheet(
 
 		const spriteIds = sprites.map((s) => s.id);
 
-		logger.log(EventCode.CANVAS_DRAW, {
-			msg: 'Import complete',
-			thingId: updatedThing.id,
-			sprites: spriteIds.length
-		});
-
-		console.log('Import SUCCESS:', {
-			thingId: updatedThing.id,
-			cacheSize: data.sprites.size,
-			spriteCount: spriteIds.length
-		});
-
+		log.info(`Imported ${spriteIds.length} sprite(s) into ${updatedThing.category} ${updatedThing.id}`);
 		return { spriteIds, updatedThing, success: true };
 	} catch (err) {
-		logger.log(EventCode.ERROR, { err, msg: 'Import failed' });
-		console.error('Import failed:', err);
+		log.error('Import failed', err);
 		const message = typeof err === 'string' ? err : err instanceof Error ? err.message : String(err);
 		return { success: false, error: message };
 	}

@@ -1,8 +1,8 @@
 import * as lz4 from 'lz4js';
+import { log } from '@/lib/log';
 import { join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { logger, logError, EventCode } from '@/lib/debug';
 
 import { loadDatFile } from './datReader';
 import { SpriteReader } from './spriteReader';
@@ -100,7 +100,7 @@ export async function writeOtfiFile(datPath: string, data: AssetData): Promise<v
 		`  sprites-file: ${sprName}`,
 		''
 	].join('\n');
-	await invoke('write_file_text', { path: `${dirWithSep}${baseName}.otfi`, contents });
+	await invoke('write_file_text', { contents, path: `${dirWithSep}${baseName}.otfi` });
 }
 
 function parseOtml(content: string): Record<string, string> {
@@ -380,7 +380,7 @@ export async function loadTibiaData(
 		}
 		if (onProgress) onProgress('Preloading sprites...', 100, 100);
 	} catch (err) {
-		logError('Failed to preload first-page thumbnails', err);
+		log.error('Failed to preload first-page thumbnails', err);
 	}
 
 	const FULL_PRELOAD_MAX_SPRITES = 60000;
@@ -395,7 +395,7 @@ export async function loadTibiaData(
 				sprData.header.sprite_count,
 				undefined,
 				() => myEpoch === loadEpoch
-			).catch((err) => logError('Background full preload failed', err));
+			).catch((err) => log.error('Background full preload failed', err));
 		}, 400);
 	}
 
@@ -406,7 +406,7 @@ export async function loadTibiaData(
 			const { loadServerItems } = await import('./otb');
 			serverItems = await loadServerItems(serverPaths.otbPath, serverPaths.xmlPath);
 		} catch (err) {
-			logError('Failed to load items.otb', err);
+			log.error('Failed to load items.otb', err);
 		}
 	}
 
@@ -430,12 +430,12 @@ export async function loadTibiaData(
 		xmlPath: serverPaths?.xmlPath,
 		itemsCount: datData.itemsCount,
 		transparency: sprData.transparency,
-		frameGroups: overrides?.frameGroups ?? detectedVersion.value >= 1057,
-		frameDurations: overrides?.frameDurations ?? detectedVersion.supportsFrameDurations,
 		outfitsCount: datData.outfitsCount,
 		effectsCount: datData.effectsCount,
 		missilesCount: datData.missilesCount,
-		spritesCount: sprData.header.sprite_count
+		spritesCount: sprData.header.sprite_count,
+		frameGroups: overrides?.frameGroups ?? detectedVersion.value >= 1057,
+		frameDurations: overrides?.frameDurations ?? detectedVersion.supportsFrameDurations
 	};
 }
 
@@ -556,16 +556,9 @@ export async function loadSpriteWindow(
 		}
 	}
 
-	logger.log(EventCode.LOADER_WINDOW, { e: endId, s: startId, req: spriteId, cached: allCached, sz: spriteCache.size });
-
-	if (allCached) {
-		logger.log(EventCode.LOADER_CACHED, { e: endId, s: startId });
-		return;
-	}
+	if (allCached) return;
 
 	try {
-		logger.log(EventCode.LOADER_READ, { e: endId, n: count, s: startId });
-
 		const response = await invoke<Uint8Array>('read_sprites_batch_rgba', {
 			count,
 			startId,
@@ -578,10 +571,8 @@ export async function loadSpriteWindow(
 		for (const sprite of batchedSprites) {
 			spriteCache.set(sprite.id, sprite);
 		}
-
-		logger.log(EventCode.LOADER_ADDED, { rgba: true, sz: spriteCache.size, n: batchedSprites.length });
 	} catch (err) {
-		logError(`Failed to load sprite window ${startId}-${endId}`, err);
+		log.error(`Failed to load sprite window ${startId}-${endId}`, err);
 	}
 }
 
@@ -597,13 +588,8 @@ export async function preloadSprites(
 	const BATCH_SIZE = 500;
 	const batches = Math.ceil(Math.min(count, totalSprites) / BATCH_SIZE);
 
-	logger.log(EventCode.LOADER_READ, { count, batches, preload: true });
-
 	for (let i = 0; i < batches; i++) {
-		if (shouldContinue && !shouldContinue()) {
-			logger.log(EventCode.LOADER_READ, { at: i, preload: true, cancelled: true });
-			return;
-		}
+		if (shouldContinue && !shouldContinue()) return;
 
 		const startId = i * BATCH_SIZE + 1;
 		const batchCount = Math.min(BATCH_SIZE, totalSprites - startId + 1);
@@ -628,13 +614,11 @@ export async function preloadSprites(
 				onProgress(Math.min((i + 1) * BATCH_SIZE, count), count);
 			}
 		} catch (err) {
-			logError(`Failed to preload batch ${i + 1}/${batches}`, err);
+			log.error(`Failed to preload batch ${i + 1}/${batches}`, err);
 		}
 
 		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 	}
-
-	logger.log(EventCode.LOADER_ADDED, { preload: true, sz: spriteCache.size });
 }
 
 export async function loadSpriteIds(
@@ -645,18 +629,9 @@ export async function loadSpriteIds(
 ): Promise<void> {
 	const uncachedIds = spriteIds.filter((id) => id > 0 && !spriteCache.has(id));
 
-	if (uncachedIds.length === 0) {
-		logger.log(EventCode.LOADER_CACHED, { n: spriteIds.length });
-		return;
-	}
+	if (uncachedIds.length === 0) return;
 
 	const uniqueIds = [...new Set(uncachedIds)];
-
-	logger.log(EventCode.LOADER_READ, {
-		method: 'list',
-		total: uniqueIds.length,
-		ids: uniqueIds.slice(0, 5)
-	});
 
 	try {
 		const response = await invoke<Uint8Array>('read_sprites_rgba', {
@@ -670,14 +645,8 @@ export async function loadSpriteIds(
 		for (const sprite of batchedSprites) {
 			spriteCache.set(sprite.id, sprite);
 		}
-
-		logger.log(EventCode.LOADER_ADDED, {
-			rgba: true,
-			sz: spriteCache.size,
-			n: batchedSprites.length
-		});
 	} catch (err) {
-		logError(`Failed to load sprite list of ${uniqueIds.length} items`, err);
+		log.error(`Failed to load sprite list of ${uniqueIds.length} items`, err);
 	}
 }
 
@@ -689,18 +658,9 @@ export async function loadSpriteIdsLz4(
 ): Promise<void> {
 	const uncachedIds = spriteIds.filter((id) => id > 0 && !spriteCache.has(id));
 
-	if (uncachedIds.length === 0) {
-		logger.log(EventCode.LOADER_CACHED, { lz4: true, n: spriteIds.length });
-		return;
-	}
+	if (uncachedIds.length === 0) return;
 
 	const uniqueIds = [...new Set(uncachedIds)];
-
-	logger.log(EventCode.LOADER_READ, {
-		method: 'lz4',
-		total: uniqueIds.length,
-		ids: uniqueIds.slice(0, 5)
-	});
 
 	try {
 		const compressedResponse = await invoke<Uint8Array>('read_sprites_rgba_lz4', {
@@ -713,26 +673,13 @@ export async function loadSpriteIdsLz4(
 
 		const decompressed = lz4.decompress(compressedBuffer);
 
-		logger.log(EventCode.LOADER_READ, {
-			lz4: true,
-			decompressed: decompressed.byteLength,
-			compressed: compressedBuffer.byteLength,
-			ratio: ((compressedBuffer.byteLength / decompressed.byteLength) * 100).toFixed(1) + '%'
-		});
-
 		const batchedSprites = parseRgbaSprites(decompressed, transparency);
 
 		for (const sprite of batchedSprites) {
 			spriteCache.set(sprite.id, sprite);
 		}
-
-		logger.log(EventCode.LOADER_ADDED, {
-			lz4: true,
-			sz: spriteCache.size,
-			n: batchedSprites.length
-		});
 	} catch (err) {
-		logError(`Failed to load sprite list (LZ4) of ${uniqueIds.length} items`, err);
+		log.error(`Failed to load sprite list (LZ4) of ${uniqueIds.length} items`, err);
 		await loadSpriteIds(sprPath, spriteIds, transparency, spriteCache);
 	}
 }

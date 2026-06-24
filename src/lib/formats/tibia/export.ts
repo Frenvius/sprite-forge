@@ -1,14 +1,11 @@
+import { log } from '@/lib/log';
 import { invoke } from '@tauri-apps/api/core';
-import { logger, EventCode } from '@/lib/debug';
 import { open, save } from '@tauri-apps/plugin-dialog';
 
 import { AssetData, ThingType } from './types';
 
 export async function exportObjectSheets(things: ThingType[], data: AssetData): Promise<number> {
-	if (!things.length || !data || !data.sprPath) {
-		logger.log(EventCode.ERROR, { msg: 'Cannot export object sheets: Data not loaded' });
-		return 0;
-	}
+	if (!things.length || !data || !data.sprPath) return 0;
 
 	try {
 		const dir = await open({ directory: true, multiple: false });
@@ -29,24 +26,20 @@ export async function exportObjectSheets(things: ThingType[], data: AssetData): 
 				});
 				exported++;
 			} catch (err) {
-				logger.log(EventCode.ERROR, { err, msg: 'Failed to export object sheet', thing: `${thing.category}_${thing.id}` });
+				log.error(`Failed to export ${thing.category}_${thing.id}`, err);
 			}
 		}
 
-		logger.log(EventCode.CANVAS_DRAW, { dir, count: exported, msg: 'Batch export complete' });
+		log.info(`Exported ${exported} object sheet(s) to ${dir}`);
 		return exported;
 	} catch (err) {
-		logger.log(EventCode.ERROR, { err, msg: 'Failed to export object sheets' });
-		console.error('Batch export failed:', err);
+		log.error('Batch export failed', err);
 		return 0;
 	}
 }
 
 export async function exportObjectSheet(thing: ThingType, data: AssetData) {
-	if (!data || !data.sprPath) {
-		logger.log(EventCode.ERROR, { msg: 'Cannot export object sheet: Data not loaded' });
-		return;
-	}
+	if (!data || !data.sprPath) return;
 
 	try {
 		const filePath = await save({
@@ -67,10 +60,7 @@ export async function exportObjectSheet(thing: ThingType, data: AssetData) {
 			sprPath: data.sprPath,
 			transparent: data.transparency
 		});
-
-		logger.log(EventCode.CANVAS_DRAW, { path: filePath, msg: 'Export successful' });
 	} catch (err) {
-		logger.log(EventCode.ERROR, { err, msg: 'Failed to export object sheet' });
-		console.error('Export failed:', err);
+		log.error('Export failed', err);
 	}
 }

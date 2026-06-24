@@ -1,5 +1,4 @@
 import React from 'react';
-import { logger, EventCode } from '@/lib/debug';
 import { open } from '@tauri-apps/plugin-dialog';
 import { importObjectSheet } from '@/lib/formats/tibia';
 import { useTransfer } from '@/usecase/context/TransferContext';
@@ -167,8 +166,6 @@ export const useItemList = () => {
 		let cancelled = false;
 
 		const loadSpritesProgressively = async () => {
-			logger.log(EventCode.ITEM_PAGE, { pg: currentPage, cat: selectedCategory, n: paginatedItemIds.length });
-
 			const { loadSpriteIds, loadSpriteIdsLz4 } = await import('@/lib/formats/tibia');
 			if (cancelled) return;
 
