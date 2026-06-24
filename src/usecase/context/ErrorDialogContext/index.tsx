@@ -1,11 +1,7 @@
 import React from 'react';
 
 import { errorToString } from '~/lib/errorMessage';
-import { ErrorDialog, type ErrorInfo } from '~/components/ErrorDialog';
-
-interface ErrorDialogContextValue {
-	showError: (title: string, error: unknown) => void;
-}
+import { type ErrorInfo, type ErrorDialogContextValue } from './types';
 
 const ErrorDialogContext = React.createContext<null | ErrorDialogContextValue>(null);
 
@@ -16,12 +12,11 @@ export const ErrorDialogProvider = ({ children }: { children: React.ReactNode })
 		setInfo({ title, message: errorToString(error) });
 	}, []);
 
-	return (
-		<ErrorDialogContext.Provider value={{ showError }}>
-			{children}
-			<ErrorDialog info={info} onClose={() => setInfo(null)} />
-		</ErrorDialogContext.Provider>
-	);
+	const closeError = React.useCallback(() => setInfo(null), []);
+
+	const value = React.useMemo<ErrorDialogContextValue>(() => ({ info, showError, closeError }), [info, showError, closeError]);
+
+	return <ErrorDialogContext.Provider value={value}>{children}</ErrorDialogContext.Provider>;
 };
 
 export const useErrorDialog = (): ErrorDialogContextValue => {

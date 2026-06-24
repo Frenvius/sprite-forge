@@ -3,10 +3,6 @@ import type { ImportPreset, TransferContextValue } from './types';
 import React from 'react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
-import { ExportDialog } from '~/components/ExportDialog';
-import { ImportDialog } from '~/components/ImportDialog';
-import { ObdViewerDialog } from '~/components/ObdViewerDialog';
-
 const TransferContext = React.createContext<null | TransferContextValue>(null);
 
 export const TransferProvider = ({ children }: { children: React.ReactNode }) => {
@@ -78,14 +74,7 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 		]
 	);
 
-	return (
-		<TransferContext.Provider value={value}>
-			{children}
-			<ExportDialog />
-			<ImportDialog />
-			<ObdViewerDialog />
-		</TransferContext.Provider>
-	);
+	return <TransferContext.Provider value={value}>{children}</TransferContext.Provider>;
 };
 
 export const useTransfer = () => {

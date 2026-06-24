@@ -4,8 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import { Toaster } from '~/components/ui/toaster';
+import { ErrorDialog } from '~/components/ErrorDialog';
+import { ExportDialog } from '~/components/ExportDialog';
+import { ImportDialog } from '~/components/ImportDialog';
 import { TooltipProvider } from '~/components/ui/tooltip';
 import { Toaster as Sonner } from '~/components/ui/sonner';
+import { ObdViewerDialog } from '~/components/ObdViewerDialog';
 import { ThemeProvider } from '~/usecase/context/ThemeContext';
 import { DragDropProvider } from '~/usecase/context/DragDropContext';
 import { TransferProvider } from '~/usecase/context/TransferContext';
@@ -21,11 +25,15 @@ const App = () => (
 		<ThemeProvider>
 			<TooltipProvider>
 				<ErrorDialogProvider>
+					<ErrorDialog />
 					<AssetDataProvider>
 						<PanelSettingsProvider>
 							<GeneralSettingsProvider>
 								<DragDropProvider>
 									<TransferProvider>
+										<ExportDialog />
+										<ImportDialog />
+										<ObdViewerDialog />
 										<Toaster />
 										<Sonner />
 										<BrowserRouter>

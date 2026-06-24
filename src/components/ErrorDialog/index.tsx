@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Copy, Check, AlertTriangle } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
-import { type ErrorDialogProps } from './types';
 import { ScrollArea } from '~/components/ui/scroll-area';
+import { useErrorDialog } from '~/usecase/context/ErrorDialogContext';
 import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
-export type { ErrorInfo } from './types';
-
-export const ErrorDialog = ({ info, onClose }: ErrorDialogProps) => {
+export const ErrorDialog = () => {
+	const { info, closeError } = useErrorDialog();
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = async () => {
@@ -26,7 +25,7 @@ export const ErrorDialog = ({ info, onClose }: ErrorDialogProps) => {
 		<Dialog
 			open={!!info}
 			onOpenChange={(open) => {
-				if (!open) onClose();
+				if (!open) closeError();
 			}}
 		>
 			<DialogContent className="max-w-2xl">
@@ -49,7 +48,7 @@ export const ErrorDialog = ({ info, onClose }: ErrorDialogProps) => {
 						{copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
 						{copied ? 'Copied' : 'Copy'}
 					</Button>
-					<Button onClick={onClose}>Close</Button>
+					<Button onClick={closeError}>Close</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
