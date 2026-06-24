@@ -5,33 +5,18 @@ import { Search, FolderOpen, PackageOpen } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { fmtTime } from '~/usecase/util/timeUtils';
 import { ObdCard } from '~/components/ObdViewerDialog/ObdCard';
 import { useImportDialog } from '~/usecase/hooks/useImportDialog';
+import { OBD_CATEGORIES, OBD_ROW_HEIGHT } from '~/usecase/util/constants';
 import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
-
-const ROW_H = 120;
-
-const CATEGORIES = [
-	{ value: 0, label: 'All' },
-	{ value: 1, label: 'Items' },
-	{ value: 2, label: 'Outfits' },
-	{ value: 3, label: 'Effects' },
-	{ value: 4, label: 'Missiles' }
-];
-
-const fmtTime = (s: number) => {
-	if (!isFinite(s) || s < 0) return '--';
-	const m = Math.floor(s / 60);
-	const sec = Math.floor(s % 60);
-	return `${m}m ${sec.toString().padStart(2, '0')}s`;
-};
 
 export const ImportDialog = () => {
 	const v = useImportDialog();
 
 	const rowVirtualizer = useVirtualizer({
 		overscan: 5,
-		estimateSize: () => ROW_H,
+		estimateSize: () => OBD_ROW_HEIGHT,
 		count: Math.ceil(v.total / v.itemsPerRow),
 		getScrollElement: () => v.scrollRef.current
 	});
@@ -95,7 +80,7 @@ export const ImportDialog = () => {
 								/>
 							</div>
 							<div className="flex items-center gap-1">
-								{CATEGORIES.map((c) => (
+								{OBD_CATEGORIES.map((c) => (
 									<button
 										type="button"
 										key={c.value}
@@ -185,8 +170,8 @@ export const ImportDialog = () => {
 												key={vr.key}
 												className="absolute left-0 top-0 grid gap-2"
 												style={{
-													height: ROW_H,
 													width: '100%',
+													height: OBD_ROW_HEIGHT,
 													transform: `translateY(${vr.start}px)`,
 													gridTemplateColumns: `repeat(${v.itemsPerRow}, minmax(0, 1fr))`
 												}}

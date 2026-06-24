@@ -6,25 +6,10 @@ import { cn } from '~/lib/utils';
 import { ObdCard } from './ObdCard';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { fmtTime } from '~/usecase/util/timeUtils';
 import { useObdViewer } from '~/usecase/hooks/useObdViewer';
+import { OBD_CATEGORIES, OBD_ROW_HEIGHT } from '~/usecase/util/constants';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
-
-const ROW_H = 120;
-
-const CATEGORIES = [
-	{ value: 0, label: 'All' },
-	{ value: 1, label: 'Items' },
-	{ value: 2, label: 'Outfits' },
-	{ value: 3, label: 'Effects' },
-	{ value: 4, label: 'Missiles' }
-];
-
-const fmtTime = (s: number) => {
-	if (!isFinite(s) || s < 0) return '--';
-	const m = Math.floor(s / 60);
-	const sec = Math.floor(s % 60);
-	return `${m}m ${sec.toString().padStart(2, '0')}s`;
-};
 
 export const ObdViewerDialog = () => {
 	const v = useObdViewer();
@@ -33,7 +18,7 @@ export const ObdViewerDialog = () => {
 	const virtualizer = useVirtualizer({
 		overscan: 5,
 		count: rowCount,
-		estimateSize: () => ROW_H,
+		estimateSize: () => OBD_ROW_HEIGHT,
 		getScrollElement: () => v.scrollRef.current
 	});
 
@@ -108,7 +93,7 @@ export const ObdViewerDialog = () => {
 						</button>
 					</div>
 					<div className="ml-auto flex items-center gap-1">
-						{CATEGORIES.map((c) => (
+						{OBD_CATEGORIES.map((c) => (
 							<button
 								type="button"
 								key={c.value}
@@ -181,7 +166,7 @@ export const ObdViewerDialog = () => {
 									<div
 										key={vr.key}
 										className="absolute left-0 top-0 flex gap-2"
-										style={{ height: ROW_H, width: '100%', transform: `translateY(${vr.start}px)` }}
+										style={{ width: '100%', height: OBD_ROW_HEIGHT, transform: `translateY(${vr.start}px)` }}
 									>
 										{cells}
 									</div>
