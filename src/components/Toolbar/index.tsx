@@ -24,26 +24,26 @@ import {
 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
-import { Button } from './ui/button';
-import { AboutDialog } from './AboutDialog';
-import { LoadingDialog } from './LoadingDialog';
-import { SettingsDialog } from './SettingsDialog';
-import { SceneEditorDialog } from './SceneEditor';
+import { Button } from '~/components/ui/button';
 import { errorToString } from '~/lib/errorMessage';
 import { getFormat } from '~/lib/formats/registry';
-import { LoadOptions } from './FolderSelectDialog';
-import { UpdateIndicator } from './UpdateIndicator';
 import { useToast } from '~/usecase/hooks/use-toast';
+import { AboutDialog } from '~/components/AboutDialog';
 import { useUpdater } from '~/usecase/hooks/use-updater';
-import { FolderSelectDialog } from './FolderSelectDialog';
-import { ThemeSettingsDialog } from './ThemeSettingsDialog';
-import { VersionHistoryDialog } from './VersionHistoryDialog';
+import { LoadingDialog } from '~/components/LoadingDialog';
+import { SettingsDialog } from '~/components/SettingsDialog';
+import { SceneEditorDialog } from '~/components/SceneEditor';
+import { LoadOptions } from '~/components/FolderSelectDialog';
+import { UpdateIndicator } from '~/components/UpdateIndicator';
 import { useTransfer } from '~/usecase/context/TransferContext';
-import { SpriteOptimizerDialog } from './SpriteOptimizerDialog';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { FolderSelectDialog } from '~/components/FolderSelectDialog';
 import { useErrorDialog } from '~/usecase/context/ErrorDialogContext';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { ThemeSettingsDialog } from '~/components/ThemeSettingsDialog';
+import { VersionHistoryDialog } from '~/components/VersionHistoryDialog';
 import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
+import { SpriteOptimizerDialog } from '~/components/SpriteOptimizerDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { type ThingType, getCategoryMap, optimizeSprites } from '~/lib/formats/tibia';
 import { addRecentLoad, getRecentLoads, type RecentLoad, clearRecentLoads } from '~/usecase/util/recentLoads';
 import {
@@ -58,7 +58,7 @@ import {
 	MenubarSubContent,
 	MenubarSubTrigger,
 	MenubarCheckboxItem
-} from './ui/menubar';
+} from '~/components/ui/menubar';
 
 export const Toolbar = () => {
 	const {

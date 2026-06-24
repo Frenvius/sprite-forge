@@ -1,7 +1,7 @@
-import { Label } from './ui/label';
-import { Switch } from './ui/switch';
+import { Label } from '~/components/ui/label';
+import { Switch } from '~/components/ui/switch';
 import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
-import { Dialog, DialogTitle, DialogHeader, DialogContent } from './ui/dialog';
+import { Dialog, DialogTitle, DialogHeader, DialogContent } from '~/components/ui/dialog';
 
 interface PanelSettingsDialogProps {
 	open: boolean;

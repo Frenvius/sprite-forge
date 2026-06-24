@@ -1,6 +1,6 @@
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
-import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Button } from '~/components/ui/button';
+import { Progress } from '~/components/ui/progress';
+import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface SpriteOptimizerDialogProps {
 	open: boolean;

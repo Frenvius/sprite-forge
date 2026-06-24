@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-import { Slider } from './ui/slider';
-import { Switch } from './ui/switch';
+import { Slider } from '~/components/ui/slider';
+import { Switch } from '~/components/ui/switch';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface SettingsDialogProps {
 	open: boolean;

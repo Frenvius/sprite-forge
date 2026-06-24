@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 
-import { Progress } from './ui/progress';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Progress } from '~/components/ui/progress';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface LoadingDialogProps {
 	open: boolean;

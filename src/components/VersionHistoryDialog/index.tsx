@@ -5,14 +5,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { Clock, Trash2, Package, RotateCcw, FolderOpen } from 'lucide-react';
 
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Button } from '~/components/ui/button';
 import { useToast } from '~/usecase/hooks/use-toast';
+import { ScrollArea } from '~/components/ui/scroll-area';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { getCommitHistory, cleanOldVersions } from '~/lib/versionControl';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface VersionHistoryDialogProps {
 	open: boolean;

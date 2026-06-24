@@ -6,9 +6,9 @@ import { cn } from '~/lib/utils';
 import { Label } from '~/components/ui/label';
 import { Input } from '~/components/ui/input';
 import { Switch } from '~/components/ui/switch';
-import { PropertyWithUndo } from '../PropertyWithUndo';
 import { NumberInput } from '~/components/ui/number-input';
 import { EightBitColorPicker } from '~/components/EightBitColorPicker';
+import { PropertyWithUndo } from '~/components/PropertiesPanel/PropertyWithUndo';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 
 interface FieldProps {

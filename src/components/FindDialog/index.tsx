@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
 
-import { Input } from './ui/input';
-import { Switch } from './ui/switch';
-import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
-import { Dialog, DialogContent } from './ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from './ui/select';
+import { Input } from '~/components/ui/input';
+import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
+import { ScrollArea } from '~/components/ui/scroll-area';
+import { Dialog, DialogContent } from '~/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 
 interface FindDialogProps {
 	open: boolean;

@@ -20,20 +20,20 @@ import {
 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
-import { Input } from './ui/input';
-import { Switch } from './ui/switch';
-import { Button } from './ui/button';
-import { Slider } from './ui/slider';
-import { CheckerBoard } from './CheckerBoard';
-import { ScrollArea } from './ui/scroll-area';
+import { Input } from '~/components/ui/input';
+import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
+import { Slider } from '~/components/ui/slider';
 import { isValidSpriteId } from '~/lib/formats/tibia';
-import { SpriteCanvas } from './commons/SpriteCanvas';
+import { CheckerBoard } from '~/components/CheckerBoard';
+import { ScrollArea } from '~/components/ui/scroll-area';
+import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
 import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia/types';
-import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from './ui/select';
-import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from './ui/context-menu';
-import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
+import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from '~/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from '~/components/ui/dropdown-menu';
 
 type SimilarityRef = { id: number; category: ThingCategory };
 

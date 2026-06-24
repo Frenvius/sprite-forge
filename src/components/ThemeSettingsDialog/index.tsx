@@ -3,10 +3,10 @@ import type { Theme } from '~/lib/themes/types';
 import { Sun, Moon, Check, Upload, Sparkles, Download } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
-import { Button } from './ui/button';
+import { Button } from '~/components/ui/button';
 import { useToast } from '~/usecase/hooks/use-toast';
 import { useTheme } from '~/usecase/context/ThemeContext';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface ThemeSettingsDialogProps {
 	open: boolean;

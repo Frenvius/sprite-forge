@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
-import { Button } from './ui/button';
-import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from './ui/dialog';
+import { Button } from '~/components/ui/button';
+import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
 interface AboutDialogProps {
 	open: boolean;

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
+import { Button } from '~/components/ui/button';
+import { Progress } from '~/components/ui/progress';
 import { type useUpdater } from '~/usecase/hooks/use-updater';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 interface UpdateIndicatorProps {
 	updater: ReturnType<typeof useUpdater>;
