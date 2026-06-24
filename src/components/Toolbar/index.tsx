@@ -38,6 +38,7 @@ import { UpdateIndicator } from '~/components/UpdateIndicator';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { FolderSelectDialog } from '~/components/FolderSelectDialog';
+import { useWindowControls } from '~/usecase/hooks/useWindowControls';
 import { useErrorDialog } from '~/usecase/context/ErrorDialogContext';
 import { ThemeSettingsDialog } from '~/components/ThemeSettingsDialog';
 import { VersionHistoryDialog } from '~/components/VersionHistoryDialog';
@@ -93,22 +94,8 @@ export const Toolbar = () => {
 	const [sceneEditorOpen, setSceneEditorOpen] = useState(false);
 	const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
 	const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-	const [isMaximized, setIsMaximized] = useState(false);
+	const { minimize, isMaximized, toggleMaximize } = useWindowControls();
 	const [recentLoads, setRecentLoads] = useState<RecentLoad[]>(() => getRecentLoads());
-
-	useEffect(() => {
-		const appWindow = getCurrentWindow();
-		let unlisten: undefined | (() => void);
-		void appWindow.isMaximized().then(setIsMaximized);
-		void appWindow
-			.onResized(() => {
-				void appWindow.isMaximized().then(setIsMaximized);
-			})
-			.then((fn) => {
-				unlisten = fn;
-			});
-		return () => unlisten?.();
-	}, []);
 	const [itemToAdd, setItemToAdd] = useState<null | ThingType>(null);
 	const [isMac, setIsMac] = useState(false);
 
@@ -291,14 +278,12 @@ export const Toolbar = () => {
 
 	const handleMinimize = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const appWindow = getCurrentWindow();
-		await appWindow.minimize();
+		await minimize();
 	};
 
 	const handleMaximize = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const appWindow = getCurrentWindow();
-		await appWindow.toggleMaximize();
+		await toggleMaximize();
 	};
 
 	const handleClose = async (e: React.MouseEvent) => {

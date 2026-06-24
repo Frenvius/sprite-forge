@@ -31,6 +31,7 @@ import { type ViewMode, type SimilarityRef } from './types';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { PROPERTIES, VIEW_MODES, CATEGORY_BYTE } from './constants';
+import { useWindowControls } from '~/usecase/hooks/useWindowControls';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
 import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia/types';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
@@ -79,6 +80,7 @@ function encodeFindSimilarPayload(
 
 export const FindWindow = () => {
 	const { data, setData, spriteSize, setOpenedItemId, notifySpritesLoaded } = useAssetData();
+	const { minimize, toggleMaximize } = useWindowControls();
 	const [selectedCategory, setSelectedCategory] = useState<'all' | ThingCategory>('all');
 	const [properties, setProperties] = useState<Record<string, boolean>>(
 		PROPERTIES.reduce((acc, prop) => ({ ...acc, [prop.property]: false }), {})
@@ -545,14 +547,12 @@ export const FindWindow = () => {
 
 	const handleMinimize = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const appWindow = getCurrentWindow();
-		await appWindow.minimize();
+		await minimize();
 	};
 
 	const handleMaximize = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const appWindow = getCurrentWindow();
-		await appWindow.toggleMaximize();
+		await toggleMaximize();
 	};
 
 	const handleClose = useCallback(
