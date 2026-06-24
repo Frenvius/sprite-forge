@@ -8,7 +8,6 @@ import { ErrorDialog } from '~/components/ErrorDialog';
 import { ExportDialog } from '~/components/ExportDialog';
 import { ImportDialog } from '~/components/ImportDialog';
 import { TooltipProvider } from '~/components/ui/tooltip';
-import { Toaster as Sonner } from '~/components/ui/sonner';
 import { ObdViewerDialog } from '~/components/ObdViewerDialog';
 import { ThemeProvider } from '~/usecase/context/ThemeContext';
 import { DragDropProvider } from '~/usecase/context/DragDropContext';
@@ -35,7 +34,6 @@ const App = () => (
 										<ImportDialog />
 										<ObdViewerDialog />
 										<Toaster />
-										<Sonner />
 										<BrowserRouter>
 											<Routes>
 												<Route path="/" element={<Index />} />
