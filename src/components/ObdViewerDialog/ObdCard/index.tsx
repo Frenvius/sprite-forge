@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Copy, Check } from 'lucide-react';
 import { CATEGORY_NAME } from '@/lib/formats/tibia/obdViewer';
 
-export const ObdCard = ({ row, thumb, selected, onToggle, fill }: ObdCardProps) => {
+export const ObdCard = ({ row, fill, thumb, selected, onToggle }: ObdCardProps) => {
 	const canvasRef = React.useRef<null | HTMLCanvasElement>(null);
 
 	React.useEffect(() => {

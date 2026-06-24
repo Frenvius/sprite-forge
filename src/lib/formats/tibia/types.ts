@@ -311,12 +311,12 @@ export interface AssetData {
 
 	outfitsCount: number;
 	effectsCount: number;
-	transparency: boolean;
 	frameGroups: boolean;
-	frameDurations: boolean;
-
+	transparency: boolean;
 	missilesCount: number;
+
 	version: ClientVersion;
+	frameDurations: boolean;
 	sprites: Map<number, Sprite>;
 	items: Map<number, ThingType>;
 	outfits: Map<number, ThingType>;
