@@ -2,18 +2,11 @@ import { useState } from 'react';
 import { Copy, Check, AlertTriangle } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
+import { type ErrorDialogProps } from './types';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
-export interface ErrorInfo {
-	title: string;
-	message: string;
-}
-
-interface ErrorDialogProps {
-	onClose: () => void;
-	info: null | ErrorInfo;
-}
+export type { ErrorInfo } from './types';
 
 export const ErrorDialog = ({ info, onClose }: ErrorDialogProps) => {
 	const [copied, setCopied] = useState(false);

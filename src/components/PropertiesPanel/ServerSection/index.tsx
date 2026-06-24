@@ -1,4 +1,4 @@
-import type { AttrDef, XmlAttr, ServerItem, ServerProfile } from '~/lib/formats/tibia';
+import type { XmlAttr, ServerItem } from '~/lib/formats/tibia';
 
 import { useState } from 'react';
 import { Trash2, Server } from 'lucide-react';
@@ -11,66 +11,14 @@ import { Textarea } from '~/components/ui/textarea';
 import { AddAttributesPopover } from './AddAttributesPopover';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { defaultValueFor, getServerProfile, getServerProfiles } from '~/lib/formats/tibia';
+import { type AttrRowProps, type ServerSectionProps, type ServerItemEditorProps } from './types';
+import { NO_ARTICLE, TYPE_OPTIONS, SYNCED_FLAGS, STACK_OPTIONS, SYNCED_NUMBERS } from './constants';
 import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from '~/components/ui/select';
-
-const TYPE_OPTIONS = [
-	{ value: 0, label: 'None' },
-	{ value: 1, label: 'Ground' },
-	{ value: 2, label: 'Container' },
-	{ value: 11, label: 'Splash' },
-	{ value: 12, label: 'Fluid' },
-	{ value: 14, label: 'Deprecated' }
-];
-
-const STACK_OPTIONS = [
-	{ value: 0, label: 'None' },
-	{ value: 1, label: 'Border' },
-	{ value: 2, label: 'Bottom' },
-	{ value: 3, label: 'Top' }
-];
-
-const SYNCED_FLAGS: Array<{ label: string; key: keyof ServerItem }> = [
-	{ key: 'unpassable', label: 'Unpassable' },
-	{ key: 'movable', label: 'Movable' },
-	{ key: 'blockMissiles', label: 'Block Missiles' },
-	{ key: 'blockPathfinder', label: 'Block Pathfind' },
-	{ key: 'hasElevation', label: 'Has Elevation' },
-	{ key: 'multiUse', label: 'Multi Use' },
-	{ key: 'pickupable', label: 'Pickupable' },
-	{ key: 'stackable', label: 'Stackable' },
-	{ key: 'forceUse', label: 'Force Use' },
-	{ key: 'readable', label: 'Readable' },
-	{ key: 'rotatable', label: 'Rotatable' },
-	{ key: 'hangable', label: 'Hangable' },
-	{ key: 'hookSouth', label: 'Hook South' },
-	{ key: 'hookEast', label: 'Hook East' },
-	{ key: 'ignoreLook', label: 'Ignore Look' },
-	{ key: 'fullGround', label: 'Full Ground' },
-	{ key: 'isAnimation', label: 'Is Animation' }
-];
-
-const SYNCED_NUMBERS: Array<{ label: string; key: keyof ServerItem }> = [
-	{ key: 'groundSpeed', label: 'Ground Speed' },
-	{ key: 'lightLevel', label: 'Light Level' },
-	{ key: 'lightColor', label: 'Light Color' },
-	{ key: 'minimapColor', label: 'Minimap Color' },
-	{ key: 'maxReadChars', label: 'Max Read Chars' },
-	{ label: 'Max R/W Chars', key: 'maxReadWriteChars' },
-	{ key: 'tradeAs', label: 'Trade As' }
-];
 
 const labelCls = 'text-[11px] text-muted-foreground';
 const inputCls = 'h-7 text-xs';
-const NO_ARTICLE = '__none__';
 
 const isTrue = (v: string) => v === '1' || v.toLowerCase() === 'true';
-
-interface AttrRowProps {
-	attr: XmlAttr;
-	def?: AttrDef;
-	onRemove: () => void;
-	onChange: (value: string) => void;
-}
 
 const AttrRow = ({ def, attr, onChange, onRemove }: AttrRowProps) => {
 	const nested = !!attr.children && attr.children.length > 0;
@@ -128,13 +76,6 @@ const AttrRow = ({ def, attr, onChange, onRemove }: AttrRowProps) => {
 		</div>
 	);
 };
-
-interface ServerItemEditorProps {
-	item: ServerItem;
-	autoSync: boolean;
-	profile: ServerProfile;
-	onChange: (serverId: number, updates: Partial<ServerItem>) => void;
-}
 
 const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerItemEditorProps) => {
 	const set = (updates: Partial<ServerItem>) => onChange(item.serverId, updates);
@@ -336,10 +277,6 @@ const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerItemEdito
 		</div>
 	);
 };
-
-interface ServerSectionProps {
-	clientId: number;
-}
 
 export const ServerSection = ({ clientId }: ServerSectionProps) => {
 	const { data, updateCounter, autoSyncServer, updateServerItem, setServerProfile, setAutoSyncServer, getServerItemsForClient } =

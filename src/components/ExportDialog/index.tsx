@@ -1,26 +1,15 @@
-import type { LucideIcon } from 'lucide-react';
 import type { ExportFormat } from '~/lib/formats/tibia';
 
-import { Box, Check, Image, Package, Layers3, FolderOpen, FileArchive, ArrowUpRight } from 'lucide-react';
+import { Check, Package, Layers3, FolderOpen, FileArchive, ArrowUpRight } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
-import { FORMAT_OPTIONS } from './constants';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Switch } from '~/components/ui/switch';
 import { Button } from '~/components/ui/button';
 import { useExportDialog } from '~/usecase/hooks/useExportDialog';
+import { FORMAT_ICONS, SECTION_LABEL, FORMAT_OPTIONS } from './constants';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
-
-const FORMAT_ICONS: Record<ExportFormat, LucideIcon> = {
-	obd: Box,
-	png: Image,
-	bmp: Image,
-	jpg: Image,
-	sfp: Package
-};
-
-const SECTION_LABEL = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground';
 
 export const ExportDialog = () => {
 	const {

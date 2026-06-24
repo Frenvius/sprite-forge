@@ -27,23 +27,15 @@ import { Slider } from '~/components/ui/slider';
 import { isValidSpriteId } from '~/lib/formats/tibia';
 import { CheckerBoard } from '~/components/CheckerBoard';
 import { ScrollArea } from '~/components/ui/scroll-area';
+import { type ViewMode, type SimilarityRef } from './types';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { PROPERTIES, VIEW_MODES, CATEGORY_BYTE } from './constants';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
 import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia/types';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from '~/components/ui/context-menu';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuTrigger } from '~/components/ui/dropdown-menu';
-
-type SimilarityRef = { id: number; category: ThingCategory };
-
-const CATEGORY_BYTE: Record<'all' | ThingCategory, number> = {
-	all: 0,
-	[ThingCategory.ITEM]: 1,
-	[ThingCategory.OUTFIT]: 2,
-	[ThingCategory.EFFECT]: 3,
-	[ThingCategory.MISSILE]: 4
-};
 
 function encodeFindSimilarPayload(
 	refs: SimilarityRef[],
@@ -84,56 +76,6 @@ function encodeFindSimilarPayload(
 	u8.set(sprBytes, p);
 	return u8;
 }
-
-type ViewMode = 'list' | 'grid' | 'large' | 'compact';
-
-const VIEW_MODES: ViewMode[] = ['list', 'grid', 'compact', 'large'];
-
-const PROPERTIES: Array<{ display: string; property: string }> = [
-	{ display: 'Is Ground', property: 'isGround' },
-	{ display: 'Ground Border', property: 'isGroundBorder' },
-	{ display: 'Bottom', property: 'isOnBottom' },
-	{ display: 'Top', property: 'isOnTop' },
-	{ display: 'Has Light', property: 'hasLight' },
-	{ display: 'Automap', property: 'miniMap' },
-	{ display: 'Has Offset', property: 'hasOffset' },
-	{ display: 'Has Elevation', property: 'hasElevation' },
-	{ display: 'Equip', property: 'cloth' },
-	{ display: 'Market', property: 'isMarketItem' },
-	{ display: 'Writable', property: 'writable' },
-	{ display: 'Writable Once', property: 'writableOnce' },
-	{ display: 'Has Action', property: 'hasDefaultAction' },
-	{ display: 'Container', property: 'isContainer' },
-	{ display: 'Stackable', property: 'stackable' },
-	{ display: 'Force Use', property: 'forceUse' },
-	{ display: 'Multi Use', property: 'multiUse' },
-	{ display: 'Fluid Container', property: 'isFluidContainer' },
-	{ display: 'Fluid', property: 'isFluid' },
-	{ display: 'Unpassable', property: 'isUnpassable' },
-	{ display: 'Unmovable', property: 'isUnmoveable' },
-	{ display: 'Block Missile', property: 'blockMissile' },
-	{ property: 'blockPathfind', display: 'Block Pathfinder' },
-	{ property: 'noMoveAnimation', display: 'No Move Animation' },
-	{ display: 'Pickupable', property: 'pickupable' },
-	{ display: 'Hangable', property: 'hangable' },
-	{ display: 'Hook East', property: 'isHorizontal' },
-	{ display: 'Hook South', property: 'isVertical' },
-	{ display: 'Rotatable', property: 'rotatable' },
-	{ property: 'dontHide', display: "Don't Hide" },
-	{ display: 'Translucent', property: 'isTranslucent' },
-	{ display: 'Lying Object', property: 'isLyingObject' },
-	{ display: 'Animate Always', property: 'animateAlways' },
-	{ display: 'Full Ground', property: 'isFullGround' },
-	{ display: 'Ignore Look', property: 'ignoreLook' },
-	{ display: 'Wrappable', property: 'wrappable' },
-	{ display: 'Unwrappable', property: 'unwrappable' },
-	{ display: 'Top effect', property: 'topEffect' },
-	{ display: 'Useable', property: 'usable' },
-	{ display: 'Has Charges', property: 'hasCharges' },
-	{ display: 'Floor Change', property: 'floorChange' },
-	{ display: 'Lens Help', property: 'isLensHelp' },
-	{ display: 'Is Animation', property: 'isAnimation' }
-];
 
 export const FindWindow = () => {
 	const { data, setData, spriteSize, setOpenedItemId, notifySpritesLoaded } = useAssetData();
