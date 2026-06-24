@@ -1,5 +1,6 @@
 import { memo, useRef, useEffect } from 'react';
 
+import { type SceneTile } from '../types';
 import { isValidSpriteId } from '~/lib/formats/tibia';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 
@@ -26,15 +27,6 @@ function collectSceneSpriteIds(
 	}
 
 	return Array.from(spriteIds);
-}
-
-interface SceneItem {
-	id: number;
-	count?: number;
-}
-
-interface SceneTile {
-	items: SceneItem[];
 }
 
 interface SceneCanvasProps {

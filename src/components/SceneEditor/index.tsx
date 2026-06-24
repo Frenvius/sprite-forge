@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { X, Save, Star, Plus, Trash2, Search, Eraser, Pencil, Pipette, Maximize2, Minimize2 } from 'lucide-react';
 
+import { type SceneTile } from './types';
 import { SceneCanvas } from './SceneCanvas';
 import { Label } from '~/components/ui/label';
 import { Button } from '~/components/ui/button';
@@ -12,15 +13,6 @@ import { Dialog, DialogContent } from '~/components/ui/dialog';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
-
-interface SceneItem {
-	id: number;
-	count?: number;
-}
-
-interface SceneTile {
-	items: SceneItem[];
-}
 
 interface SceneEditorDialogProps {
 	open: boolean;
