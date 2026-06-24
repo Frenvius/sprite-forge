@@ -8,7 +8,7 @@ import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Separator } from '~/components/ui/separator';
-import { useIsMobile } from '~/usecase/hooks/use-mobile';
+import { useIsMobile } from '~/usecase/hooks/useMobile';
 import { Sheet, SheetContent } from '~/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip';
 

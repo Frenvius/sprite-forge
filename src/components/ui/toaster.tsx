@@ -1,6 +1,6 @@
 import { Copy } from 'lucide-react';
 
-import { useToast } from '~/usecase/hooks/use-toast';
+import { useToast } from '~/usecase/hooks/useToast';
 import {
 	Toast,
 	ToastClose,

@@ -4,7 +4,7 @@ import { Sun, Moon, Check, Upload, Sparkles, Download } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
-import { useToast } from '~/usecase/hooks/use-toast';
+import { useToast } from '~/usecase/hooks/useToast';
 import { useTheme } from '~/usecase/context/ThemeContext';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 

@@ -4,7 +4,7 @@ import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2, ExternalLink 
 
 import { Button } from '~/components/ui/button';
 import { Progress } from '~/components/ui/progress';
-import { type useUpdater } from '~/usecase/hooks/use-updater';
+import { type useUpdater } from '~/usecase/hooks/useUpdater';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 interface UpdateIndicatorProps {

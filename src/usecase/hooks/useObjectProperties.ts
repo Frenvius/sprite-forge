@@ -5,7 +5,7 @@ import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 import { ThingCategory } from '~/lib/formats/tibia';
-import { useToast } from '~/usecase/hooks/use-toast';
+import { useToast } from '~/usecase/hooks/useToast';
 import { ZOOM_LEVELS } from '~/usecase/util/constants';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
