@@ -243,6 +243,12 @@ export const useImportDialog = () => {
 		else void startOpen('obd', paths);
 	}, [startOpen]);
 
+	const pickFolder = React.useCallback(async () => {
+		const dir = await open({ directory: true, multiple: false });
+		if (!dir || typeof dir !== 'string') return;
+		void startOpen('obd', [dir]);
+	}, [startOpen]);
+
 	const toggle = React.useCallback((recordIndex: number) => {
 		setSelected((prev) => {
 			const next = new Set(prev);
@@ -327,6 +333,7 @@ export const useImportDialog = () => {
 		scrollRef,
 		setSearch,
 		selectAll,
+		pickFolder,
 		selectNone,
 		setDupOnly,
 		importOpen,
@@ -334,6 +341,7 @@ export const useImportDialog = () => {
 		closeImport,
 		itemsPerRow,
 		ensureVisible,
+		hasProject: !!data,
 		deselectDuplicates,
 		duplicateCount: stats?.duplicates ?? 0
 	};

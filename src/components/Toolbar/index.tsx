@@ -79,7 +79,7 @@ export const Toolbar = () => {
 	} = useAssetData();
 	const { settings, togglePanel } = usePanelSettings();
 	const { showError } = useErrorDialog();
-	const { openObdViewer } = useTransfer();
+	const { openImport } = useTransfer();
 	const { toast } = useToast();
 	const updater = useUpdater();
 	const [folderDialogOpen, setFolderDialogOpen] = useState(false);
@@ -579,7 +579,7 @@ export const Toolbar = () => {
 								<Search className="mr-2 h-3.5 w-3.5" />
 								Find
 							</MenubarItem>
-							<MenubarItem disabled={!data} onSelect={openObdViewer}>
+							<MenubarItem onSelect={() => openImport()}>
 								<Boxes className="mr-2 h-3.5 w-3.5" />
 								OBD Viewer
 							</MenubarItem>

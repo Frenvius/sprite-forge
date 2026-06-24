@@ -8,7 +8,6 @@ import { ErrorDialog } from '~/components/ErrorDialog';
 import { ExportDialog } from '~/components/ExportDialog';
 import { ImportDialog } from '~/components/ImportDialog';
 import { TooltipProvider } from '~/components/ui/tooltip';
-import { ObdViewerDialog } from '~/components/ObdViewerDialog';
 import { ThemeProvider } from '~/usecase/context/ThemeContext';
 import { DragDropProvider } from '~/usecase/context/DragDropContext';
 import { TransferProvider } from '~/usecase/context/TransferContext';
@@ -32,7 +31,6 @@ const App = () => (
 									<TransferProvider>
 										<ExportDialog />
 										<ImportDialog />
-										<ObdViewerDialog />
 										<Toaster />
 										<BrowserRouter>
 											<Routes>

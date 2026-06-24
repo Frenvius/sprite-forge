@@ -35,9 +35,6 @@ use formats::FormatManagerState;
 mod obd;
 mod pack;
 
-mod obd_store;
-use obd_store::{ObdRecord, ObdStore, ObdStoreState};
-
 mod import_store;
 use import_store::{thing_pixel_hash, ImportRecord, ImportSrc, ImportStore, ImportStoreState};
 
@@ -1948,39 +1945,6 @@ fn extract_obd_bin(request: tauri::ipc::Request) -> Result<tauri::ipc::Response,
     build_extract_response(things, sprites, transparent)
 }
 
-#[derive(Clone, Serialize)]
-struct ObdProgress {
-	job: u64,
-	done: usize,
-	total: usize,
-	#[serde(rename = "elapsedMs")]
-	elapsed_ms: u64,
-}
-
-#[derive(Clone, Serialize)]
-struct ObdDone {
-	job: u64,
-	done: usize,
-	total: usize,
-	duplicates: usize,
-	#[serde(rename = "elapsedMs")]
-	elapsed_ms: u64,
-}
-
-#[derive(Serialize)]
-struct ObdStats {
-	status: u8,
-	done: usize,
-	total: usize,
-	duplicates: usize,
-	item: usize,
-	outfit: usize,
-	effect: usize,
-	missile: usize,
-	#[serde(rename = "elapsedMs")]
-	elapsed_ms: u64,
-	error: String,
-}
 
 fn obd_is_file(p: &Path) -> bool {
 	p.extension()
@@ -2019,272 +1983,6 @@ fn obd_collect_files(paths: &[String], recursive: bool) -> Vec<String> {
 	out
 }
 
-fn obd_build_record(path: &str, obj: &obd::ObdObject) -> ObdRecord {
-	use std::collections::HashMap;
-	let mut rgba_by_id: HashMap<u32, &Vec<u8>> = HashMap::new();
-	for s in &obj.sprites {
-		rgba_by_id.insert(s.id, &s.rgba);
-	}
-
-	let mut ids: Vec<u32> = obj.thing.sprite_index.clone();
-	if let Some(fgs) = &obj.thing.frame_groups_data {
-		for fg in fgs {
-			ids.extend_from_slice(&fg.sprite_index);
-		}
-	}
-
-	let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-	h ^= ids.len() as u64;
-	h = h.wrapping_mul(0x0000_0100_0000_01b3);
-	for id in &ids {
-		match rgba_by_id.get(id) {
-			Some(rgba) => {
-				for &b in rgba.iter() {
-					h ^= b as u64;
-					h = h.wrapping_mul(0x0000_0100_0000_01b3);
-				}
-			}
-			None => {
-				h ^= 0xff;
-				h = h.wrapping_mul(0x0000_0100_0000_01b3);
-			}
-		}
-	}
-
-	ObdRecord {
-		path: path.to_string(),
-		name: obj.thing.market_name.clone(),
-		category: transfer_category_value(&obj.thing.category),
-		source_id: obj.thing.id,
-		thumb_w: (obj.thing.width as u16) * 32,
-		thumb_h: (obj.thing.height as u16) * 32,
-		frames: obj.thing.frames,
-		sprite_count: obj.sprites.len() as u32,
-		content_hash: h,
-	}
-}
-
-#[tauri::command]
-fn obd_open(
-	app: tauri::AppHandle,
-	store: tauri::State<ObdStoreState>,
-	paths: Vec<String>,
-	recursive: bool,
-) -> Result<usize, String> {
-	use rayon::prelude::*;
-	use tauri::Emitter;
-
-	let files = obd_collect_files(&paths, recursive);
-	let total = files.len();
-	let job = store.lock().unwrap().begin(total);
-	let store_arc = store.inner().clone();
-
-	std::thread::spawn(move || {
-		files.par_chunks(512).for_each(|chunk| {
-			if store_arc.lock().unwrap().job != job {
-				return;
-			}
-			let mut recs = Vec::with_capacity(chunk.len());
-			for path in chunk {
-				if let Ok(bytes) = std::fs::read(path) {
-					if let Ok(obj) = obd::decode_obd(&bytes) {
-						recs.push(obd_build_record(path, &obj));
-					}
-				}
-			}
-			let (done, total, elapsed, alive) = {
-				let mut s = store_arc.lock().unwrap();
-				let alive = s.extend(job, chunk.len(), recs);
-				(s.done, s.total, s.elapsed_ms(), alive)
-			};
-			if alive {
-				let _ = app.emit("obd_progress", ObdProgress { job, done, total, elapsed_ms: elapsed });
-			}
-		});
-
-		let payload = {
-			let mut s = store_arc.lock().unwrap();
-			s.finish(job);
-			if s.job == job {
-				Some(ObdDone {
-					job,
-					done: s.done,
-					total: s.total,
-					duplicates: s.duplicate_count(),
-					elapsed_ms: s.elapsed_ms(),
-				})
-			} else {
-				None
-			}
-		};
-		if let Some(p) = payload {
-			let _ = app.emit("obd_done", p);
-		}
-	});
-
-	Ok(total)
-}
-
-#[tauri::command]
-fn obd_query(store: tauri::State<ObdStoreState>, request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
-	let body = match request.body() {
-		tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
-		_ => return Err("obd_query expects a raw binary payload".to_string()),
-	};
-	let mut r = Reader::new(body);
-	let category = r.u8()?;
-	let dup_only = r.u8()? != 0;
-	let offset = r.u32()? as usize;
-	let limit = r.u32()? as usize;
-	let search_len = r.u16()? as usize;
-	let search = String::from_utf8_lossy(r.take(search_len)?).to_lowercase();
-
-	let s = store.lock().unwrap();
-
-	let matches = |rec: &ObdRecord| -> bool {
-		if category != 0 && rec.category != category {
-			return false;
-		}
-		if dup_only && !s.is_dup(rec.content_hash) {
-			return false;
-		}
-		if !search.is_empty() {
-			let by_name = rec.name.to_lowercase().contains(&search);
-			let by_id = rec.source_id.to_string().contains(&search);
-			if !by_name && !by_id {
-				return false;
-			}
-		}
-		true
-	};
-
-	let mut matched: Vec<usize> = Vec::new();
-	for (i, rec) in s.records.iter().enumerate() {
-		if matches(rec) {
-			matched.push(i);
-		}
-	}
-	let total_matched = matched.len();
-
-	let mut out = Vec::new();
-	out.push(s.status.code());
-	out.extend_from_slice(&(total_matched as u32).to_le_bytes());
-	let mut count = 0u32;
-	let mut rows = Vec::new();
-	for &i in matched.iter().skip(offset).take(limit) {
-		let rec = &s.records[i];
-		rows.extend_from_slice(&(i as u32).to_le_bytes());
-		rows.push(rec.category);
-		rows.extend_from_slice(&rec.source_id.to_le_bytes());
-		rows.extend_from_slice(&rec.thumb_w.to_le_bytes());
-		rows.extend_from_slice(&rec.thumb_h.to_le_bytes());
-		rows.push(rec.frames);
-		rows.extend_from_slice(&rec.sprite_count.to_le_bytes());
-		rows.push(if s.is_dup(rec.content_hash) { 1 } else { 0 });
-		let name = rec.name.as_bytes();
-		rows.extend_from_slice(&(name.len() as u16).to_le_bytes());
-		rows.extend_from_slice(name);
-		count += 1;
-	}
-	out.extend_from_slice(&count.to_le_bytes());
-	out.extend_from_slice(&rows);
-
-	Ok(tauri::ipc::Response::new(out))
-}
-
-#[tauri::command]
-fn obd_thumbs(store: tauri::State<ObdStoreState>, request: tauri::ipc::Request) -> Result<tauri::ipc::Response, String> {
-	use std::collections::HashMap;
-
-	let body = match request.body() {
-		tauri::ipc::InvokeBody::Raw(b) => b.as_slice(),
-		_ => return Err("obd_thumbs expects a raw binary payload".to_string()),
-	};
-	let mut r = Reader::new(body);
-	let count = r.u32()? as usize;
-	let mut indices = Vec::with_capacity(count);
-	for _ in 0..count {
-		indices.push(r.u32()? as usize);
-	}
-
-	let paths: Vec<(usize, Option<String>)> = {
-		let s = store.lock().unwrap();
-		indices.iter().map(|&i| (i, s.records.get(i).map(|r| r.path.clone()))).collect()
-	};
-
-	let mut out = Vec::new();
-	out.extend_from_slice(&(paths.len() as u32).to_le_bytes());
-	for (i, path) in paths {
-		let mut w = 0u16;
-		let mut h = 0u16;
-		let mut thumb: Vec<u8> = Vec::new();
-		if let Some(path) = path {
-			if let Ok(bytes) = std::fs::read(&path) {
-				if let Ok(obj) = obd::decode_obd(&bytes) {
-					let mut rgba_by_id: HashMap<u32, Vec<u8>> = HashMap::new();
-					for sp in &obj.sprites {
-						rgba_by_id.insert(sp.id, sp.rgba.clone());
-					}
-					let (tw, th, t) = pack::render_thing_thumb(&obj.thing, &rgba_by_id);
-					w = tw;
-					h = th;
-					thumb = t;
-				}
-			}
-		}
-		out.extend_from_slice(&(i as u32).to_le_bytes());
-		out.extend_from_slice(&w.to_le_bytes());
-		out.extend_from_slice(&h.to_le_bytes());
-		out.extend_from_slice(&(thumb.len() as u32).to_le_bytes());
-		out.extend_from_slice(&thumb);
-	}
-
-	Ok(tauri::ipc::Response::new(out))
-}
-
-#[tauri::command]
-fn obd_stats(store: tauri::State<ObdStoreState>) -> ObdStats {
-	let s = store.lock().unwrap();
-	let mut item = 0;
-	let mut outfit = 0;
-	let mut effect = 0;
-	let mut missile = 0;
-	for rec in &s.records {
-		match rec.category {
-			1 => item += 1,
-			2 => outfit += 1,
-			3 => effect += 1,
-			4 => missile += 1,
-			_ => {}
-		}
-	}
-	ObdStats {
-		status: s.status.code(),
-		done: s.done,
-		total: s.total,
-		duplicates: s.duplicate_count(),
-		item,
-		outfit,
-		effect,
-		missile,
-		elapsed_ms: s.elapsed_ms(),
-		error: s.error.clone(),
-	}
-}
-
-#[tauri::command]
-fn obd_get_paths(store: tauri::State<ObdStoreState>, indices: Vec<u32>) -> Vec<String> {
-	let s = store.lock().unwrap();
-	indices
-		.iter()
-		.filter_map(|&i| s.records.get(i as usize).map(|r| r.path.clone()))
-		.collect()
-}
-
-#[tauri::command]
-fn obd_clear(store: tauri::State<ObdStoreState>) {
-	store.lock().unwrap().clear();
-}
 
 #[derive(Clone, Serialize)]
 struct ImportProgress {
@@ -2838,8 +2536,6 @@ pub fn run() {
 
     let dat_manager: DatManagerState = Arc::new(Mutex::new(DatManager::new()));
 
-    let obd_store: ObdStoreState = Arc::new(Mutex::new(ObdStore::new()));
-
     let import_store: ImportStoreState = Arc::new(Mutex::new(ImportStore::new()));
 
     let format_manager: FormatManagerState = {
@@ -2870,7 +2566,6 @@ pub fn run() {
         .manage(spr_manager)
         .manage(dat_manager)
         .manage(format_manager)
-        .manage(obd_store)
         .manage(import_store)
         .invoke_handler(tauri::generate_handler![
             read_file,
@@ -2938,12 +2633,6 @@ pub fn run() {
             extract_obd_bin,
             read_otb_file,
             write_otb_file,
-            obd_open,
-            obd_query,
-            obd_thumbs,
-            obd_stats,
-            obd_get_paths,
-            obd_clear,
             import_open_obd,
             import_open_sfp,
             import_query,

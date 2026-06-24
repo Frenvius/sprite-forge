@@ -1,12 +1,12 @@
 import React from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Search, FolderOpen, PackageOpen } from 'lucide-react';
+import { Search, FolderOpen, PackageOpen, FolderSearch } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Input } from '~/components/ui/input';
+import { ObdCard } from '~/components/ObdCard';
 import { Button } from '~/components/ui/button';
 import { fmtTime } from '~/usecase/util/timeUtils';
-import { ObdCard } from '~/components/ObdViewerDialog/ObdCard';
 import { useImportDialog } from '~/usecase/hooks/useImportDialog';
 import { OBD_CATEGORIES, OBD_ROW_HEIGHT } from '~/usecase/util/constants';
 import { Dialog, DialogTitle, DialogFooter, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
@@ -60,10 +60,16 @@ export const ImportDialog = () => {
 							<p className="text-sm text-foreground">Choose a pack or OBD file</p>
 							<p className="text-xs text-muted-foreground">.sfp pack or one/many .obd files</p>
 						</div>
-						<Button className="gap-2" onClick={v.pickFile}>
-							<FolderOpen className="h-4 w-4" />
-							Browse files
-						</Button>
+						<div className="flex gap-2">
+							<Button className="gap-2" onClick={v.pickFile}>
+								<FolderOpen className="h-4 w-4" />
+								Browse files
+							</Button>
+							<Button className="gap-2" variant="secondary" onClick={v.pickFolder}>
+								<FolderSearch className="h-4 w-4" />
+								Open folder
+							</Button>
+						</div>
 					</div>
 				)}
 
@@ -114,6 +120,10 @@ export const ImportDialog = () => {
 							<Button size="sm" variant="outline" onClick={v.pickFile} className="h-8 gap-1.5 text-xs">
 								<FolderOpen className="h-3.5 w-3.5" />
 								Open
+							</Button>
+							<Button size="sm" variant="outline" onClick={v.pickFolder} className="h-8 gap-1.5 text-xs">
+								<FolderSearch className="h-3.5 w-3.5" />
+								Folder
 							</Button>
 						</div>
 
@@ -200,11 +210,12 @@ export const ImportDialog = () => {
 					) : (
 						<span />
 					)}
-					<div className="flex gap-2">
+					<div className="flex items-center gap-2">
+						{!v.hasProject && <span className="text-xs text-muted-foreground">Open a project to import</span>}
 						<Button variant="ghost" disabled={v.busy} onClick={v.closeImport}>
 							Cancel
 						</Button>
-						<Button onClick={v.confirm} disabled={v.busy || v.selected.size === 0}>
+						<Button onClick={v.confirm} disabled={v.busy || v.selected.size === 0 || !v.hasProject}>
 							{v.busy ? 'Importing…' : 'Import'}
 						</Button>
 					</div>

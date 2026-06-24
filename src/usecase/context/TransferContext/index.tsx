@@ -7,15 +7,12 @@ const TransferContext = React.createContext<null | TransferContextValue>(null);
 
 export const TransferProvider = ({ children }: { children: React.ReactNode }) => {
 	const [importOpen, setImportOpen] = React.useState(false);
-	const [obdViewerOpen, setObdViewerOpen] = React.useState(false);
 	const [exportIds, setExportIds] = React.useState<null | number[]>(null);
 	const [importPreset, setImportPreset] = React.useState<null | ImportPreset>(null);
 
 	const closeExport = React.useCallback(() => setExportIds(null), []);
 	const closeImport = React.useCallback(() => setImportOpen(false), []);
 	const openExport = React.useCallback((ids: number[]) => setExportIds(ids), []);
-	const openObdViewer = React.useCallback(() => setObdViewerOpen(true), []);
-	const closeObdViewer = React.useCallback(() => setObdViewerOpen(false), []);
 	const openImport = React.useCallback((preset?: ImportPreset) => {
 		setImportPreset(preset ?? null);
 		setImportOpen(true);
@@ -28,7 +25,6 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 		getCurrentWebviewWindow()
 			.onDragDropEvent((event) => {
 				if (event.payload.type !== 'drop') return;
-				if (obdViewerOpen) return;
 				const paths = event.payload.paths;
 				const sfp = paths.find((p) => /\.sfp$/i.test(p));
 				const obds = paths.filter((p) => /\.obd$/i.test(p));
@@ -45,7 +41,7 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 			cancelled = true;
 			unlisten?.();
 		};
-	}, [openImport, obdViewerOpen]);
+	}, [openImport]);
 
 	const value = React.useMemo(
 		() => ({
@@ -55,23 +51,9 @@ export const TransferProvider = ({ children }: { children: React.ReactNode }) =>
 			openExport,
 			closeImport,
 			closeExport,
-			importPreset,
-			obdViewerOpen,
-			openObdViewer,
-			closeObdViewer
+			importPreset
 		}),
-		[
-			importOpen,
-			exportIds,
-			importPreset,
-			openImport,
-			openExport,
-			closeImport,
-			closeExport,
-			obdViewerOpen,
-			openObdViewer,
-			closeObdViewer
-		]
+		[importOpen, exportIds, importPreset, openImport, openExport, closeImport, closeExport]
 	);
 
 	return <TransferContext.Provider value={value}>{children}</TransferContext.Provider>;

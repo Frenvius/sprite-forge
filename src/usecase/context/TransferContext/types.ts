@@ -7,11 +7,8 @@ export interface ImportPreset {
 
 export interface TransferContextValue {
 	importOpen: boolean;
-	obdViewerOpen: boolean;
 	closeExport: () => void;
 	closeImport: () => void;
-	openObdViewer: () => void;
-	closeObdViewer: () => void;
 	exportIds: null | number[];
 	importPreset: null | ImportPreset;
 	openExport: (ids: number[]) => void;
