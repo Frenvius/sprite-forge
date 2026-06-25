@@ -5,6 +5,7 @@ import { Download, RotateCw, RefreshCw, AlertCircle, CheckCircle2, ExternalLink 
 import { Button } from '~/components/ui/button';
 import { Progress } from '~/components/ui/progress';
 import { type useUpdater } from '~/usecase/hooks/useUpdater';
+import { ReleaseNotes } from '~/components/UpdateIndicator/ReleaseNotes';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 interface UpdateIndicatorProps {
@@ -115,11 +116,7 @@ export const UpdateIndicator = ({ updater }: UpdateIndicatorProps) => {
 				<div className="px-4 py-3 space-y-3">
 					{status === 'available' && (
 						<>
-							{notes && (
-								<div className="max-h-32 overflow-y-auto text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-									{notes}
-								</div>
-							)}
+							{notes && <ReleaseNotes notes={notes} />}
 							<div className="flex items-center gap-2">
 								<Button size="sm" className="h-8 text-xs flex-1" onClick={() => void downloadAndInstall()}>
 									<Download className="h-3.5 w-3.5 mr-1.5" />
