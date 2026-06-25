@@ -1,6 +1,8 @@
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-
+import { PanelId } from '~/usecase/util/dock';
 import { Toolbar } from '~/components/Toolbar';
+import { useDock } from '~/usecase/hooks/useDock';
+import { Workspace } from '~/components/Workspace';
+import { DragHandleProps } from '~/usecase/util/dock';
 import { ItemList } from '~/components/Panels/ItemList';
 import { useTheme } from '~/usecase/context/ThemeContext';
 import { SpriteList } from '~/components/Panels/SpriteList';
@@ -9,17 +11,6 @@ import { OpenedItemsPanel } from '~/components/OpenedItemsPanel';
 import { VisualizationPanel } from '~/components/VisualizationPanel';
 import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
 
-const ResizeHandle = () => (
-	<PanelResizeHandle className="group relative w-2 flex-shrink-0 outline-none">
-		<div
-			style={{
-				background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--primary)) 50%, transparent 100%)'
-			}}
-			className="pointer-events-none absolute inset-y-2 left-1/2 w-px -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[resize-handle-state=hover]:opacity-100 group-data-[resize-handle-state=drag]:opacity-100"
-		/>
-	</PanelResizeHandle>
-);
-
 const Index = () => {
 	const { settings } = usePanelSettings();
 	const { acrylic, isWindows } = useTheme();
@@ -27,33 +18,31 @@ const Index = () => {
 	const isMac = navigator.userAgent.includes('Mac');
 	const transparentRoot = (isWindows && acrylic) || isMac;
 
+	const isContentReady = (id: PanelId) => {
+		if (id === 'visualization') return settings.showVisualization;
+		if (id === 'openedItems') return settings.showOpenedItems;
+		return true;
+	};
+
+	const dock = useDock(isContentReady);
+
+	const renderPanel = (id: PanelId, handle?: DragHandleProps) => {
+		if (id === 'visualization') return <VisualizationPanel dragHandle={handle} />;
+		if (id === 'openedItems') return <OpenedItemsPanel dragHandle={handle} />;
+		if (id === 'itemList') return <ItemList dragHandle={handle} />;
+		if (id === 'spriteList') return <SpriteList dragHandle={handle} />;
+		return null;
+	};
+
 	return (
 		<div
 			className={`h-screen flex flex-col ${transparentRoot ? 'bg-transparent' : 'bg-background'} ${isMac ? 'rounded-xl overflow-hidden border border-white/10 shadow-2xl' : ''}`}
 		>
 			<Toolbar />
 
-			<div className="flex-1 overflow-hidden p-2">
-				<PanelGroup direction="horizontal" autoSaveId="sprite-forge-main-layout">
-					<Panel minSize={12} maxSize={40} defaultSize={17}>
-						<div className="flex flex-col gap-2 h-full">
-							{settings.showVisualization && <VisualizationPanel />}
-							{settings.showOpenedItems && <OpenedItemsPanel />}
-							<div className="flex-1 min-h-0">
-								<ItemList />
-							</div>
-						</div>
-					</Panel>
-					<ResizeHandle />
-					<Panel minSize={30} defaultSize={66}>
-						<PropertiesPanel />
-					</Panel>
-					<ResizeHandle />
-					<Panel minSize={12} maxSize={40} defaultSize={17}>
-						<SpriteList />
-					</Panel>
-				</PanelGroup>
-			</div>
+			<Workspace dock={dock} renderPanel={renderPanel}>
+				<PropertiesPanel />
+			</Workspace>
 		</div>
 	);
 };

@@ -2,6 +2,7 @@ import { Copy, Plus, Image, Search, Trash2, Upload, Download, ClipboardPaste } f
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { DragHandleProps } from '~/usecase/util/dock';
 import { useSpriteList } from '~/usecase/hooks/useSpriteList';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { ViewModeMenu } from '~/components/commons/ViewModeMenu';
@@ -15,7 +16,7 @@ import {
 	ContextMenuSeparator
 } from '~/components/ui/context-menu';
 
-export const SpriteList = () => {
+export const SpriteList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	const {
 		data,
 		viewMode,
@@ -47,11 +48,18 @@ export const SpriteList = () => {
 	const selectionCount = selectedSpriteIds.size;
 	const isMulti = selectionCount > 1;
 	const selectionIds = Array.from(selectedSpriteIds);
+	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	if (!data) {
 		return (
 			<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden">
-				<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80">
+				<div
+					{...handleProps}
+					className={cn(
+						'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80',
+						dragHandle && 'cursor-grab active:cursor-grabbing'
+					)}
+				>
 					<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Sprites</h2>
 					<span className="ml-auto text-xs text-muted-foreground font-mono">0</span>
 				</div>
@@ -68,7 +76,13 @@ export const SpriteList = () => {
 
 	return (
 		<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden relative">
-			<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80">
+			<div
+				{...handleProps}
+				className={cn(
+					'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80',
+					dragHandle && 'cursor-grab active:cursor-grabbing'
+				)}
+			>
 				<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Sprites</h2>
 
 				<div className="ml-auto flex items-center gap-1">

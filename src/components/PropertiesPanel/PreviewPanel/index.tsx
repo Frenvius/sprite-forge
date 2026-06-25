@@ -93,9 +93,9 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 	} = preview;
 
 	return (
-		<div className="w-full max-w-[361px] mx-auto min-[820px]:w-[361px] min-[820px]:max-w-none flex flex-col h-full">
+		<div className="w-full @[820px]:w-[361px] flex flex-col h-full">
 			<div className="flex flex-col items-center justify-between space-y-4 flex-1">
-				<div ref={canvasContainerRef} className="relative w-full flex-1">
+				<div ref={canvasContainerRef} className="relative w-full min-h-[360px] @[820px]:min-h-0 @[820px]:h-full @[820px]:flex-1">
 					<div className="absolute top-2 left-2 z-10 bg-secondary/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-muted-foreground font-mono border border-border/50 shadow-lg">
 						{draftItem.width * draftItem.exactSize}x{draftItem.height * draftItem.exactSize}
 					</div>
@@ -273,7 +273,7 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 						</div>
 					)}
 
-					<div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+					<div className="relative z-10 mt-2 mr-2 mb-2 ml-auto w-fit flex flex-col items-end gap-1">
 						<div className="flex flex-col items-center gap-0.5 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
 							<Button
 								size="icon"
@@ -370,7 +370,7 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 						</div>
 					</div>
 
-					<CheckerBoard className="w-full h-full border border-border/50 rounded-lg flex items-center justify-center overflow-hidden">
+					<CheckerBoard className="absolute inset-0 border border-border/50 rounded-lg flex items-center justify-center overflow-hidden">
 						<SpriteCanvas
 							showEmpty
 							panX={panX}

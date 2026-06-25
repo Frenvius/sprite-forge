@@ -1,15 +1,18 @@
 import { Play, Pause, FileQuestion } from 'lucide-react';
 import { useRef, useMemo, useState, useEffect } from 'react';
 
+import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { DragHandleProps } from '~/usecase/util/dock';
 import { CheckerBoard } from '~/components/CheckerBoard';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { loadSpriteIds, getCategoryRenderConfig } from '~/lib/formats/tibia';
 import { getPingPongFrame, AnimationDirection } from '~/lib/formats/tibia/animation';
 
-export const VisualizationPanel = () => {
+export const VisualizationPanel = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	const { data, getThing, formatConfig, selectedCategory, highlightedItemId, notifySpritesLoaded } = useAssetData();
+	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 	const item = highlightedItemId ? getThing(highlightedItemId, selectedCategory) : null;
 
 	const [currentFrame, setCurrentFrame] = useState(0);
@@ -260,8 +263,14 @@ export const VisualizationPanel = () => {
 
 	if (!data || !item) {
 		return (
-			<div className="w-full h-[150px] bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
-				<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0">
+			<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
+				<div
+					{...handleProps}
+					className={cn(
+						'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0',
+						dragHandle && 'cursor-grab active:cursor-grabbing'
+					)}
+				>
 					<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Visualization</h2>
 				</div>
 				<div className="flex-1 flex items-center justify-center p-4 min-h-0">
@@ -275,8 +284,14 @@ export const VisualizationPanel = () => {
 	}
 
 	return (
-		<div className="w-full h-[150px] bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
-			<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0">
+		<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
+			<div
+				{...handleProps}
+				className={cn(
+					'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0',
+					dragHandle && 'cursor-grab active:cursor-grabbing'
+				)}
+			>
 				<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Visualization</h2>
 			</div>
 			<div className="flex-1 min-h-0 p-2 relative">

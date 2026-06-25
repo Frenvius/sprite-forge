@@ -202,7 +202,7 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 
 					<div>
 						<Label className={labelCls}>Flags</Label>
-						<div className="mt-1 grid grid-cols-2 min-[1100px]:grid-cols-3 gap-x-3 gap-y-1">
+						<div className="mt-1 grid grid-cols-2 @[1100px]:grid-cols-3 gap-x-3 gap-y-1">
 							{SYNCED_FLAGS.map((f) => (
 								<label key={String(f.key)} className="flex items-center justify-between gap-2 text-xs">
 									<span className="truncate">{f.label}</span>

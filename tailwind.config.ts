@@ -3,7 +3,7 @@ import type { Config } from 'tailwindcss';
 export default {
 	prefix: '',
 	darkMode: ['class'],
-	plugins: [require('tailwindcss-animate')],
+	plugins: [require('tailwindcss-animate'), require('@tailwindcss/container-queries')],
 	content: ['./pages/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
 	theme: {
 		container: {

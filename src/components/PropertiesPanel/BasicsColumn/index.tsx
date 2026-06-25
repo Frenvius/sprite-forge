@@ -37,7 +37,7 @@ export const BasicsColumn = ({ preview, frameGroups }: BasicsColumnProps) => {
 
 	return (
 		<>
-			<div className="flex flex-col gap-4 min-[820px]:col-span-1">
+			<div className="flex flex-col gap-4 @[820px]:col-span-1">
 				<div className="bg-secondary/20 rounded-md border border-border/40 overflow-hidden">
 					<div className="flex items-center justify-between gap-1.5 px-3 py-2 bg-secondary/40 border-b border-border/30">
 						<div className="flex items-center gap-1.5">
@@ -234,13 +234,13 @@ export const BasicsColumn = ({ preview, frameGroups }: BasicsColumnProps) => {
 			</div>
 
 			{!isOutfit && (
-				<div className="hidden min-[1400px]:block">
-					<div className="bg-secondary/20 rounded-md border border-border/40 overflow-hidden h-[361px] flex flex-col">
+				<div className="@[820px]:col-span-2 @[1100px]:col-span-1">
+					<div className="bg-secondary/20 rounded-md border border-border/40 overflow-hidden flex flex-col">
 						<div className="flex items-center gap-1.5 px-3 py-2 bg-secondary/40 border-b border-border/30 flex-shrink-0">
 							<div className="w-0.5 h-3 bg-primary rounded-full" />
 							<h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Visuals</h3>
 						</div>
-						<div className="p-3 space-y-4 overflow-y-auto flex-1">
+						<div className="p-3 space-y-4 flex-1">
 							<div>
 								<div className="pb-1 mb-3 border-b border-border/30"></div>
 								<div className="space-y-2 pl-1">

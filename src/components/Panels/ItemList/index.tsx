@@ -2,6 +2,7 @@ import { Edit, Copy, Plus, Circle, Trash2, Upload, Package, Sparkles, Download, 
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { DragHandleProps } from '~/usecase/util/dock';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { CheckerBoard } from '~/components/CheckerBoard';
 import { useItemList } from '~/usecase/hooks/useItemList';
@@ -14,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/comp
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from '~/components/ui/context-menu';
 
-export const ItemList = () => {
+export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	const {
 		data,
 		getThing,
@@ -53,6 +54,7 @@ export const ItemList = () => {
 
 	const { getServerItemsForClient } = useAssetData();
 	const showServerInfo = !!data?.otbPath && selectedCategory === ThingCategory.ITEM;
+	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	const selectionCount = selectedItemIds.size;
 	const isMulti = selectionCount > 1;
@@ -61,7 +63,13 @@ export const ItemList = () => {
 	if (!data) {
 		return (
 			<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden">
-				<div className="h-8 px-3 flex items-center gap-2 border-b border-border/50 bg-secondary/80">
+				<div
+					{...handleProps}
+					className={cn(
+						'h-8 px-3 flex items-center gap-2 border-b border-border/50 bg-secondary/80',
+						dragHandle && 'cursor-grab active:cursor-grabbing'
+					)}
+				>
 					<Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ThingCategory)}>
 						<SelectTrigger className="h-6 w-24 text-xs">
 							<SelectValue />
@@ -89,7 +97,13 @@ export const ItemList = () => {
 
 	return (
 		<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden relative">
-			<div className="h-8 px-3 flex items-center gap-2 border-b border-border/50 bg-secondary/80">
+			<div
+				{...handleProps}
+				className={cn(
+					'h-8 px-3 flex items-center gap-2 border-b border-border/50 bg-secondary/80',
+					dragHandle && 'cursor-grab active:cursor-grabbing'
+				)}
+			>
 				<Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ThingCategory)}>
 					<SelectTrigger className="h-6 w-24 text-xs mt-[1px]">
 						<SelectValue />

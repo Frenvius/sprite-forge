@@ -2,18 +2,26 @@ import { X } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { DragHandleProps } from '~/usecase/util/dock';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
 
-export const OpenedItemsPanel = () => {
+export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	const { data, openedItems, openedItemId, setOpenedItemId, removeOpenedItem, selectedCategory, setSelectedCategoryAndItem } =
 		useAssetData();
+	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	if (!data) {
 		return (
-			<div className="w-full h-[72px] bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
-				<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0">
+			<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
+				<div
+					{...handleProps}
+					className={cn(
+						'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0',
+						dragHandle && 'cursor-grab active:cursor-grabbing'
+					)}
+				>
 					<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Opened Objects</h2>
 				</div>
 				<div className="flex-1 flex items-center justify-center p-4 min-h-0">
@@ -33,13 +41,14 @@ export const OpenedItemsPanel = () => {
 		TIBIA_FORMAT_CONFIG.categories.find((c) => c.id === category)?.label ?? category;
 
 	return (
-		<div
-			className={cn(
-				'w-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0',
-				openedItems.length === 0 ? 'h-[72px]' : 'min-h-[72px] max-h-[200px]'
-			)}
-		>
-			<div className="h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0">
+		<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
+			<div
+				{...handleProps}
+				className={cn(
+					'h-8 px-3 flex items-center border-b border-border/50 bg-secondary/80 flex-shrink-0',
+					dragHandle && 'cursor-grab active:cursor-grabbing'
+				)}
+			>
 				<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Opened Objects</h2>
 				{openedItems.length > 0 && <span className="ml-auto text-xs text-muted-foreground font-mono">{openedItems.length}</span>}
 			</div>

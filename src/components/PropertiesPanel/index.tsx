@@ -61,9 +61,9 @@ export const PropertiesPanel = () => {
 				</div>
 
 				<ScrollArea className="flex-1">
-					<div className="p-4">
+					<div className="@container p-4">
 						<div
-							className={`grid gap-4 mb-4 grid-cols-1 min-[820px]:grid-cols-[361px_1fr] ${isOutfit ? '' : 'min-[1400px]:grid-cols-[361px_1fr_1fr]'}`}
+							className={`grid gap-4 mb-4 grid-cols-1 @[820px]:grid-cols-[361px_1fr] ${isOutfit ? '' : '@[1100px]:grid-cols-[361px_1fr_1fr]'}`}
 						>
 							<PreviewPanel preview={c.preview} />
 							<BasicsColumn preview={c.preview} frameGroups={c.frameGroups} />
