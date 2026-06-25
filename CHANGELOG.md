@@ -5,6 +5,29 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-25
+
+### Added
+- In-place item removal with undo/redo.
+- Configurable default sprite canvas zoom in Preferences.
+- Exported objects panel with double-click to view.
+- Draggable, dockable panels with a persistent layout.
+- Background context menu to create or import directly in listings.
+- Rich object preview sidebar in the import dialog.
+- Timestamped `.bak` backup of the DAT/SPR before each save.
+- On-demand OBD/SFP viewer with server-item dedup in the import dialog.
+- Drag-and-drop reordering of favorites.
+- Single-file format auto-detection in the open dialog.
+
+### Fixed
+- Update notes now render as formatted markdown instead of raw text.
+- Writes a placeholder for missing DAT object IDs to prevent corruption on save.
+- Sprite sheet export now decodes with the correct SPR alpha format.
+- Centers the toggle switch thumb.
+
+### Performance
+- Faster OTB loading via binary transfer.
+
 ## [0.2.0] - 2026-06-20
 
 ### Added
