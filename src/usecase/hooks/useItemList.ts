@@ -316,6 +316,15 @@ export const useItemList = () => {
 		[getThing, toast]
 	);
 
+	const goToLastItem = () => {
+		const lastId = allItemIds[allItemIds.length - 1];
+		if (lastId === undefined) return;
+		setCurrentPage(totalPages);
+		shouldScrollToHighlightedRef.current = true;
+		setHighlightedItemId(lastId);
+		setSelectedItemIds(new Set([lastId]));
+	};
+
 	const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === 'Enter') {
 			const itemId = parseInt(inputValue);
@@ -751,6 +760,7 @@ export const useItemList = () => {
 		setViewMode,
 		exportSheet,
 		exportSheets,
+		goToLastItem,
 		importGeneral,
 		createNewItem,
 		setInputValue,

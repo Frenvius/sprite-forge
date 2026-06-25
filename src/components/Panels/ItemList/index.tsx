@@ -31,6 +31,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 		setViewMode,
 		findSimilar,
 		exportSheets,
+		goToLastItem,
 		importGeneral,
 		createNewItem,
 		setInputValue,
@@ -331,6 +332,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 			</ContextMenu>
 
 			<ListPagination
+				onLast={goToLastItem}
 				totalPages={totalPages}
 				inputValue={inputValue}
 				currentPage={currentPage}

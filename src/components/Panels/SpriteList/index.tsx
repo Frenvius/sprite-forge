@@ -27,6 +27,7 @@ export const SpriteList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => 
 		setViewMode,
 		selectSprite,
 		setInputValue,
+		goToLastSprite,
 		createNewSprite,
 		handlePageChange,
 		handleFindUsages,
@@ -278,6 +279,7 @@ export const SpriteList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => 
 			<ListPagination
 				totalPages={totalPages}
 				inputValue={inputValue}
+				onLast={goToLastSprite}
 				currentPage={currentPage}
 				onInputChange={setInputValue}
 				onPageChange={handlePageChange}

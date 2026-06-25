@@ -147,6 +147,15 @@ export const useSpriteList = () => {
 		}
 	};
 
+	const goToLastSprite = () => {
+		const lastId = allSpriteIds[allSpriteIds.length - 1];
+		if (lastId === undefined) return;
+		setCurrentPage(totalPages);
+		shouldScrollToHighlightedRef.current = true;
+		setHighlightedSpriteId(lastId);
+		setSelectedSpriteIds(new Set([lastId]));
+	};
+
 	const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === 'Enter') {
 			const spriteId = parseInt(inputValue);
@@ -690,6 +699,7 @@ export const useSpriteList = () => {
 		setViewMode,
 		selectSprite,
 		setInputValue,
+		goToLastSprite,
 		createNewSprite,
 		handlePageChange,
 		handleFindUsages,

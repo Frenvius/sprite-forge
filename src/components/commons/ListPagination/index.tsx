@@ -6,6 +6,7 @@ import { cn } from '~/lib/utils';
 import { Input } from '~/components/ui/input';
 
 export const ListPagination = ({
+	onLast,
 	totalPages,
 	inputValue,
 	currentPage,
@@ -56,7 +57,7 @@ export const ListPagination = ({
 				</button>
 				<button
 					disabled={currentPage === totalPages}
-					onClick={() => onPageChange(totalPages)}
+					onClick={() => (onLast ? onLast() : onPageChange(totalPages))}
 					className={cn(
 						'w-7 h-7 flex items-center justify-center rounded bg-secondary hover:bg-secondary/80 transition-colors',
 						currentPage === totalPages && 'opacity-50 cursor-not-allowed'
