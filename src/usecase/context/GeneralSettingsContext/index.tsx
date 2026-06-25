@@ -2,6 +2,7 @@ import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface GeneralSettings {
+	defaultZoom: number;
 	backupOnSave: boolean;
 	listAmountObjects: number;
 	listAmountSprites: number;
@@ -14,6 +15,7 @@ interface GeneralSettingsContextType {
 }
 
 const DEFAULT_SETTINGS: GeneralSettings = {
+	defaultZoom: 2,
 	backupOnSave: true,
 	listAmountObjects: 100,
 	listAmountSprites: 100,
@@ -27,6 +29,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 
 	React.useEffect(() => {
 		invoke<{
+			default_zoom: number;
 			backup_on_save: boolean;
 			list_amount_objects: number;
 			list_amount_sprites: number;
@@ -34,6 +37,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 		}>('get_general_settings')
 			.then((saved) => {
 				setSettingsState({
+					defaultZoom: saved.default_zoom ?? 2,
 					backupOnSave: saved.backup_on_save ?? true,
 					listAmountObjects: saved.list_amount_objects,
 					listAmountSprites: saved.list_amount_sprites,
@@ -49,6 +53,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 		setSettingsState(next);
 		invoke('set_general_settings', {
 			settings: {
+				default_zoom: next.defaultZoom,
 				backup_on_save: next.backupOnSave,
 				list_amount_objects: next.listAmountObjects,
 				list_amount_sprites: next.listAmountSprites,

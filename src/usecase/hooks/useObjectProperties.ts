@@ -34,6 +34,8 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 	const { settings } = useGeneralSettings();
 	const autoPlayRef = React.useRef(settings.autoPlayAnimation);
 	autoPlayRef.current = settings.autoPlayAnimation;
+	const defaultZoomRef = React.useRef(settings.defaultZoom);
+	defaultZoomRef.current = settings.defaultZoom;
 	const projectItem = openedItemId && openedItemCategory ? getThing(openedItemId, openedItemCategory) : null;
 	const item = override ? override.item : projectItem;
 
@@ -307,7 +309,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 		showFloorChange: isItem && clientVersion >= 710 && clientVersion <= 854
 	};
 
-	const [zoom, setZoom] = React.useState(1);
+	const [zoom, setZoom] = React.useState(settings.defaultZoom);
 	const [panX, setPanX] = React.useState(0);
 	const [panY, setPanY] = React.useState(0);
 	const [showExactSize, setShowExactSize] = React.useState(false);
@@ -873,7 +875,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 
 			const savedState = loadItemState(openedItemCategory, openedItemId);
 
-			const zoomValue = savedState?.zoom !== undefined ? savedState.zoom : 1;
+			const zoomValue = savedState?.zoom !== undefined ? savedState.zoom : defaultZoomRef.current;
 			const panXValue = savedState?.panX !== undefined ? savedState.panX : 0;
 			const panYValue = savedState?.panY !== undefined ? savedState.panY : 0;
 
@@ -1065,7 +1067,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 		setHasChanges(false);
 
 		const cat = override.item.category;
-		setZoom(2);
+		setZoom(defaultZoomRef.current);
 		setPanX(0);
 		setPanY(0);
 		setPatternX(

@@ -371,6 +371,10 @@ fn default_true() -> bool {
     true
 }
 
+fn default_zoom() -> u32 {
+    2
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GeneralSettings {
     list_amount_objects: u32,
@@ -379,6 +383,8 @@ struct GeneralSettings {
     auto_play_animation: bool,
     #[serde(default = "default_true")]
     backup_on_save: bool,
+    #[serde(default = "default_zoom")]
+    default_zoom: u32,
 }
 
 impl Default for GeneralSettings {
@@ -388,6 +394,7 @@ impl Default for GeneralSettings {
             list_amount_sprites: 100,
             auto_play_animation: false,
             backup_on_save: true,
+            default_zoom: 2,
         }
     }
 }

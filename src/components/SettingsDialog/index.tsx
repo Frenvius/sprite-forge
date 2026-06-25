@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 
 import { Slider } from '~/components/ui/slider';
 import { Switch } from '~/components/ui/switch';
+import { Button } from '~/components/ui/button';
+import { ZOOM_LEVELS } from '~/usecase/util/constants';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { Dialog, DialogTitle, DialogHeader, DialogContent, DialogDescription } from '~/components/ui/dialog';
 
@@ -94,6 +96,25 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 								onCheckedChange={(checked) => setSettings({ ...settings, autoPlayAnimation: checked })}
 							/>
 						</label>
+						<div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+							<div className="space-y-0.5">
+								<div className="text-sm text-foreground">Default zoom</div>
+								<div className="text-[10px] text-muted-foreground">Zoom level applied when opening an object.</div>
+							</div>
+							<div className="flex gap-1">
+								{ZOOM_LEVELS.map((level) => (
+									<Button
+										size="sm"
+										key={level}
+										className="h-7 w-9 font-mono text-xs"
+										variant={settings.defaultZoom === level ? 'default' : 'outline'}
+										onClick={() => setSettings({ ...settings, defaultZoom: level })}
+									>
+										{level}x
+									</Button>
+								))}
+							</div>
+						</div>
 					</section>
 
 					<section className="space-y-3">
