@@ -88,161 +88,178 @@ export const SpriteList = () => {
 				</div>
 			</div>
 
-			<div ref={scrollViewportRef} className="flex-1 overflow-y-auto custom-scrollbar">
-				<div
-					className={cn(
-						'p-2 pb-16',
-						viewMode === 'list' && 'space-y-0.5',
-						viewMode === 'grid' && 'grid grid-cols-2 gap-1',
-						viewMode === 'grid-3' && 'grid grid-cols-3 gap-1',
-						viewMode === 'grid-4' && 'grid grid-cols-4 gap-1',
-						viewMode === 'large' && 'grid grid-cols-1 gap-2',
-						viewMode === 'large-2' && 'grid grid-cols-2 gap-2'
-					)}
-				>
-					{paginatedSpriteIds.map((id) => (
-						<ContextMenu key={id}>
-							<ContextMenuTrigger asChild>
-								<div
-									role="button"
-									data-sprite-id={id}
-									onContextMenu={() => handleContextMenuTarget(id)}
-									onClick={(e) => {
-										e.stopPropagation();
-										selectSprite(id, e);
-									}}
-									onDoubleClick={(e) => {
-										e.stopPropagation();
-										openSprite(id);
-									}}
-									onMouseUp={(e) => {
-										const timer = (e.target as any)._dragTimer;
-										if (timer) clearTimeout(timer);
-									}}
-									style={{
-										userSelect: 'none',
-										msUserSelect: 'none',
-										MozUserSelect: 'none',
-										WebkitUserSelect: 'none'
-									}}
-									onMouseDown={(e) => {
-										if (e.button !== 0) return;
-
-										e.preventDefault();
-										e.stopPropagation();
-
-										(e.target as any)._dragTimer = startSpriteDragTimer(id, (idsToDrag) => (
-											<div className="bg-background border border-border rounded-md shadow-lg overflow-hidden w-12 h-12 flex items-center justify-center relative">
-												<SpriteCanvas showEmpty scale={1.5} spriteId={id} renderMode="list" />
-												{idsToDrag.length > 1 && (
-													<div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-1 rounded-bl-md">
-														{idsToDrag.length}
-													</div>
-												)}
-											</div>
-										));
-									}}
-									className={cn(
-										'w-full rounded-md transition-all hover:bg-item-hover cursor-grab active:cursor-grabbing relative',
-										(selectedSpriteIds.has(id) || highlightedSpriteId === id) && 'bg-primary/15 ring-1 ring-primary/50',
-										viewMode === 'list' && 'flex items-center gap-2 px-2 py-1',
-										viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
-										viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
-										viewMode === 'grid-4' && 'flex flex-col items-center px-0.5 py-1 gap-0.5',
-										viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5',
-										viewMode === 'large-2' && 'flex flex-col items-stretch gap-1 p-1.5 overflow-hidden'
-									)}
-								>
-									<div
-										className={cn(
-											'rounded-md border border-border/50 flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted pointer-events-none select-none',
-											viewMode === 'list' && 'w-8 h-8',
-											viewMode === 'grid' && 'w-12 h-12',
-											viewMode === 'grid-3' && 'w-11 h-11',
-											viewMode === 'grid-4' && 'w-9 h-9',
-											viewMode === 'large' && 'w-32 h-32',
-											viewMode === 'large-2' && 'w-full aspect-square'
-										)}
-									>
-										<SpriteCanvas
-											showEmpty
-											spriteId={id}
-											renderMode="list"
-											fill={viewMode === 'large-2'}
-											className="pointer-events-none select-none"
-											scale={
-												viewMode === 'list'
-													? 1
-													: viewMode === 'grid'
-														? 1.5
-														: viewMode === 'grid-3'
-															? 1.375
-															: viewMode === 'grid-4'
-																? 1.125
-																: 4
-											}
-										/>
-									</div>
-									<div
-										className={cn(
-											'min-w-0 pointer-events-none select-none',
-											viewMode === 'list' && 'flex-1 text-left',
-											viewMode === 'grid' && 'flex-1 text-right',
-											viewMode === 'grid-3' && 'w-full text-center',
-											viewMode === 'grid-4' && 'w-full text-center',
-											viewMode === 'large' && 'flex-1 text-right',
-											viewMode === 'large-2' && 'w-full text-center'
-										)}
-									>
+			<ContextMenu>
+				<ContextMenuTrigger asChild>
+					<div ref={scrollViewportRef} className="flex-1 overflow-y-auto custom-scrollbar">
+						<div
+							className={cn(
+								'p-2 pb-16',
+								viewMode === 'list' && 'space-y-0.5',
+								viewMode === 'grid' && 'grid grid-cols-2 gap-1',
+								viewMode === 'grid-3' && 'grid grid-cols-3 gap-1',
+								viewMode === 'grid-4' && 'grid grid-cols-4 gap-1',
+								viewMode === 'large' && 'grid grid-cols-1 gap-2',
+								viewMode === 'large-2' && 'grid grid-cols-2 gap-2'
+							)}
+						>
+							{paginatedSpriteIds.map((id) => (
+								<ContextMenu key={id}>
+									<ContextMenuTrigger asChild>
 										<div
+											role="button"
+											data-sprite-id={id}
+											onClick={(e) => {
+												e.stopPropagation();
+												selectSprite(id, e);
+											}}
+											onDoubleClick={(e) => {
+												e.stopPropagation();
+												openSprite(id);
+											}}
+											onContextMenu={(e) => {
+												e.stopPropagation();
+												handleContextMenuTarget(id);
+											}}
+											onMouseUp={(e) => {
+												const timer = (e.target as any)._dragTimer;
+												if (timer) clearTimeout(timer);
+											}}
+											style={{
+												userSelect: 'none',
+												msUserSelect: 'none',
+												MozUserSelect: 'none',
+												WebkitUserSelect: 'none'
+											}}
 											className={cn(
-												'text-foreground font-mono font-medium leading-tight truncate',
-												viewMode === 'grid-4' ? 'text-[9px]' : viewMode === 'grid-3' ? 'text-[10px]' : 'text-[11px]'
+												'w-full rounded-md transition-all hover:bg-item-hover cursor-grab active:cursor-grabbing relative',
+												(selectedSpriteIds.has(id) || highlightedSpriteId === id) && 'bg-primary/15 ring-1 ring-primary/50',
+												viewMode === 'list' && 'flex items-center gap-2 px-2 py-1',
+												viewMode === 'grid' && 'flex items-center px-1 py-0.5 gap-1.5',
+												viewMode === 'grid-3' && 'flex flex-col items-center px-1 py-1 gap-1',
+												viewMode === 'grid-4' && 'flex flex-col items-center px-0.5 py-1 gap-0.5',
+												viewMode === 'large' && 'flex items-center px-1 py-0.5 gap-1.5',
+												viewMode === 'large-2' && 'flex flex-col items-stretch gap-1 p-1.5 overflow-hidden'
 											)}
+											onMouseDown={(e) => {
+												if (e.button !== 0) return;
+
+												e.preventDefault();
+												e.stopPropagation();
+
+												(e.target as any)._dragTimer = startSpriteDragTimer(id, (idsToDrag) => (
+													<div className="bg-background border border-border rounded-md shadow-lg overflow-hidden w-12 h-12 flex items-center justify-center relative">
+														<SpriteCanvas showEmpty scale={1.5} spriteId={id} renderMode="list" />
+														{idsToDrag.length > 1 && (
+															<div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-1 rounded-bl-md">
+																{idsToDrag.length}
+															</div>
+														)}
+													</div>
+												));
+											}}
 										>
-											{id}
+											<div
+												className={cn(
+													'rounded-md border border-border/50 flex items-center justify-center flex-shrink-0 overflow-hidden bg-muted pointer-events-none select-none',
+													viewMode === 'list' && 'w-8 h-8',
+													viewMode === 'grid' && 'w-12 h-12',
+													viewMode === 'grid-3' && 'w-11 h-11',
+													viewMode === 'grid-4' && 'w-9 h-9',
+													viewMode === 'large' && 'w-32 h-32',
+													viewMode === 'large-2' && 'w-full aspect-square'
+												)}
+											>
+												<SpriteCanvas
+													showEmpty
+													spriteId={id}
+													renderMode="list"
+													fill={viewMode === 'large-2'}
+													className="pointer-events-none select-none"
+													scale={
+														viewMode === 'list'
+															? 1
+															: viewMode === 'grid'
+																? 1.5
+																: viewMode === 'grid-3'
+																	? 1.375
+																	: viewMode === 'grid-4'
+																		? 1.125
+																		: 4
+													}
+												/>
+											</div>
+											<div
+												className={cn(
+													'min-w-0 pointer-events-none select-none',
+													viewMode === 'list' && 'flex-1 text-left',
+													viewMode === 'grid' && 'flex-1 text-right',
+													viewMode === 'grid-3' && 'w-full text-center',
+													viewMode === 'grid-4' && 'w-full text-center',
+													viewMode === 'large' && 'flex-1 text-right',
+													viewMode === 'large-2' && 'w-full text-center'
+												)}
+											>
+												<div
+													className={cn(
+														'text-foreground font-mono font-medium leading-tight truncate',
+														viewMode === 'grid-4' ? 'text-[9px]' : viewMode === 'grid-3' ? 'text-[10px]' : 'text-[11px]'
+													)}
+												>
+													{id}
+												</div>
+											</div>
 										</div>
-									</div>
-								</div>
-							</ContextMenuTrigger>
-							<ContextMenuContent>
-								<ContextMenuItem disabled={isMulti} onClick={() => id && handleCopySpriteImage(id)}>
-									<Copy className="mr-2 h-4 w-4" />
-									<span>Copy Image</span>
-								</ContextMenuItem>
-								<ContextMenuItem disabled={isMulti} onClick={() => id && data && pasteClipboardImage(id)}>
-									<ClipboardPaste className="mr-2 h-4 w-4" />
-									<span>Paste from Clipboard</span>
-								</ContextMenuItem>
-								<ContextMenuSeparator />
-								<ContextMenuItem disabled={isMulti} onClick={() => id && handleFindUsages(id)}>
-									<Search className="mr-2 h-4 w-4" />
-									<span>Find Usages</span>
-								</ContextMenuItem>
-								<ContextMenuSeparator />
-								<ContextMenuItem
-									onClick={() => (isMulti ? handleExportSpritesPng(selectionIds) : id && handleExportSpritePng(id))}
-								>
-									<Download className="mr-2 h-4 w-4" />
-									<span>{isMulti ? `Export PNGs (${selectionCount})...` : 'Export PNG...'}</span>
-								</ContextMenuItem>
-								<ContextMenuItem disabled={isMulti} onClick={() => id && handleReplaceFromPng(id)}>
-									<Upload className="mr-2 h-4 w-4" />
-									<span>Replace from PNG...</span>
-								</ContextMenuItem>
-								<ContextMenuSeparator />
-								<ContextMenuItem
-									className="text-destructive focus:text-destructive"
-									onClick={() => (isMulti ? handleDeleteSprite(selectionIds) : id && handleDeleteSprite(id))}
-								>
-									<Trash2 className="mr-2 h-4 w-4" />
-									<span>{isMulti ? `Remove (${selectionCount})` : 'Remove'}</span>
-								</ContextMenuItem>
-							</ContextMenuContent>
-						</ContextMenu>
-					))}
-				</div>
-			</div>
+									</ContextMenuTrigger>
+									<ContextMenuContent>
+										<ContextMenuItem disabled={isMulti} onClick={() => id && handleCopySpriteImage(id)}>
+											<Copy className="mr-2 h-4 w-4" />
+											<span>Copy Image</span>
+										</ContextMenuItem>
+										<ContextMenuItem disabled={isMulti} onClick={() => id && data && pasteClipboardImage(id)}>
+											<ClipboardPaste className="mr-2 h-4 w-4" />
+											<span>Paste from Clipboard</span>
+										</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem disabled={isMulti} onClick={() => id && handleFindUsages(id)}>
+											<Search className="mr-2 h-4 w-4" />
+											<span>Find Usages</span>
+										</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem
+											onClick={() => (isMulti ? handleExportSpritesPng(selectionIds) : id && handleExportSpritePng(id))}
+										>
+											<Download className="mr-2 h-4 w-4" />
+											<span>{isMulti ? `Export PNGs (${selectionCount})...` : 'Export PNG...'}</span>
+										</ContextMenuItem>
+										<ContextMenuItem disabled={isMulti} onClick={() => id && handleReplaceFromPng(id)}>
+											<Upload className="mr-2 h-4 w-4" />
+											<span>Replace from PNG...</span>
+										</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem
+											className="text-destructive focus:text-destructive"
+											onClick={() => (isMulti ? handleDeleteSprite(selectionIds) : id && handleDeleteSprite(id))}
+										>
+											<Trash2 className="mr-2 h-4 w-4" />
+											<span>{isMulti ? `Remove (${selectionCount})` : 'Remove'}</span>
+										</ContextMenuItem>
+									</ContextMenuContent>
+								</ContextMenu>
+							))}
+						</div>
+					</div>
+				</ContextMenuTrigger>
+				<ContextMenuContent>
+					<ContextMenuItem onClick={createNewSprite}>
+						<Plus className="mr-2 h-4 w-4" />
+						<span>Create new sprite</span>
+					</ContextMenuItem>
+					<ContextMenuItem onClick={() => pasteClipboardImage()}>
+						<ClipboardPaste className="mr-2 h-4 w-4" />
+						<span>Paste from Clipboard</span>
+					</ContextMenuItem>
+				</ContextMenuContent>
+			</ContextMenu>
 
 			<ListPagination
 				totalPages={totalPages}

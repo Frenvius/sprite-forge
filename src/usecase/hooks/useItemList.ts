@@ -404,6 +404,7 @@ export const useItemList = () => {
 		pendingNewItemId.current = newId;
 		notifyDataChanged();
 		setCurrentPage(targetPage);
+		return newId;
 	};
 
 	const editItem = (id: number) => {
@@ -565,6 +566,44 @@ export const useItemList = () => {
 		}
 	};
 
+	const importGeneral = async () => {
+		if (!data) return;
+
+		const selected = await open({
+			multiple: true,
+			filters: [{ name: 'Importable', extensions: ['sfp', 'obd', 'png', 'bmp', 'jpg', 'jpeg'] }]
+		});
+		if (!selected) return;
+		const paths = Array.isArray(selected) ? selected : [selected];
+
+		const sfp = paths.find((p) => /\.sfp$/i.test(p));
+		if (sfp) {
+			openImport({ paths: [sfp], source: 'sfp' });
+			return;
+		}
+
+		const obds = paths.filter((p) => /\.obd$/i.test(p));
+		if (obds.length > 0) {
+			openImport({ paths: obds, source: 'obd' });
+			return;
+		}
+
+		const image = paths.find((p) => /\.(png|bmp|jpe?g)$/i.test(p));
+		if (!image) return;
+
+		const newId = createNewItem();
+		const item = getThing(newId, selectedCategory);
+		if (!item) return;
+
+		const result = await importObjectSheet(item, data, image, { isNew: true });
+		if (result.success) {
+			notifySpritesLoaded();
+			notifyDataChanged([newId]);
+		} else if (result.error) {
+			toast({ variant: 'destructive', description: `Import rejected: ${result.error}` });
+		}
+	};
+
 	const removeItem = (ids: number | number[]) => {
 		if (!data) return;
 		const map = getCategoryMap(selectedCategory);
@@ -683,6 +722,7 @@ export const useItemList = () => {
 		setViewMode,
 		exportSheet,
 		exportSheets,
+		importGeneral,
 		createNewItem,
 		setInputValue,
 		updateCounter,
