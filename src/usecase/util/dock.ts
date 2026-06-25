@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core';
 
 export type DockZone = 'left' | 'right';
 
-export type PanelKind = 'itemList' | 'spriteList' | 'openedItems' | 'visualization';
+export type PanelKind = 'itemList' | 'spriteList' | 'openedItems' | 'recentExports' | 'visualization';
 
 export type PanelId = PanelKind;
 
@@ -84,6 +84,14 @@ export const PANELS: Record<PanelKind, PanelMeta> = {
 		id: 'visualization',
 		title: 'Visualization',
 		minWidth: MIN_PANEL_WIDTH
+	},
+	recentExports: {
+		minHeight: 100,
+		resizable: true,
+		stackable: true,
+		id: 'recentExports',
+		title: 'Exported Objects',
+		minWidth: MIN_PANEL_WIDTH
 	}
 };
 
@@ -94,8 +102,8 @@ export const panelMeta = (id: PanelId): PanelMeta => PANELS[id];
 export const DEFAULT_DOCK_LAYOUT: DockLayout = {
 	float: {},
 	right: [['spriteList']],
-	height: { openedItems: 140, visualization: 170 },
-	left: [['visualization', 'openedItems', 'itemList']],
+	height: { openedItems: 140, visualization: 170, recentExports: 150 },
+	left: [['visualization', 'openedItems', 'recentExports', 'itemList']],
 	width: { spriteList: DEFAULT_PANEL_WIDTH, visualization: DEFAULT_PANEL_WIDTH }
 };
 

@@ -612,6 +612,13 @@ export const Toolbar = () => {
 							>
 								Opened Objects
 							</MenubarCheckboxItem>
+							<MenubarCheckboxItem
+								checked={settings.showExports}
+								onSelect={(e) => e.preventDefault()}
+								onCheckedChange={() => togglePanel('showExports')}
+							>
+								Exported Objects
+							</MenubarCheckboxItem>
 							<MenubarSeparator />
 							<MenubarItem onSelect={() => setThemeDialogOpen(true)}>
 								<Palette className="mr-2 h-3.5 w-3.5" />

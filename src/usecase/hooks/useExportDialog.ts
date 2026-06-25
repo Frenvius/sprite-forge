@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { useToast } from './useToast';
+import { addRecentExport } from '~/usecase/util/recentExports';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { exportObd, exportPack, loadSpriteIdsLz4, collectReferencedSpriteIds } from '~/lib/formats/tibia';
@@ -103,6 +104,7 @@ export const useExportDialog = () => {
 			for (const thing of list) {
 				const path = await join(outputFolder, fileName(thing, 'obd'));
 				await exportObd(thing, data, path);
+				addRecentExport({ path, source: 'obd', at: Date.now(), name: fileName(thing, 'obd') });
 				count++;
 			}
 			return count;
@@ -117,6 +119,7 @@ export const useExportDialog = () => {
 			const outPath = appendPath ?? (outputFolder ? await join(outputFolder, `${name}.sfp`) : null);
 			if (!outPath) return 0;
 			await exportPack(list, data, outPath, appendPath);
+			addRecentExport({ path: outPath, source: 'sfp', at: Date.now(), name: outPath.split(/[\\/]/).pop() ?? `${name}.sfp` });
 			return list.length;
 		},
 		[data, appendPath, outputFolder, name]

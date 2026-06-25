@@ -8,6 +8,7 @@ import { useTheme } from '~/usecase/context/ThemeContext';
 import { SpriteList } from '~/components/Panels/SpriteList';
 import { PropertiesPanel } from '~/components/PropertiesPanel';
 import { OpenedItemsPanel } from '~/components/OpenedItemsPanel';
+import { RecentExportsPanel } from '~/components/RecentExportsPanel';
 import { VisualizationPanel } from '~/components/VisualizationPanel';
 import { usePanelSettings } from '~/usecase/context/PanelSettingsContext';
 
@@ -21,6 +22,7 @@ const Index = () => {
 	const isContentReady = (id: PanelId) => {
 		if (id === 'visualization') return settings.showVisualization;
 		if (id === 'openedItems') return settings.showOpenedItems;
+		if (id === 'recentExports') return settings.showExports;
 		return true;
 	};
 
@@ -31,6 +33,7 @@ const Index = () => {
 		if (id === 'openedItems') return <OpenedItemsPanel dragHandle={handle} />;
 		if (id === 'itemList') return <ItemList dragHandle={handle} />;
 		if (id === 'spriteList') return <SpriteList dragHandle={handle} />;
+		if (id === 'recentExports') return <RecentExportsPanel dragHandle={handle} />;
 		return null;
 	};
 
