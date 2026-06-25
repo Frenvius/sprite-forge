@@ -22,9 +22,11 @@ import {
 export const useItemList = () => {
 	const {
 		data,
+		pushUndo,
 		isNewItem,
 		spriteSize,
 		updateThing,
+		captureUndo,
 		openedItemId,
 		formatConfig,
 		updateCounter,
@@ -379,11 +381,13 @@ export const useItemList = () => {
 			newId++;
 		}
 
+		const undoBefore = captureUndo(selectedCategory, [newId]);
 		const newItem = createThingType(newId, selectedCategory, formatConfig);
 		map.set(newId, newItem);
 
 		const newCount = map.size;
 		setCategoryCount(data, selectedCategory, newCount);
+		pushUndo(undoBefore, captureUndo(selectedCategory, [newId]), 'Create');
 
 		const updatedMaxId = minId + newCount - 1;
 		const updatedAllItemIds: number[] = [];
@@ -449,6 +453,7 @@ export const useItemList = () => {
 		const map = getCategoryMapUtil(data, selectedCategory);
 		const idList = Array.isArray(ids) ? ids : [ids];
 		const minId = getCategoryStartId(formatConfig, selectedCategory);
+		const prevCount = getCategoryCount(data, selectedCategory);
 
 		let lastNewId: null | number = null;
 		const newIds: number[] = [];
@@ -485,6 +490,11 @@ export const useItemList = () => {
 
 		const updatedCount = Math.max(getCategoryCount(data, selectedCategory), lastNewId - minId + 1);
 		setCategoryCount(data, selectedCategory, updatedCount);
+		pushUndo(
+			{ count: prevCount, category: selectedCategory, entries: newIds.map((id) => ({ id, thing: null })) },
+			captureUndo(selectedCategory, newIds),
+			'Duplicate'
+		);
 
 		const updatedMaxId = minId + updatedCount - 1;
 		const updatedAllItemIds: number[] = [];
@@ -613,28 +623,47 @@ export const useItemList = () => {
 		const toRemove = idList.filter((id) => map.has(id));
 		if (toRemove.length === 0) return;
 
+		const minId = getCategoryStartId(formatConfig, selectedCategory);
 		const firstRemoved = toRemove[0];
 		const firstIndex = allItemIds.indexOf(firstRemoved);
 
-		for (const id of toRemove) {
-			map.delete(id);
+		let maxId = minId - 1;
+		for (const id of map.keys()) if (id > maxId) maxId = id;
+
+		const undoBefore = captureUndo(selectedCategory, toRemove);
+
+		for (const id of [...toRemove].sort((a, b) => b - a)) {
+			if (id === maxId && id !== minId) {
+				map.delete(id);
+				let next = id - 1;
+				while (next >= minId && !map.has(next)) next--;
+				maxId = next;
+			} else {
+				map.set(id, createThingType(id, selectedCategory, formatConfig));
+			}
 			removeOpenedItem(id, selectedCategory);
 			if (openedItemId === id) setOpenedItemId(null);
 		}
 
+		setCategoryCount(data, selectedCategory, map.size);
+		pushUndo(undoBefore, captureUndo(selectedCategory, toRemove), 'Remove');
+
 		setHighlightedItemId(null);
 		setSelectedItemIds(new Set());
 
-		const removedSet = new Set(toRemove);
-		const remainingIds = allItemIds.filter((itemId) => !removedSet.has(itemId));
-		if (remainingIds.length === 0) {
+		const presentIds: number[] = [];
+		let newMax = minId - 1;
+		for (const id of map.keys()) if (id > newMax) newMax = id;
+		for (let id = minId; id <= newMax; id++) if (map.has(id)) presentIds.push(id);
+
+		if (presentIds.length === 0) {
 			setCurrentPage(1);
 		} else {
-			const nextId = remainingIds[firstIndex] || remainingIds[firstIndex - 1] || remainingIds[0];
+			const nextId = presentIds[firstIndex] || presentIds[firstIndex - 1] || presentIds[presentIds.length - 1];
 			if (nextId) {
 				setHighlightedItemId(nextId);
 				setSelectedItemIds(new Set([nextId]));
-				const targetPage = Math.floor(remainingIds.indexOf(nextId) / itemsPerPage) + 1;
+				const targetPage = Math.floor(presentIds.indexOf(nextId) / itemsPerPage) + 1;
 				setCurrentPage(targetPage);
 			}
 		}

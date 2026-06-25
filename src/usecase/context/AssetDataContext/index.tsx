@@ -7,13 +7,29 @@ import {
 	SpriteReader,
 	ThingCategory,
 	getCategoryMap,
+	getCategoryCount,
+	setCategoryCount,
 	saveCachedProfile,
 	syncFromThingType,
 	TIBIA_FORMAT_CONFIG,
 	createServerItemFromThing
 } from '~/lib/formats/tibia';
 
+interface ItemSnapshot {
+	count: number;
+	category: ThingCategory;
+	entries: Array<{ id: number; thing: null | ThingType }>;
+}
+
+interface UndoEntry {
+	label: string;
+	after: ItemSnapshot;
+	before: ItemSnapshot;
+}
+
 interface AssetDataContextType {
+	canUndo: boolean;
+	canRedo: boolean;
 	spriteSize: number;
 	isLoading: boolean;
 	error: null | string;
@@ -23,6 +39,8 @@ interface AssetDataContextType {
 	autoSyncServer: boolean;
 	openedItems: ThingType[];
 	spriteLoadVersion: number;
+	undo: () => null | string;
+	redo: () => null | string;
 	formatConfig: FormatConfig;
 	openedItemId: null | number;
 	spriteImportVersion: number;
@@ -58,10 +76,12 @@ interface AssetDataContextType {
 	removeOpenedItem: (id: number, category: ThingCategory) => void;
 	getThing: (id: number, category: ThingCategory) => null | ThingType;
 	hasUnsavedChanges: (id: number, category: ThingCategory) => boolean;
+	captureUndo: (category: ThingCategory, ids: number[]) => ItemSnapshot;
 	setOpenedItemId: (id: null | number, category?: ThingCategory) => void;
 	compileFiles: () => Promise<null | { synced: number; created: number }>;
 	loadingProgress: null | { stage: string; total: number; current: number };
 	updateServerItem: (serverId: number, updates: Partial<ServerItem>) => void;
+	pushUndo: (before: ItemSnapshot, after: ItemSnapshot, label: string) => void;
 	setSelectedCategoryAndItem: (category: ThingCategory, itemId: number) => void;
 	setData: (data: AssetData, reader: SpriteReader, skipBackendSync?: boolean) => void;
 	markUnsavedChanges: (id: number, category: ThingCategory, hasChanges: boolean) => void;
@@ -125,6 +145,9 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	>(new Map());
 	const [modifiedSprites, setModifiedSprites] = React.useState<Map<number, Sprite>>(new Map());
 	const [modifiedServerIds, setModifiedServerIds] = React.useState<Set<number>>(new Set());
+	const undoStackRef = React.useRef<UndoEntry[]>([]);
+	const redoStackRef = React.useRef<UndoEntry[]>([]);
+	const [historyVersion, setHistoryVersion] = React.useState(0);
 	const [autoSyncServer, setAutoSyncServerState] = React.useState<boolean>(() => {
 		try {
 			return typeof window === 'undefined' ? true : localStorage.getItem('sprite-forge-otb-autosync') !== 'false';
@@ -228,6 +251,9 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			setUnsavedChanges(new Set());
 			setNewItemKeys(new Set());
 			setSelectedCategoryState(ThingCategory.ITEM);
+			undoStackRef.current = [];
+			redoStackRef.current = [];
+			setHistoryVersion((v) => v + 1);
 
 			hasRestoredRef.current = false;
 			hasPreloadedRef.current = false;
@@ -274,6 +300,9 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		setOpenedSpriteId(null);
 		setUnsavedChanges(new Set());
 		setNewItemKeys(new Set());
+		undoStackRef.current = [];
+		redoStackRef.current = [];
+		setHistoryVersion((v) => v + 1);
 		try {
 			if (typeof window !== 'undefined') {
 				localStorage.removeItem('sprite-forge-opened-items');
@@ -639,6 +668,84 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		[data]
 	);
 
+	const captureUndo = React.useCallback(
+		(category: ThingCategory, ids: number[]): ItemSnapshot => {
+			if (!data) return { category, count: 0, entries: [] };
+			const map = getCategoryMap(data, category);
+			return {
+				category,
+				count: getCategoryCount(data, category),
+				entries: ids.map((id) => ({
+					id,
+					thing: map.has(id) ? (structuredClone(map.get(id)!) as ThingType) : null
+				}))
+			};
+		},
+		[data]
+	);
+
+	const pushUndo = React.useCallback((before: ItemSnapshot, after: ItemSnapshot, label: string) => {
+		undoStackRef.current.push({ after, label, before });
+		if (undoStackRef.current.length > 100) undoStackRef.current.shift();
+		redoStackRef.current = [];
+		setHistoryVersion((v) => v + 1);
+	}, []);
+
+	const applyItemSnapshot = React.useCallback(
+		(snap: ItemSnapshot) => {
+			if (!data) return;
+			const map = getCategoryMap(data, snap.category);
+			for (const entry of snap.entries) {
+				if (entry.thing === null) map.delete(entry.id);
+				else map.set(entry.id, structuredClone(entry.thing) as ThingType);
+			}
+			setCategoryCount(data, snap.category, snap.count);
+		},
+		[data]
+	);
+
+	const undo = React.useCallback((): null | string => {
+		const entry = undoStackRef.current.pop();
+		if (!entry) return null;
+		applyItemSnapshot(entry.before);
+		redoStackRef.current.push(entry);
+		setHistoryVersion((v) => v + 1);
+		notifyDataChanged();
+		return entry.label;
+	}, [applyItemSnapshot, notifyDataChanged]);
+
+	const redo = React.useCallback((): null | string => {
+		const entry = redoStackRef.current.pop();
+		if (!entry) return null;
+		applyItemSnapshot(entry.after);
+		undoStackRef.current.push(entry);
+		setHistoryVersion((v) => v + 1);
+		notifyDataChanged();
+		return entry.label;
+	}, [applyItemSnapshot, notifyDataChanged]);
+
+	const canUndo = historyVersion >= 0 && undoStackRef.current.length > 0;
+	const canRedo = historyVersion >= 0 && redoStackRef.current.length > 0;
+
+	React.useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (!(e.ctrlKey || e.metaKey)) return;
+			const key = e.key.toLowerCase();
+			if (key !== 'z' && key !== 'y') return;
+			const el = document.activeElement as null | HTMLElement;
+			if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+			if (key === 'y' || (key === 'z' && e.shiftKey)) {
+				e.preventDefault();
+				redo();
+			} else {
+				e.preventDefault();
+				undo();
+			}
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [undo, redo]);
+
 	const getSprite = React.useCallback(
 		(id: number): null | Sprite => {
 			if (!data || !data.sprPath) return null;
@@ -771,10 +878,15 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		<AssetDataContext.Provider
 			value={{
 				data,
+				undo,
+				redo,
 				error,
 				setData,
+				canUndo,
+				canRedo,
 				setError,
 				getThing,
+				pushUndo,
 				isLoading,
 				clearData,
 				getSprite,
@@ -783,6 +895,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				setLoading,
 				updateThing,
 				openedItems,
+				captureUndo,
 				spriteReader,
 				openedItemId,
 				compileFiles,
