@@ -77,6 +77,7 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 		handleCopySprite,
 		handleFirstFrame,
 		handleSpriteDrop,
+		getSpriteOverride,
 		sceneScrollOffset,
 		defaultSceneTiles,
 		handlePatternDown,
@@ -391,6 +392,7 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 							onSpriteDrop={handleSpriteDrop}
 							onSpriteHover={handleSpriteHover}
 							sceneScrollOffset={sceneScrollOffset}
+							getSpriteOverride={getSpriteOverride}
 							onSpriteDoubleClick={handleSpriteDoubleClick}
 							outfitData={isOutfit ? outfitData : undefined}
 							onMiddleMousePanChange={setIsMiddleMousePanning}

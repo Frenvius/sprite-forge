@@ -54,6 +54,7 @@ export const useImportDialog = () => {
 	const [progress, setProgress] = React.useState<null | ImportProgress>(null);
 
 	const [selected, setSelected] = React.useState<Set<number>>(new Set());
+	const [focusedRow, setFocusedRow] = React.useState<null | ImportRow>(null);
 	const [busy, setBusy] = React.useState(false);
 	const [, setTick] = React.useState(0);
 
@@ -177,6 +178,7 @@ export const useImportDialog = () => {
 			thumbRef.current.clear();
 			resetCaches();
 			setSelected(new Set());
+			setFocusedRow(null);
 			setTotal(0);
 			setProgress(null);
 			setStats(null);
@@ -200,6 +202,7 @@ export const useImportDialog = () => {
 			setCategory(0);
 			setDupOnly(false);
 			setSelected(new Set());
+			setFocusedRow(null);
 			void importClear();
 			return;
 		}
@@ -337,12 +340,15 @@ export const useImportDialog = () => {
 		selectNone,
 		setDupOnly,
 		importOpen,
+		focusedRow,
 		setCategory,
 		closeImport,
 		itemsPerRow,
 		ensureVisible,
+		setFocusedRow,
 		hasProject: !!data,
 		deselectDuplicates,
-		duplicateCount: stats?.duplicates ?? 0
+		duplicateCount: stats?.duplicates ?? 0,
+		transparency: data?.transparency ?? true
 	};
 };

@@ -1,4 +1,4 @@
-import type { ThingType } from '~/lib/formats/tibia';
+import type { Sprite, ThingType } from '~/lib/formats/tibia';
 import type { SceneTile } from '~/usecase/util/spriteLayoutUtils';
 
 import React from 'react';
@@ -48,6 +48,7 @@ export interface SpriteCanvasProps {
 	onSpriteDoubleClick?: (spriteId: number) => void;
 	onSpriteHover?: (spriteId: null | number) => void;
 	onMiddleMousePanChange?: (isPanning: boolean) => void;
+	getSpriteOverride?: (id: number) => Sprite | undefined;
 	onSpriteDrop?: (index: number, spriteId: number | number[]) => void;
 	outfitData?: {
 		head: number;
@@ -84,6 +85,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		smooth = false,
 		sceneHeight = 0,
 		showGrid = false,
+		getSpriteOverride,
 		onSpriteDoubleClick,
 		renderMode = 'full',
 		isPanEnabled = false,
@@ -106,6 +108,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		notifySpriteImport,
 		notifySpritesLoaded
 	} = useAssetData();
+	const resolveSprite = getSpriteOverride ?? getSprite;
 	const { dragType, isDragging, draggedItem } = useDragDrop();
 	const [isLoading, setIsLoading] = React.useState(false);
 	const [isPanning, setIsPanning] = React.useState(false);
@@ -282,7 +285,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 												const sceneSpriteId = sceneThing.spriteIndex[spriteIdx];
 
 												if (isValidSpriteId(sceneSpriteId)) {
-													const sceneSprite = getSprite(sceneSpriteId);
+													const sceneSprite = resolveSprite(sceneSpriteId);
 													if (sceneSprite && !sceneSprite.isEmpty) {
 														if (!sceneSprite.imageData) {
 															const imageData = offscreenCtx.createImageData(spriteSize, spriteSize);
@@ -354,7 +357,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 					continue;
 				}
 
-				const sprite = getSprite(currentSpriteId);
+				const sprite = resolveSprite(currentSpriteId);
 				if (!sprite) {
 					missingSprites++;
 					continue;
@@ -434,7 +437,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 					continue;
 				}
 
-				const sprite = getSprite(currentSpriteId);
+				const sprite = resolveSprite(currentSpriteId);
 
 				if (!sprite) {
 					missingSprites++;
@@ -524,7 +527,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		sceneHeight,
 		sceneScrollOffset,
 		patternX,
-		getSprite,
+		resolveSprite,
 		smooth
 	]);
 

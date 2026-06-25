@@ -7,11 +7,12 @@ import { invoke } from '@tauri-apps/api/core';
 import { ThingCategory } from '~/lib/formats/tibia';
 import { useToast } from '~/usecase/hooks/useToast';
 import { ZOOM_LEVELS } from '~/usecase/util/constants';
+import { type Sprite, type ThingType } from '~/lib/formats/tibia';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '~/usecase/util/itemStateUtils';
 
-export const useObjectProperties = () => {
+export const useObjectProperties = (override?: { item: null | ThingType; getSprite: (id: number) => Sprite | undefined }) => {
 	const {
 		data,
 		getThing,
@@ -33,7 +34,8 @@ export const useObjectProperties = () => {
 	const { settings } = useGeneralSettings();
 	const autoPlayRef = React.useRef(settings.autoPlayAnimation);
 	autoPlayRef.current = settings.autoPlayAnimation;
-	const item = openedItemId && openedItemCategory ? getThing(openedItemId, openedItemCategory) : null;
+	const projectItem = openedItemId && openedItemCategory ? getThing(openedItemId, openedItemCategory) : null;
+	const item = override ? override.item : projectItem;
 
 	const [draftItem, setDraftItem] = React.useState<typeof item>(null);
 	const [hasChanges, setHasChanges] = React.useState(false);
@@ -47,6 +49,7 @@ export const useObjectProperties = () => {
 	hasUnsavedChangesRef.current = hasUnsavedChanges;
 
 	React.useEffect(() => {
+		if (override) return;
 		if (item && openedItemId && openedItemCategory) {
 			let initialItem = { ...item };
 			let initialGroup = 0;
@@ -264,7 +267,7 @@ export const useObjectProperties = () => {
 	};
 
 	const clientVersion = data?.version.value || 0;
-	const itemCategory = openedItemCategory || selectedCategory;
+	const itemCategory = override?.item ? (override.item.category as ThingCategory) : openedItemCategory || selectedCategory;
 	const isItem = itemCategory === ThingCategory.ITEM;
 	const isOutfit = itemCategory === ThingCategory.OUTFIT;
 	const isMissile = itemCategory === ThingCategory.MISSILE;
@@ -841,6 +844,7 @@ export const useObjectProperties = () => {
 	};
 
 	React.useEffect(() => {
+		if (override) return;
 		if (draftItem && openedItemId && openedItemCategory) {
 			if (
 				previousItemRef.current &&
@@ -962,6 +966,7 @@ export const useObjectProperties = () => {
 	}, [draftItem, openedItemId, openedItemCategory, isOutfit, item]);
 
 	React.useEffect(() => {
+		if (override) return;
 		if (isLoadingStateRef.current) {
 			return;
 		}
@@ -1008,6 +1013,7 @@ export const useObjectProperties = () => {
 	]);
 
 	React.useEffect(() => {
+		if (override) return;
 		if (!data || !item || !draftItem || !data.sprPath || !draftItem.spriteIndex) return;
 
 		const spriteIds = Array.from(new Set(draftItem.spriteIndex.filter((id) => id > 0)));
@@ -1026,6 +1032,52 @@ export const useObjectProperties = () => {
 
 		loadItemSprites();
 	}, [data, item, draftItem, notifySpritesLoaded]);
+
+	React.useEffect(() => {
+		if (!override?.item) return;
+		let init = { ...override.item };
+		let initialGroup = 0;
+		if (init.category === ThingCategory.OUTFIT && init.frameGroupsData && init.frameGroupsData.length > 0) {
+			initialGroup = init.frameGroupsData.length > 1 ? 1 : 0;
+			const g = init.frameGroupsData[initialGroup];
+			init = {
+				...init,
+				width: g.width,
+				height: g.height,
+				frames: g.frames,
+				layers: g.layers,
+				patternX: g.patternX,
+				patternY: g.patternY,
+				patternZ: g.patternZ,
+				exactSize: g.exactSize,
+				spriteIndex: g.spriteIndex,
+				isAnimation: g.isAnimation,
+				loopCount: g.loopCount || 0,
+				startFrame: g.startFrame || 0,
+				animationMode: g.animationMode || 0,
+				frameDurations: g.frameDurations || []
+			};
+		}
+		setDraftItem(init);
+		originalItemRef.current = { ...init };
+		setSelectedFrameGroup(initialGroup);
+		selectedFrameGroupRef.current = initialGroup;
+		setHasChanges(false);
+
+		const cat = override.item.category;
+		setZoom(2);
+		setPanX(0);
+		setPanY(0);
+		setPatternX(
+			cat === ThingCategory.OUTFIT ? Math.min(2, Math.max(0, init.patternX - 1)) : cat === ThingCategory.MISSILE ? 1 : 0
+		);
+		setPatternY(cat === ThingCategory.MISSILE ? 2 : 0);
+		setPatternZ(0);
+		setCurrentFrame(0);
+		setCurrentLayer(0);
+		setIsPlaying(init.frames > 1);
+		setOutfitData({ head: 0, body: 0, legs: 0, feet: 0, addons: Array(Math.max(0, init.patternY - 1)).fill(false) });
+	}, [override?.item]);
 
 	const firstSpriteId = draftItem && draftItem.spriteIndex && draftItem.spriteIndex.length > 0 ? draftItem.spriteIndex[0] : 0;
 
@@ -1105,7 +1157,8 @@ export const useObjectProperties = () => {
 			isMiddleMousePanning,
 			setShowDirectionButtons,
 			setIsMiddleMousePanning,
-			handleSpriteDoubleClick
+			handleSpriteDoubleClick,
+			getSpriteOverride: override?.getSprite
 		}
 	};
 };

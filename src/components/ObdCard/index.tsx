@@ -6,7 +6,7 @@ import { Copy, Check } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { CATEGORY_NAME } from '~/lib/formats/tibia/obdViewer';
 
-export const ObdCard = ({ row, fill, thumb, selected, onToggle }: ObdCardProps) => {
+export const ObdCard = ({ row, fill, thumb, focused, onFocus, selected, onToggle }: ObdCardProps) => {
 	const canvasRef = React.useRef<null | HTMLCanvasElement>(null);
 
 	React.useEffect(() => {
@@ -26,17 +26,23 @@ export const ObdCard = ({ row, fill, thumb, selected, onToggle }: ObdCardProps) 
 	return (
 		<button
 			type="button"
-			onClick={() => onToggle(row.recordIndex)}
+			onClick={() => onFocus(row)}
 			className={cn(
 				'group relative flex h-[112px] flex-col overflow-hidden rounded-lg border bg-secondary/40 text-left transition-colors',
 				fill ? 'w-full' : 'w-[88px]',
-				selected ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-primary/50'
+				focused ? 'border-primary ring-2 ring-primary' : selected ? 'border-primary/60' : 'border-border hover:border-primary/50'
 			)}
 		>
 			<div
+				role="checkbox"
+				aria-checked={selected}
+				onClick={(e) => {
+					e.stopPropagation();
+					onToggle(row.recordIndex);
+				}}
 				className={cn(
-					'absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded border',
-					selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background/80'
+					'absolute right-1 top-1 z-10 flex h-4 w-4 cursor-pointer items-center justify-center rounded border transition-colors',
+					selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background/80 hover:border-primary'
 				)}
 			>
 				{selected && <Check className="h-3 w-3" />}
