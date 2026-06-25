@@ -70,7 +70,7 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 
 	if (renderMode === 'list' && thing) {
 		canvasW = thing.width * spriteSize;
-		canvasH = spriteSize;
+		canvasH = thing.height * spriteSize;
 
 		const clamp = renderConfig?.listPatternXClamp;
 		const defaultPatternX = clamp && thing.patternX > clamp ? clamp : 0;
@@ -78,17 +78,20 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 		const layerCount = renderConfig?.listLayerCount ?? thing.layers;
 
 		for (let l = 0; l < layerCount; l++) {
-			for (let w = 0; w < thing.width; w++) {
-				const index = getSpriteIndex(thing, w, 0, l, defaultPatternX, 0, 0, 0);
-				if (index < thing.spriteIndex.length) {
-					const posX = (thing.width - w - 1) * spriteSize;
-					layout.push({
-						y: 0,
-						x: posX,
-						layer: l,
-						patternY: 0,
-						spriteId: thing.spriteIndex[index]
-					});
+			for (let h = 0; h < thing.height; h++) {
+				for (let w = 0; w < thing.width; w++) {
+					const index = getSpriteIndex(thing, w, h, l, defaultPatternX, 0, 0, 0);
+					if (index < thing.spriteIndex.length) {
+						const posX = (thing.width - w - 1) * spriteSize;
+						const posY = (thing.height - h - 1) * spriteSize;
+						layout.push({
+							x: posX,
+							y: posY,
+							layer: l,
+							patternY: 0,
+							spriteId: thing.spriteIndex[index]
+						});
+					}
 				}
 			}
 		}

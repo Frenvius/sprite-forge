@@ -1067,7 +1067,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 		setHasChanges(false);
 
 		const cat = override.item.category;
-		setZoom(defaultZoomRef.current);
+		setZoom(2);
 		setPanX(0);
 		setPanY(0);
 		setPatternX(
