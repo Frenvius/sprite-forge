@@ -2373,7 +2373,7 @@ fn import_extract(store: tauri::State<ImportStoreState>, request: tauri::ipc::Re
 		_ => return Err("import_extract expects a raw binary payload".to_string()),
 	};
 	let mut r = Reader::new(body);
-	let _project_transparent = r.u8()? != 0;
+	let project_transparent = r.u8()? != 0;
 	let base = r.u32()?;
 	let n = r.u32()? as usize;
 	let mut indices = Vec::with_capacity(n);
@@ -2417,7 +2417,7 @@ fn import_extract(store: tauri::State<ImportStoreState>, request: tauri::ipc::Re
 				}
 				things.push(thing);
 			}
-			build_extract_response(things, sprites, transparent)
+			build_extract_response(things, sprites, project_transparent)
 		}
 		ImportSrc::Obd(paths) => {
 			let sel: Vec<String> = indices
@@ -2479,7 +2479,7 @@ fn import_extract(store: tauri::State<ImportStoreState>, request: tauri::ipc::Re
 				}
 				things.push(thing);
 			}
-			build_extract_response(things, sprites, transparent)
+			build_extract_response(things, sprites, project_transparent)
 		}
 		ImportSrc::None => Err("no import source loaded".to_string()),
 	}
