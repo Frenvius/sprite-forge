@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, Read, BufReader};
+use std::io::{self, Read, BufReader, Seek};
 use crate::dat_writer::{ThingType, FrameDuration, FrameGroup};
 
 pub fn encode_dat_to_binary(
@@ -543,7 +543,8 @@ impl DatReader {
         let mut missiles = Vec::with_capacity(missiles_count as usize);
 
         for id in 100..=items_count {
-            let thing = self.read_thing(id as u32, "item").map_err(|e| format!("Error reading item {}: {}", id, e))?;
+            let start = self.reader.stream_position().unwrap_or(0);
+            let thing = self.read_thing(id as u32, "item").map_err(|e| format!("Error reading item {} (started at byte offset {} / 0x{:x}): {}", id, start, start, e))?;
             items.push(thing);
         }
 

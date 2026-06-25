@@ -9,7 +9,7 @@ use spr_manager::{SprManager, SprManagerState, SprHeader, SpriteData, compress_t
 
 mod logger;
 
-mod dat_writer;
+pub mod dat_writer;
 use dat_writer::{write_dat_from_buffer, read_thing, Reader, ThingType, FrameGroup};
 
 mod spr_writer;
@@ -18,7 +18,7 @@ use spr_writer::{update_sprites_in_spr, copy_spr_with_modifications, SpriteWrite
 mod dat_manager;
 use dat_manager::{DatManager, DatManagerState};
 
-mod dat_reader;
+pub mod dat_reader;
 use dat_reader::{DatReader, encode_dat_to_binary};
 
 mod optimizer;
