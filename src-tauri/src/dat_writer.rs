@@ -1538,23 +1538,59 @@ pub fn write_dat_file(
         .map_err(|e| format!("Failed to write header: {}", e))?;
     }
 
-    append_category(&mut out, &items_bytes, items_min_id, items_max_id);
-    append_category(&mut out, &outfits_bytes, outfits_min_id, outfits_max_id);
-    append_category(&mut out, &effects_bytes, effects_min_id, effects_max_id);
-    append_category(&mut out, &missiles_bytes, missiles_min_id, missiles_max_id);
+    let empty_plain = empty_thing_bytes(version, extended, false);
+    let empty_outfit = if frame_groups {
+        empty_thing_bytes(version, extended, true)
+    } else {
+        empty_plain.clone()
+    };
+
+    append_category(&mut out, &items_bytes, items_min_id, items_max_id, &empty_plain);
+    append_category(&mut out, &outfits_bytes, outfits_min_id, outfits_max_id, &empty_outfit);
+    append_category(&mut out, &effects_bytes, effects_min_id, effects_max_id, &empty_plain);
+    append_category(&mut out, &missiles_bytes, missiles_min_id, missiles_max_id, &empty_plain);
 
     std::fs::write(path, &out).map_err(|e| format!("Failed to write file: {}", e))?;
 
     Ok(())
 }
 
-fn append_category(out: &mut Vec<u8>, map: &HashMap<u32, Vec<u8>>, min_id: u16, max_id: u16) {
+fn append_category(out: &mut Vec<u8>, map: &HashMap<u32, Vec<u8>>, min_id: u16, max_id: u16, empty: &[u8]) {
     for id in min_id..=max_id {
         match map.get(&(id as u32)) {
             Some(bytes) => out.extend_from_slice(bytes),
-            None => out.push(0xFF),
+            None => out.extend_from_slice(empty),
         }
     }
+}
+
+fn empty_thing_bytes(version: u32, extended: bool, frame_groups_outfit: bool) -> Vec<u8> {
+    let mut b: Vec<u8> = Vec::with_capacity(16);
+    b.push(0xFF);
+
+    if frame_groups_outfit {
+        b.push(1);
+        b.push(1);
+    }
+
+    b.push(1);
+    b.push(1);
+
+    b.push(1);
+    b.push(1);
+    b.push(1);
+    if frame_groups_outfit || version > 750 {
+        b.push(1);
+    }
+    b.push(1);
+
+    if extended {
+        b.extend_from_slice(&0u32.to_le_bytes());
+    } else {
+        b.extend_from_slice(&0u16.to_le_bytes());
+    }
+
+    b
 }
 
 pub struct Reader<'a> {
