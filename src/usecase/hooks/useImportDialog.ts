@@ -38,7 +38,7 @@ const nextSpriteBase = (sprites: Map<number, unknown>, spritesCount: number): nu
 export const useImportDialog = () => {
 	const { toast } = useToast();
 	const { importOpen, closeImport, importPreset } = useTransfer();
-	const { data, updateThing, markAsNewItem, notifyDataChanged, notifySpritesLoaded } = useAssetData();
+	const { data, updateThing, markAsNewItem, ensureServerItem, notifyDataChanged, notifySpritesLoaded } = useAssetData();
 
 	const scrollRef = React.useRef<HTMLDivElement>(null);
 	const [gridWidth, setGridWidth] = React.useState(0);
@@ -301,6 +301,7 @@ export const useImportDialog = () => {
 				setCategoryCount(data, cat, map.size);
 				updateThing(nextId, cat, thing as ThingType);
 				markAsNewItem(nextId, cat);
+				if (cat === ('item' as ThingCategory)) ensureServerItem(nextId);
 			}
 
 			notifyDataChanged(result.sprites.map((s) => s.id));

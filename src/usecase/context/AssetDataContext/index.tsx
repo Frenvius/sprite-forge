@@ -7,8 +7,11 @@ import {
 	SpriteReader,
 	ThingCategory,
 	getCategoryMap,
+	thingHasSprites,
+	createServerItem,
 	getCategoryCount,
 	setCategoryCount,
+	SERVER_ITEM_TYPE,
 	saveCachedProfile,
 	syncFromThingType,
 	TIBIA_FORMAT_CONFIG,
@@ -61,6 +64,7 @@ interface AssetDataContextType {
 	setServerProfile: (profileId: string) => void;
 	setOpenedSpriteId: (id: null | number) => void;
 	setFormatConfig: (config: FormatConfig) => void;
+	ensureServerItem: (clientId: number) => boolean;
 	reloadServerAttributes: () => { synced: number };
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
@@ -69,6 +73,7 @@ interface AssetDataContextType {
 	getServerItem: (serverId: number) => null | ServerItem;
 	setSelectedCategory: (category: ThingCategory) => void;
 	attachServerItems: (serverItems: ServerItemData) => void;
+	deleteServerItemsForClients: (clientIds: number[]) => void;
 	getServerItemsForClient: (clientId: number) => ServerItem[];
 	isNewItem: (id: number, category: ThingCategory) => boolean;
 	clearNewItem: (id: number, category: ThingCategory) => void;
@@ -415,6 +420,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		for (const thing of data.items.values()) {
 			const serverIds = sd.byClientId.get(thing.id);
 			if (serverIds && serverIds.length > 0) continue;
+			if (!thingHasSprites(thing)) continue;
 			const newItem = createServerItemFromThing(thing, ++maxServerId, data.version.value);
 			sd.items.set(newItem.serverId, newItem);
 			sd.byClientId.set(thing.id, [newItem.serverId]);
@@ -432,6 +438,74 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 		return { created: newIds.length };
 	}, [data]);
+
+	const ensureServerItem = React.useCallback(
+		(clientId: number): boolean => {
+			const sd = data?.serverItems;
+			if (!data || !sd) return false;
+			const existing = sd.byClientId.get(clientId);
+			if (existing && existing.length > 0) return false;
+			const thing = data.items.get(clientId);
+			if (!thing) return false;
+
+			let maxServerId = 0;
+			for (const id of sd.items.keys()) if (id > maxServerId) maxServerId = id;
+
+			const newItem = createServerItemFromThing(thing, maxServerId + 1, data.version.value);
+			sd.items.set(newItem.serverId, newItem);
+			sd.byClientId.set(clientId, [newItem.serverId]);
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				next.add(newItem.serverId);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+			return true;
+		},
+		[data]
+	);
+
+	const deleteServerItemsForClients = React.useCallback(
+		(clientIds: number[]) => {
+			const sd = data?.serverItems;
+			if (!data || !sd) return;
+
+			const toRemove = new Set<number>();
+			for (const cid of clientIds) {
+				const sids = sd.byClientId.get(cid);
+				if (sids) for (const sid of sids) toRemove.add(sid);
+				sd.byClientId.delete(cid);
+			}
+			if (toRemove.size === 0) return;
+
+			let maxServerId = 0;
+			for (const id of sd.items.keys()) if (id > maxServerId) maxServerId = id;
+
+			while (toRemove.has(maxServerId)) {
+				sd.items.delete(maxServerId);
+				toRemove.delete(maxServerId);
+				let next = 0;
+				for (const id of sd.items.keys()) if (id > next) next = id;
+				maxServerId = next;
+			}
+
+			const touched: number[] = [];
+			for (const sid of toRemove) {
+				const placeholder = createServerItem(sid, 0);
+				placeholder.type = SERVER_ITEM_TYPE.Deprecated;
+				sd.items.set(sid, placeholder);
+				touched.push(sid);
+			}
+
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				for (const sid of touched) next.add(sid);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+		},
+		[data]
+	);
 
 	const reloadServerAttributes = React.useCallback((): { synced: number } => {
 		const sd = data?.serverItems;
@@ -916,6 +990,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				hasModifiedItems,
 				updateServerItem,
 				setServerProfile,
+				ensureServerItem,
 				attachServerItems,
 				highlightedItemId,
 				setOpenedSpriteId,
@@ -937,7 +1012,8 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				setHighlightedSpriteId,
 				getServerItemsForClient,
 				createMissingServerItems,
-				setSelectedCategoryAndItem
+				setSelectedCategoryAndItem,
+				deleteServerItemsForClients
 			}}
 		>
 			{children}

@@ -506,6 +506,14 @@ export interface OtbReconcileResult {
 	created: number;
 }
 
+export function thingHasSprites(thing: ThingType): boolean {
+	if ((thing.spriteIndex ?? []).some((id) => id > 0)) return true;
+	for (const g of thing.frameGroupsData ?? []) {
+		if ((g.spriteIndex ?? []).some((id) => id > 0)) return true;
+	}
+	return false;
+}
+
 export function reconcileServerItems(data: AssetData, autoSync: boolean, clientVersion: number): OtbReconcileResult {
 	const sd = data.serverItems;
 	if (!sd) return { synced: 0, created: 0 };
@@ -528,7 +536,7 @@ export function reconcileServerItems(data: AssetData, autoSync: boolean, clientV
 					}
 				}
 			}
-		} else {
+		} else if (thingHasSprites(thing)) {
 			const newItem = createServerItemFromThing(thing, ++maxServerId, clientVersion);
 			sd.items.set(newItem.serverId, newItem);
 			sd.byClientId.set(thing.id, [newItem.serverId]);

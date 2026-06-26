@@ -67,7 +67,7 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 			<div className="flex items-end gap-2">
 				<div className="space-y-1 flex-shrink-0">
 					<Label className={labelCls}>Server</Label>
-					<div className="h-7 w-16 px-2 flex items-center text-xs font-mono rounded-md bg-muted/50 border border-border/40 text-muted-foreground">
+					<div className="h-7 w-20 px-2 flex items-center text-xs font-mono rounded-md bg-muted/50 border border-border/40 text-muted-foreground">
 						{item.serverId}
 					</div>
 				</div>
@@ -76,7 +76,7 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 					<Input
 						type="number"
 						value={item.clientId}
-						className="h-7 text-xs w-16"
+						className="h-7 text-xs w-20"
 						onChange={(e) => set({ clientId: num(e.target.value) })}
 					/>
 				</div>
@@ -86,7 +86,7 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 						onValueChange={(v) => set({ article: v === NO_ARTICLE ? undefined : v })}
 						value={item.article && item.article.length > 0 ? item.article : NO_ARTICLE}
 					>
-						<SelectTrigger className="h-7 text-xs w-16">
+						<SelectTrigger className="h-7 text-xs w-20">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Server } from 'lucide-react';
+import { Plus, Server } from 'lucide-react';
 
+import { Button } from '~/components/ui/button';
 import { Switch } from '~/components/ui/switch';
 import { type ServerSectionProps } from './types';
 import { ServerItemEditor } from './ServerItemEditor';
@@ -9,8 +10,16 @@ import { getServerProfile, getServerProfiles } from '~/lib/formats/tibia';
 import { Select, SelectItem, SelectValue, SelectTrigger, SelectContent } from '~/components/ui/select';
 
 export const ServerSection = ({ clientId }: ServerSectionProps) => {
-	const { data, updateCounter, autoSyncServer, updateServerItem, setServerProfile, setAutoSyncServer, getServerItemsForClient } =
-		useAssetData();
+	const {
+		data,
+		updateCounter,
+		autoSyncServer,
+		ensureServerItem,
+		updateServerItem,
+		setServerProfile,
+		setAutoSyncServer,
+		getServerItemsForClient
+	} = useAssetData();
 	const [collapsed, setCollapsed] = useState(false);
 
 	if (!data?.otbPath || !data.serverItems) return null;
@@ -31,6 +40,12 @@ export const ServerSection = ({ clientId }: ServerSectionProps) => {
 					Server Item (OTB)
 				</button>
 				<div className="flex items-center gap-3">
+					{serverItems.length === 0 && (
+						<Button size="sm" variant="outline" className="h-6 px-2 text-[11px] gap-1" onClick={() => ensureServerItem(clientId)}>
+							<Plus className="h-3 w-3" />
+							Create
+						</Button>
+					)}
 					<Select value={profile.id} onValueChange={setServerProfile}>
 						<SelectTrigger className="h-6 text-[11px] w-28">
 							<SelectValue />
@@ -54,8 +69,8 @@ export const ServerSection = ({ clientId }: ServerSectionProps) => {
 				<div className="space-y-2">
 					{serverItems.length === 0 ? (
 						<div className="text-xs text-muted-foreground rounded-md border border-dashed border-border/60 p-3">
-							No server item linked to client id {clientId}. One will be created automatically on Compile (server id
-							auto-assigned, flags synced from this item).
+							No server item linked to client id {clientId}. Use <span className="font-medium text-foreground">Create</span> to
+							add one now (server id auto-assigned, flags synced from this item), or it will be created automatically on Compile.
 						</div>
 					) : (
 						serverItems.map((item) => (

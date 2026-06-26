@@ -32,6 +32,7 @@ export const useItemList = () => {
 		updateCounter,
 		markAsNewItem,
 		setOpenedItemId,
+		ensureServerItem,
 		selectedCategory,
 		removeOpenedItem,
 		highlightedItemId,
@@ -40,7 +41,8 @@ export const useItemList = () => {
 		markUnsavedChanges,
 		setSelectedCategory,
 		notifySpritesLoaded,
-		setHighlightedItemId
+		setHighlightedItemId,
+		deleteServerItemsForClients
 	} = useAssetData();
 	const { toast } = useToast();
 	const { openExport, openImport } = useTransfer();
@@ -413,6 +415,7 @@ export const useItemList = () => {
 
 		markAsNewItem(newId, selectedCategory);
 		markUnsavedChanges(newId, selectedCategory, true);
+		if (selectedCategory === ThingCategory.ITEM) ensureServerItem(newId);
 
 		pendingNewItemId.current = newId;
 		notifyDataChanged();
@@ -491,6 +494,7 @@ export const useItemList = () => {
 			map.set(newId, duplicate);
 			markAsNewItem(newId, selectedCategory);
 			markUnsavedChanges(newId, selectedCategory, true);
+			if (selectedCategory === ThingCategory.ITEM) ensureServerItem(newId);
 			newIds.push(newId);
 			lastNewId = newId;
 		}
@@ -656,6 +660,8 @@ export const useItemList = () => {
 
 		setCategoryCount(data, selectedCategory, map.size);
 		pushUndo(undoBefore, captureUndo(selectedCategory, toRemove), 'Remove');
+
+		if (selectedCategory === ThingCategory.ITEM) deleteServerItemsForClients(toRemove);
 
 		setHighlightedItemId(null);
 		setSelectedItemIds(new Set());
