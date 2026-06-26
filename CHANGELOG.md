@@ -5,6 +5,16 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-06-25
+
+### Added
+- Server items (OTB) are now created, synced, and cleaned up live as you add, import, or delete items, instead of only on compile, with a Create button in the server item panel.
+- Last button jumps to the final item in both list panels.
+
+### Fixed
+- Imported sprites no longer turn blank/transparent after saving on transparent clients (e.g. 10.98).
+- Multi-tile object thumbnails now render at full height in the lists.
+
 ## [0.2.1] - 2026-06-25
 
 ### Added
