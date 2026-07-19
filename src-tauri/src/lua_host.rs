@@ -100,6 +100,19 @@ pub fn write_script(name: String, content: String, lua: State<LuaState>) -> Resu
 }
 
 #[tauri::command]
+pub fn open_scripts_dir(lua: State<LuaState>) -> Result<(), String> {
+    let dir = {
+        let h = lua.lock().map_err(|e| e.to_string())?;
+        h.dir.clone()
+    };
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {}", dir.display(), e))?;
+    let resolved = std::fs::canonicalize(&dir).unwrap_or(dir);
+    let as_str = resolved.to_string_lossy();
+    let clean = as_str.trim_start_matches(r"\\?\");
+    tauri_plugin_opener::open_path(clean, None::<&str>).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn reload_scripts(dir: Option<String>, lua: State<LuaState>) -> Result<usize, String> {
     let mut h = lua.lock().map_err(|e| e.to_string())?;
     if let Some(d) = dir {

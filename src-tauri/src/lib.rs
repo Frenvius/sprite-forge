@@ -2691,6 +2691,7 @@ pub fn run() {
             import_clear,
             set_window_acrylic,
             lua_host::list_scripts,
+            lua_host::open_scripts_dir,
             lua_host::read_script,
             lua_host::write_script,
             lua_host::reload_scripts,

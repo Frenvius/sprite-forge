@@ -92,6 +92,33 @@ export const LuaScriptsDialog = ({ open, onOpenChange }: Props) => {
 		}
 	};
 
+	const reloadFromDisk = () => {
+		setStatus('');
+		void invoke<string[]>('list_scripts')
+			.then((list) => {
+				setNames(list);
+				const keep = active && list.includes(active) ? active : (list[0] ?? null);
+				setActive(keep);
+				if (dirty) {
+					setStatus('Reloaded file list. Unsaved changes kept.');
+					return;
+				}
+				if (!keep) {
+					setContent('');
+					setStatus('Reloaded from disk.');
+					return;
+				}
+				void invoke<string>('read_script', { name: keep })
+					.then((text) => {
+						setContent(text);
+						setDirty(false);
+						setStatus('Reloaded from disk.');
+					})
+					.catch((e) => setStatus(`error: ${String(e)}`));
+			})
+			.catch((e) => setStatus(`error: ${String(e)}`));
+	};
+
 	const highlighted = React.useMemo(() => highlightLua(content), [content]);
 	const saveDisabled = saving || (!dirty && !toggleDirty);
 
@@ -142,7 +169,21 @@ export const LuaScriptsDialog = ({ open, onOpenChange }: Props) => {
 					</div>
 				</div>
 				<DialogFooter className="flex items-center justify-end gap-2 border-t border-border px-4 py-2.5">
-					<span className="mr-auto px-1 text-xs text-muted-foreground">{status}</span>
+					<div className="mr-auto flex items-center gap-2">
+						<Button
+							size="sm"
+							variant="ghost"
+							onClick={() => {
+								void invoke('open_scripts_dir').catch((e) => setStatus(`error: ${String(e)}`));
+							}}
+						>
+							Open Folder
+						</Button>
+						<Button size="sm" variant="ghost" onClick={reloadFromDisk}>
+							Reload Files
+						</Button>
+					</div>
+					<span className="self-center px-1 text-xs text-muted-foreground">{status}</span>
 					<Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
 						Close
 					</Button>
