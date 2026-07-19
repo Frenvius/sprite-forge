@@ -5,14 +5,14 @@
 	"license": "MIT",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "tsc && vite build",
-		"build:dev": "vite build --mode development",
+		"dev": "tauri dev",
+		"build": "tauri build",
+		"dev:vite": "vite",
+		"build:vite": "tsc && vite build",
+		"build:vite:dev": "vite build --mode development",
 		"lint": "eslint .",
 		"preview": "vite preview",
 		"tauri": "tauri",
-		"tauri:dev": "tauri dev",
-		"tauri:build": "tauri build",
 		"icons": "tauri icon public/sprite-forge.png"
 	},
 	"dependencies": {
