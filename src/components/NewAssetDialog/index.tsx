@@ -143,7 +143,7 @@ export const NewAssetDialog = ({ open, onConfirm, onOpenChange }: Props) => {
 								<Toggle label="Frame Groups" checked={frameGroups} onChange={setFrameGroups} />
 							</>
 						) : (
-							<Toggle label="Transparency" checked={transparency} onChange={setTransparency} />
+							!selectedFormat?.alphaChannel && <Toggle label="Transparency" checked={transparency} onChange={setTransparency} />
 						)}
 					</div>
 				</div>

@@ -600,3 +600,19 @@ pub fn compress_to_rle(pixels: &[u8], transparent: bool) -> Vec<u8> {
 }
 
 pub type SprManagerState = Arc<Mutex<SprManager>>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rle_roundtrip_preserves_alpha_when_transparent() {
+        let mut px = vec![0u8; SPRITE_DATA_SIZE];
+        px[0..4].copy_from_slice(&[10, 20, 30, 128]);
+        px[4..8].copy_from_slice(&[200, 50, 50, 1]);
+        px[8..12].copy_from_slice(&[70, 80, 90, 255]);
+
+        let back = decompress_to_rgba(&compress_to_rle(&px, true), true);
+        assert_eq!(back, px);
+    }
+}

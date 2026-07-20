@@ -52,6 +52,7 @@ export interface FormatHandler {
 	id: string;
 	exts: string[];
 	config: FormatConfig;
+	alphaChannel?: boolean;
 	kind: 'file' | 'folder';
 	loadDialogTitle?: string;
 	loadSprites?: SpriteLoader;

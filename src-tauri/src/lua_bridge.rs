@@ -160,9 +160,11 @@ pub fn forge_list_formats(lua_state: State<LuaState>) -> Result<serde_json::Valu
     for pair in formats.pairs::<String, Table>() {
         let (ext, t) = pair.map_err(|e| e.to_string())?;
         if let Ok(cfg) = t.get::<Table>("config") {
+            let alpha_channel = t.get::<bool>("alpha_channel").unwrap_or(false);
             let mut json = lua_value_to_json(mlua::Value::Table(cfg));
             if let serde_json::Value::Object(ref mut map) = json {
                 map.entry("ext".to_string()).or_insert(serde_json::Value::String(ext));
+                map.insert("alpha_channel".to_string(), serde_json::Value::Bool(alpha_channel));
             }
             out.push(json);
         }

@@ -231,7 +231,6 @@ export const Toolbar = () => {
 			if (!handler) throw new Error(`No format handler registered for '${formatId}'`);
 
 			const { data: loaded, formatConfig: loadedConfig } = await handler.load({
-				transparency,
 				folderPath: selectedPath,
 				datPath: assetPaths?.datPath,
 				sprPath: assetPaths?.sprPath,
@@ -242,6 +241,7 @@ export const Toolbar = () => {
 				itemdbPath: assetPaths?.itemdbPath,
 				frameGroups: overrides?.frameGroups,
 				improvedAnimations: overrides?.frameDurations,
+				transparency: handler.alphaChannel || transparency,
 				onProgress: (stage, current, total) => {
 					setLoading(true, { stage, total, current });
 				}
@@ -323,7 +323,7 @@ export const Toolbar = () => {
 			missiles: new Map(),
 			extended: opts.extended,
 			frameGroups: opts.frameGroups,
-			transparency: opts.transparency,
+			transparency: handler.alphaChannel || opts.transparency,
 			frameDurations: opts.improvedAnimations,
 			version: isTibia ? opts.version : { ...opts.version, value: 0, label: handler.config.name }
 		};

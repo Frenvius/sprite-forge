@@ -160,6 +160,7 @@ interface LuaFormatMeta {
 	sprite_size: number;
 	properties?: unknown[];
 	kind: 'file' | 'folder';
+	alpha_channel?: boolean;
 	categories: LuaCategory[];
 	load_dialog_title?: string;
 	companion?: { ext: string; label: string };
@@ -302,6 +303,7 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 		companion: meta.companion,
 		optimize: optimizeScripted,
 		loadSprites: loadSpritesScripted,
+		alphaChannel: !!meta.alpha_channel,
 		loadSpritesLz4: loadSpritesScripted,
 		loadDialogTitle: meta.load_dialog_title ?? `Select an ${meta.name} file`,
 

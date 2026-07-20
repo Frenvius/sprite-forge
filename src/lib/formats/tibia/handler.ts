@@ -11,6 +11,7 @@ TIBIA_FORMAT_CONFIG.properties = TIBIA_PROPERTY_SCHEMA;
 export const tibiaHandler: FormatHandler = {
 	id: 'tibia',
 	kind: 'folder',
+	alphaChannel: false,
 	config: TIBIA_FORMAT_CONFIG,
 	exts: ['dat', 'spr', 'otfi'],
 	optimize: (data, onProgress) => optimizeSprites(data, onProgress),
