@@ -43,6 +43,7 @@ export const useItemList = () => {
 		setSelectedCategory,
 		notifySpritesLoaded,
 		setHighlightedItemId,
+		duplicateServerItemsForClient,
 		deleteServerItemsForClients
 	} = useAssetData();
 	const { toast } = useToast();
@@ -496,7 +497,12 @@ export const useItemList = () => {
 			map.set(newId, duplicate);
 			markAsNewItem(newId, selectedCategory);
 			markUnsavedChanges(newId, selectedCategory, true);
-			if (selectedCategory === ThingCategory.ITEM) ensureServerItem(newId);
+			if (
+				selectedCategory === ThingCategory.ITEM &&
+				!duplicateServerItemsForClient(sourceId, newId)
+			) {
+				ensureServerItem(newId);
+			}
 			newIds.push(newId);
 			lastNewId = newId;
 		}

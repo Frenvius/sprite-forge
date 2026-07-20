@@ -4,6 +4,7 @@ import React from 'react';
 
 import { useConfirm } from '~/usecase/context/ConfirmContext';
 import { getFormat, formatByConfigName } from '~/lib/formats/registry';
+import { duplicateServerItemsForClient as duplicateServerItemsForClientData } from '~/lib/formats/tibia/serverItemUtils';
 import {
 	SpriteReader,
 	ThingCategory,
@@ -67,6 +68,7 @@ interface AssetDataContextType {
 	setFormatConfig: (config: FormatConfig) => void;
 	ensureServerItem: (clientId: number) => boolean;
 	reloadServerAttributes: () => { synced: number };
+	duplicateServerItemsForClient: (sourceClientId: number, targetClientId: number) => boolean;
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
 	setHighlightedSpriteId: (id: null | number) => void;
@@ -459,6 +461,25 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			setModifiedServerIds((prev) => {
 				const next = new Set(prev);
 				next.add(newItem.serverId);
+				return next;
+			});
+			setUpdateCounter((c) => c + 1);
+			return true;
+		},
+		[data]
+	);
+
+	const duplicateServerItemsForClient = React.useCallback(
+		(sourceClientId: number, targetClientId: number): boolean => {
+			const sd = data?.serverItems;
+			if (!data || !sd) return false;
+
+			const newServerIds = duplicateServerItemsForClientData(sd, sourceClientId, targetClientId);
+			if (newServerIds.length === 0) return false;
+
+			setModifiedServerIds((prev) => {
+				const next = new Set(prev);
+				for (const id of newServerIds) next.add(id);
 				return next;
 			});
 			setUpdateCounter((c) => c + 1);
@@ -1005,6 +1026,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				ensureServerItem,
 				attachServerItems,
 				highlightedItemId,
+				duplicateServerItemsForClient,
 				setOpenedSpriteId,
 				spriteLoadVersion,
 				hasUnsavedChanges,
