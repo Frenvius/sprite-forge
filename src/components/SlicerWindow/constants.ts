@@ -11,7 +11,9 @@ export const SLICER_PANEL_IDS = ['slicerGrid', 'slicerSprites', 'slicerLayers'];
 export const SLICER_DOCK_STORAGE_KEY = 'sprite-forge-slicer-dock';
 
 export const SLICER_DOCK_DEFAULT: DockLayout = {
+	top: [],
 	left: [],
+	bottom: [],
 	float: {},
 	width: { slicerGrid: 240 },
 	height: { slicerGrid: 70, slicerSprites: 280 },
