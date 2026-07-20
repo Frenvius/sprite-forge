@@ -79,7 +79,6 @@ pub fn forge_ui_config(lua_state: State<LuaState>) -> Result<LuaUiConfig, String
 #[serde(rename_all = "camelCase")]
 pub struct LuaAppConfig {
     pub name: Option<String>,
-    pub data_dir: Option<String>,
 }
 
 fn read_app_config(lua: &Lua) -> LuaAppConfig {
@@ -93,11 +92,6 @@ fn read_app_config(lua: &Lua) -> LuaAppConfig {
     if let Ok(name) = app.get::<String>("name") {
         if !name.is_empty() {
             cfg.name = Some(name);
-        }
-    }
-    if let Ok(dir) = app.get::<String>("data_dir") {
-        if !dir.is_empty() {
-            cfg.data_dir = Some(dir);
         }
     }
     cfg

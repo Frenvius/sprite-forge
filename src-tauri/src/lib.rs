@@ -41,6 +41,9 @@ use import_store::{thing_pixel_hash, ImportRecord, ImportSrc, ImportStore, Impor
 mod otb;
 use otb::{read_otb_file, write_otb_file};
 
+mod project;
+use project::ProjectState;
+
 mod lua_host;
 use lua_host::{LuaHost, LuaState};
 mod lua_bridge;
@@ -412,7 +415,7 @@ struct PanelSettings {
     show_opened_items: bool,
 }
 
-fn get_config_dir() -> Result<PathBuf, String> {
+pub(crate) fn get_config_dir() -> Result<PathBuf, String> {
     dirs::config_dir()
         .ok_or_else(|| "Config directory not found".to_string())
         .map(|mut path| {
@@ -2581,8 +2584,14 @@ pub fn run() {
         }
     };
 
+    let active_project = project::resolve_active();
+    match &active_project {
+        Some(p) => logger::log("INFO", &format!("Project '{}' at {}", p.manifest.id, p.root.display())),
+        None => logger::log("INFO", "No project open"),
+    }
+
     let lua_host: LuaState = {
-        let mut h = LuaHost::new(lua_host::scripts_dir());
+        let mut h = LuaHost::new(active_project.as_ref().and_then(|p| p.scripts_dir()));
         if let Err(e) = h.load_all() {
             logger::log("WARN", &format!("Lua scripts not loaded: {}", e));
             h.last_error = Some(e);
@@ -2591,6 +2600,8 @@ pub fn run() {
         }
         Arc::new(Mutex::new(h))
     };
+
+    let project_state: ProjectState = Arc::new(Mutex::new(active_project));
 
     let forge_assets: ForgeAssetsState = Arc::new(Mutex::new(None));
     let forge_things: ForgeThingsState = Arc::new(Mutex::new(Vec::new()));
@@ -2612,6 +2623,7 @@ pub fn run() {
         .manage(format_manager)
         .manage(import_store)
         .manage(lua_host)
+        .manage(project_state)
         .manage(forge_assets)
         .manage(forge_things)
         .manage(forge_items)
@@ -2695,6 +2707,13 @@ pub fn run() {
             lua_host::read_script,
             lua_host::write_script,
             lua_host::reload_scripts,
+            project::project_active,
+            project::project_open,
+            project::project_close,
+            project::project_recents,
+            project::project_clear_recents,
+            project::project_state_get,
+            project::project_state_set,
             lua_bridge::forge_ui_config,
             lua_bridge::forge_app_config,
             lua_bridge::registered_formats,

@@ -1,3 +1,7 @@
+import { invoke } from '@tauri-apps/api/core';
+
+import { getActiveProject } from '~/usecase/util/projects';
+
 export interface RecentLoad {
 	label: string;
 	formatId: string;
@@ -13,16 +17,29 @@ export interface RecentLoad {
 	improvedAnimations: boolean;
 }
 
-const KEY = 'sprite-forge-recent-loads';
+const KEY = 'recentLoads';
+const LOCAL_KEY = 'sprite-forge-recent-loads';
 const MAX = 8;
 
-export function getRecentLoads(): RecentLoad[] {
+async function hasProject(): Promise<boolean> {
+	return (await getActiveProject()) !== null;
+}
+
+function readLocal(): RecentLoad[] {
 	try {
 		if (typeof window === 'undefined') return [];
-		const raw = localStorage.getItem(KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw) as RecentLoad[];
-		return parsed.map((e) => ({
+		const raw = localStorage.getItem(LOCAL_KEY);
+		return raw ? (JSON.parse(raw) as RecentLoad[]) : [];
+	} catch {
+		return [];
+	}
+}
+
+export async function getRecentLoads(): Promise<RecentLoad[]> {
+	try {
+		const stored = (await hasProject()) ? await invoke<null | RecentLoad[]>('project_state_get', { key: KEY }) : readLocal();
+		if (!stored) return [];
+		return stored.map((e) => ({
 			...e,
 			formatId: e.formatId ?? 'tibia',
 			primaryPath: e.primaryPath ?? e.datPath ?? ''
@@ -32,21 +49,24 @@ export function getRecentLoads(): RecentLoad[] {
 	}
 }
 
-export function addRecentLoad(entry: RecentLoad): RecentLoad[] {
-	const next = [entry, ...getRecentLoads().filter((e) => e.primaryPath !== entry.primaryPath)].slice(0, MAX);
+async function store(entries: RecentLoad[]): Promise<RecentLoad[]> {
 	try {
-		if (typeof window !== 'undefined') localStorage.setItem(KEY, JSON.stringify(next));
+		if (await hasProject()) {
+			await invoke('project_state_set', { key: KEY, value: entries });
+		} else if (typeof window !== 'undefined') {
+			localStorage.setItem(LOCAL_KEY, JSON.stringify(entries));
+		}
 	} catch {
 		void 0;
 	}
-	return next;
+	return entries;
 }
 
-export function clearRecentLoads(): RecentLoad[] {
-	try {
-		if (typeof window !== 'undefined') localStorage.removeItem(KEY);
-	} catch {
-		void 0;
-	}
-	return [];
+export async function addRecentLoad(entry: RecentLoad): Promise<RecentLoad[]> {
+	const current = await getRecentLoads();
+	return store([entry, ...current.filter((e) => e.primaryPath !== entry.primaryPath)].slice(0, MAX));
+}
+
+export async function clearRecentLoads(): Promise<RecentLoad[]> {
+	return store([]);
 }

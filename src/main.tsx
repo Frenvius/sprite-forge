@@ -23,30 +23,11 @@ if (typeof window !== 'undefined') {
 	});
 }
 
-function namespaceLocalStorage(ns: string) {
-	const real = window.localStorage;
-	const prefix = ns + ':';
-	const shim: Storage = {
-		key: (i) => real.key(i),
-		clear: () => real.clear(),
-		getItem: (k) => real.getItem(prefix + k),
-		get length() {
-			return real.length;
-		},
-		setItem: (k, v) => real.setItem(prefix + k, v),
-		removeItem: (k) => real.removeItem(prefix + k)
-	};
-	Object.defineProperty(window, 'localStorage', { value: shim, configurable: true });
-}
-
 async function boot() {
-	(window as unknown as { __forgeRawStorage?: Storage }).__forgeRawStorage = window.localStorage;
-
 	const luaEnabled = isLuaEnabled();
 
 	let clientVersions = true;
 	let appName: string | undefined;
-	let dataDir: string | undefined;
 
 	if (luaEnabled) {
 		try {
@@ -56,15 +37,12 @@ async function boot() {
 			void 0;
 		}
 		try {
-			const app = await invoke<{ name?: string; dataDir?: string }>('forge_app_config');
+			const app = await invoke<{ name?: string }>('forge_app_config');
 			appName = app.name ?? undefined;
-			dataDir = app.dataDir ?? undefined;
 		} catch {
 			void 0;
 		}
 	}
-
-	if (dataDir) namespaceLocalStorage(dataDir);
 
 	if (clientVersions) registerFormat(tibiaHandler);
 	if (luaEnabled) await registerLuaFormats();

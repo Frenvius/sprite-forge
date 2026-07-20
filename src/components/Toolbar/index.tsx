@@ -31,6 +31,7 @@ import { Button } from '~/components/ui/button';
 import { errorToString } from '~/lib/errorMessage';
 import { useToast } from '~/usecase/hooks/useToast';
 import { AboutDialog } from '~/components/AboutDialog';
+import { ProjectMenu } from '~/components/ProjectMenu';
 import { useUpdater } from '~/usecase/hooks/useUpdater';
 import { optimizeSprites } from '~/lib/formats/sprites';
 import { LoadingDialog } from '~/components/LoadingDialog';
@@ -105,7 +106,7 @@ export const Toolbar = () => {
 	const [luaDialogOpen, setLuaDialogOpen] = useState(false);
 	const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 	const { minimize, isMaximized, toggleMaximize } = useWindowControls();
-	const [recentLoads, setRecentLoads] = useState<RecentLoad[]>(() => getRecentLoads());
+	const [recentLoads, setRecentLoads] = useState<RecentLoad[]>([]);
 	const [itemToAdd, setItemToAdd] = useState<null | ThingType>(null);
 	const [isMac, setIsMac] = useState(false);
 
@@ -113,6 +114,7 @@ export const Toolbar = () => {
 
 	useEffect(() => {
 		setIsMac(navigator.userAgent.includes('Mac'));
+		void getRecentLoads().then(setRecentLoads);
 
 		const handleOpenScene = (e: CustomEvent<{ item: ThingType }>) => {
 			setItemToAdd(e.detail.item);
@@ -250,7 +252,7 @@ export const Toolbar = () => {
 
 			const folderName = selectedPath.split(/[\\/]/).filter(Boolean).pop() ?? selectedPath;
 			setRecentLoads(
-				addRecentLoad({
+				await addRecentLoad({
 					transparency,
 					formatId: handler.id,
 					datPath: loaded.datPath,
@@ -682,7 +684,13 @@ export const Toolbar = () => {
 													</MenubarItem>
 												))}
 												<MenubarSeparator />
-												<MenubarItem onSelect={() => setRecentLoads(clearRecentLoads())}>Clear Recent</MenubarItem>
+												<MenubarItem
+													onSelect={() => {
+														void clearRecentLoads().then(setRecentLoads);
+													}}
+												>
+													Clear Recent
+												</MenubarItem>
 											</>
 										);
 									})()}
@@ -702,6 +710,8 @@ export const Toolbar = () => {
 								<History className="mr-2 h-3.5 w-3.5" />
 								Version History
 							</MenubarItem>
+							<MenubarSeparator />
+							<ProjectMenu />
 							<MenubarSeparator />
 							<MenubarItem onSelect={() => setSettingsDialogOpen(true)}>
 								<Settings className="mr-2 h-3.5 w-3.5" />

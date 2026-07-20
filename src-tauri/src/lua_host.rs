@@ -6,23 +6,26 @@ use tauri::State;
 
 pub struct LuaHost {
     pub lua: Lua,
-    pub dir: PathBuf,
+    pub dir: Option<PathBuf>,
     pub loaded: usize,
     pub last_error: Option<String>,
 }
 
 impl LuaHost {
-    pub fn new(dir: PathBuf) -> Self {
+    pub fn new(dir: Option<PathBuf>) -> Self {
         LuaHost { lua: unsafe { Lua::unsafe_new() }, dir, loaded: 0, last_error: None }
     }
 
     pub fn load_all(&mut self) -> Result<usize, String> {
         let lua = unsafe { Lua::unsafe_new() };
-        let mut files: Vec<PathBuf> = std::fs::read_dir(&self.dir)
-            .map_err(|e| format!("scripts dir {}: {}", self.dir.display(), e))?
-            .filter_map(|e| e.ok().map(|e| e.path()))
-            .filter(|p| p.extension().map_or(false, |x| x == "lua"))
-            .collect();
+        let mut files: Vec<PathBuf> = match &self.dir {
+            Some(dir) => std::fs::read_dir(dir)
+                .map_err(|e| format!("scripts dir {}: {}", dir.display(), e))?
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .filter(|p| p.extension().map_or(false, |x| x == "lua"))
+                .collect(),
+            None => Vec::new(),
+        };
         files.sort();
         lua.globals()
             .set("forge", lua.create_table().map_err(|e| e.to_string())?)
@@ -44,32 +47,22 @@ impl LuaHost {
 
 pub type LuaState = Arc<Mutex<LuaHost>>;
 
-pub fn scripts_dir() -> PathBuf {
-    let candidates = [
-        std::env::current_exe().ok().and_then(|e| e.parent().map(|p| p.join("scripts"))),
-        Some(PathBuf::from("scripts")),
-        Some(PathBuf::from("../scripts")),
-    ];
-    for c in candidates.into_iter().flatten() {
-        if c.is_dir() {
-            return c;
-        }
-    }
-    PathBuf::from("scripts")
-}
-
 fn script_path(host: &LuaHost, name: &str) -> Result<PathBuf, String> {
     if name.is_empty() || name.contains('/') || name.contains('\\') || name.contains("..") || !name.ends_with(".lua") {
         return Err(format!("invalid script name: {}", name));
     }
-    Ok(host.dir.join(name))
+    let dir = host.dir.as_ref().ok_or_else(|| "project has no scripts directory".to_string())?;
+    Ok(dir.join(name))
 }
 
 #[tauri::command]
 pub fn list_scripts(lua: State<LuaState>) -> Result<Vec<String>, String> {
     let h = lua.lock().map_err(|e| e.to_string())?;
-    let mut names: Vec<String> = std::fs::read_dir(&h.dir)
-        .map_err(|e| format!("scripts dir {}: {}", h.dir.display(), e))?
+    let Some(dir) = h.dir.as_ref() else {
+        return Ok(Vec::new());
+    };
+    let mut names: Vec<String> = std::fs::read_dir(dir)
+        .map_err(|e| format!("scripts dir {}: {}", dir.display(), e))?
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.extension().map_or(false, |x| x == "lua"))
         .filter_map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
@@ -103,7 +96,7 @@ pub fn write_script(name: String, content: String, lua: State<LuaState>) -> Resu
 pub fn open_scripts_dir(lua: State<LuaState>) -> Result<(), String> {
     let dir = {
         let h = lua.lock().map_err(|e| e.to_string())?;
-        h.dir.clone()
+        h.dir.clone().ok_or_else(|| "project has no scripts directory".to_string())?
     };
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {}", dir.display(), e))?;
     let resolved = std::fs::canonicalize(&dir).unwrap_or(dir);
@@ -113,11 +106,8 @@ pub fn open_scripts_dir(lua: State<LuaState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn reload_scripts(dir: Option<String>, lua: State<LuaState>) -> Result<usize, String> {
+pub fn reload_scripts(lua: State<LuaState>) -> Result<usize, String> {
     let mut h = lua.lock().map_err(|e| e.to_string())?;
-    if let Some(d) = dir {
-        h.dir = PathBuf::from(d);
-    }
     match h.load_all() {
         Ok(n) => Ok(n),
         Err(e) => {
@@ -132,14 +122,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn deploy_scripts_load() {
-        let dir = PathBuf::from("scripts");
-        if !dir.is_dir() {
-            return;
-        }
-        let mut h = LuaHost::new(dir);
-        let n = h.load_all().expect("deploy scripts should load");
-        assert!(n >= 1, "expected at least one deploy script");
+    fn loads_every_lua_file_in_the_project_scripts_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.lua"), "forge.app = { name = 'A' }").unwrap();
+        std::fs::write(dir.path().join("b.lua"), "forge.ui = { client_versions = false }").unwrap();
+        std::fs::write(dir.path().join("notes.txt"), "ignored").unwrap();
+
+        let mut h = LuaHost::new(Some(dir.path().to_path_buf()));
+        assert_eq!(h.load_all().unwrap(), 2);
+    }
+
+    #[test]
+    fn a_project_without_scripts_runs_with_an_empty_host() {
+        let mut h = LuaHost::new(None);
+        assert_eq!(h.load_all().unwrap(), 0);
+        assert!(h.lua.globals().get::<mlua::Table>("forge").is_ok());
     }
 
     #[test]
