@@ -1,5 +1,6 @@
 import type { useObjectProperties } from '~/usecase/hooks/useObjectProperties';
 
+import type React from 'react';
 import {
 	Copy,
 	Play,
@@ -40,6 +41,15 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/comp
 interface PreviewPanelProps {
 	preview: ReturnType<typeof useObjectProperties>['preview'];
 }
+
+const LeftTip = ({ label, children }: { label: string; children: React.ReactNode }) => (
+	<Tooltip>
+		<TooltipTrigger asChild>{children}</TooltipTrigger>
+		<TooltipContent side="left" sideOffset={6}>
+			{label}
+		</TooltipContent>
+	</Tooltip>
+);
 
 export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 	const { item, isOutfit, draftItem, isMissile, outfitData, handleResetSprites } = usePropertiesContext();
@@ -278,102 +288,104 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 						</div>
 					)}
 
-					<div className="relative z-10 mt-2 mr-2 mb-2 ml-auto w-fit flex flex-col items-end gap-1">
-						<div className="flex flex-col items-center gap-0.5 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={handleZoomIn}
-								className="h-6 w-6 hover:bg-secondary/50 p-0"
-								disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
-							>
-								<ZoomIn className="h-3 w-3 text-muted-foreground" />
-							</Button>
-							<div className="px-1 text-[10px] font-mono text-foreground min-w-[1.5rem] text-center">{zoom}x</div>
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={handleZoomOut}
-								disabled={zoom === ZOOM_LEVELS[0]}
-								className="h-6 w-6 hover:bg-secondary/50 p-0"
-							>
-								<ZoomOut className="h-3 w-3 text-muted-foreground" />
-							</Button>
-						</div>
+					<TooltipProvider delayDuration={150}>
+						<div className="relative z-10 mt-2 mr-2 mb-2 ml-auto w-fit flex flex-col items-end gap-1">
+							<div className="flex flex-col items-center gap-0.5 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
+								<LeftTip label="Zoom in">
+									<Button
+										size="icon"
+										variant="ghost"
+										onClick={handleZoomIn}
+										className="h-6 w-6 hover:bg-secondary/50 p-0"
+										disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+									>
+										<ZoomIn className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+								<div className="px-1 text-[10px] font-mono text-foreground min-w-[1.5rem] text-center">{zoom}x</div>
+								<LeftTip label="Zoom out">
+									<Button
+										size="icon"
+										variant="ghost"
+										onClick={handleZoomOut}
+										disabled={zoom === ZOOM_LEVELS[0]}
+										className="h-6 w-6 hover:bg-secondary/50 p-0"
+									>
+										<ZoomOut className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+							</div>
 
-						<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
-							<Button
-								size="icon"
-								variant="ghost"
-								title="Reset center"
-								onClick={handleResetPan}
-								className="h-6 w-6 hover:bg-secondary/50 p-0"
-							>
-								<RotateCcw className="h-3 w-3 text-muted-foreground" />
-							</Button>
-							<Button
-								size="icon"
-								onClick={() => setIsPanEnabled(!isPanEnabled)}
-								title={isPanEnabled ? 'Disable Pan' : 'Enable Pan'}
-								variant={isPanEnabled || isMiddleMousePanning ? 'secondary' : 'ghost'}
-								className={cn(
-									'h-6 w-6 p-0',
-									isPanEnabled || isMiddleMousePanning ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50'
-								)}
-							>
-								<Move className="h-3 w-3 text-muted-foreground" />
-							</Button>
-						</div>
+							<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
+								<LeftTip label="Reset center">
+									<Button size="icon" variant="ghost" onClick={handleResetPan} className="h-6 w-6 hover:bg-secondary/50 p-0">
+										<RotateCcw className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+								<LeftTip label={isPanEnabled ? 'Disable pan' : 'Enable pan'}>
+									<Button
+										size="icon"
+										onClick={() => setIsPanEnabled(!isPanEnabled)}
+										variant={isPanEnabled || isMiddleMousePanning ? 'secondary' : 'ghost'}
+										className={cn(
+											'h-6 w-6 p-0',
+											isPanEnabled || isMiddleMousePanning ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50'
+										)}
+									>
+										<Move className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+							</div>
 
-						<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
-							<Button
-								size="icon"
-								variant="ghost"
-								title="Reset Sprites"
-								onClick={handleResetSprites}
-								className="h-6 w-6 hover:bg-secondary/50 p-0"
-							>
-								<Undo2 className="h-3 w-3 text-muted-foreground" />
-							</Button>
-						</div>
-						<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
-							{isOutfit && (
-								<Button
-									size="icon"
-									onClick={() => setShowScene(!showScene)}
-									variant={showScene ? 'secondary' : 'ghost'}
-									title={showScene ? 'Hide Scene' : 'Show Scene'}
-									className={cn('h-6 w-6 p-0', showScene ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50')}
-								>
-									<TreePine className="h-3 w-3 text-muted-foreground" />
-								</Button>
-							)}
-							<Button
-								size="icon"
-								onClick={() => setShowSmooth(!showSmooth)}
-								variant={showSmooth ? 'secondary' : 'ghost'}
-								title={showSmooth ? 'Disable Smoothing' : 'Enable Smoothing'}
-								className={cn('h-6 w-6 p-0', showSmooth ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50')}
-							>
-								<Blend className="h-3 w-3 text-muted-foreground" />
-							</Button>
-						</div>
-						<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
-							<Button
-								size="icon"
-								variant="ghost"
-								disabled={isPlaying}
-								onClick={handleCopySprite}
-								title={isPlaying ? 'Pause animation to copy' : 'Copy sprite to clipboard'}
-								className={cn(
-									'h-6 w-6 p-0 transition-all duration-150 active:scale-90',
-									copyFlash ? 'bg-primary/30 scale-95' : 'hover:bg-secondary/50'
+							<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
+								<LeftTip label="Reset sprites">
+									<Button size="icon" variant="ghost" onClick={handleResetSprites} className="h-6 w-6 hover:bg-secondary/50 p-0">
+										<Undo2 className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+							</div>
+							<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
+								{isOutfit && (
+									<LeftTip label={showScene ? 'Hide scene' : 'Show scene'}>
+										<Button
+											size="icon"
+											onClick={() => setShowScene(!showScene)}
+											variant={showScene ? 'secondary' : 'ghost'}
+											className={cn('h-6 w-6 p-0', showScene ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50')}
+										>
+											<TreePine className="h-3 w-3 text-muted-foreground" />
+										</Button>
+									</LeftTip>
 								)}
-							>
-								<Copy className="h-3 w-3 text-muted-foreground" />
-							</Button>
+								<LeftTip label={showSmooth ? 'Disable smoothing' : 'Enable smoothing'}>
+									<Button
+										size="icon"
+										onClick={() => setShowSmooth(!showSmooth)}
+										variant={showSmooth ? 'secondary' : 'ghost'}
+										className={cn('h-6 w-6 p-0', showSmooth ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-secondary/50')}
+									>
+										<Blend className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+							</div>
+							<div className="flex flex-col gap-1 bg-secondary/90 backdrop-blur-sm rounded-md px-1 py-0.5 border border-border/50 shadow-lg">
+								<LeftTip label={isPlaying ? 'Pause animation to copy' : 'Copy sprite to clipboard'}>
+									<Button
+										size="icon"
+										variant="ghost"
+										disabled={isPlaying}
+										onClick={handleCopySprite}
+										className={cn(
+											'h-6 w-6 p-0 transition-all duration-150 active:scale-90',
+											copyFlash ? 'bg-primary/30 scale-95' : 'hover:bg-secondary/50'
+										)}
+									>
+										<Copy className="h-3 w-3 text-muted-foreground" />
+									</Button>
+								</LeftTip>
+							</div>
 						</div>
-					</div>
+					</TooltipProvider>
 
 					<CheckerBoard className="absolute inset-0 border border-border/50 rounded-lg flex items-center justify-center overflow-hidden">
 						<SpriteCanvas
