@@ -5,6 +5,28 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-20
+
+### Added
+- Editable layers in the object preview with a vertical stepper and a show-all toggle for compositing.
+- Animation timeline panel with shared playback controls.
+- Top and bottom dockable zones, with panel locking.
+- Open Folder and Reload Files actions in the Lua Scripts dialog.
+- Project manifest (`.frg`) support to resolve paths before Lua scripts run.
+- Duplicate a server item for a client.
+- Star button in the About dialog.
+- Confirmation dialog when replacing sprites via drag-and-drop or import.
+
+### Fixed
+- Multi-tile sprites now stack in the correct order (matches the reference renderer).
+- Tooltips no longer get clipped by parent containers with hidden overflow.
+- Pasting into item description (and other textareas) works again; the global image-paste listener now ignores textareas and contenteditable fields.
+- `items.xml` is preserved on save with in-place patching, plus a confirmation before rewriting.
+
+### Changed
+- Formats can now declare a full alpha channel at registration, so RGBA sprites render with correct transparency.
+- Toolbar buttons in the object preview use the styled tooltip component (hover to see labels).
+
 ## [0.3.0] - 2026-06-29
 
 ### Added
