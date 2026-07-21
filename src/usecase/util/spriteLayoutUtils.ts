@@ -78,8 +78,8 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 		const layerCount = renderConfig?.listLayerCount ?? thing.layers;
 
 		for (let l = 0; l < layerCount; l++) {
-			for (let h = 0; h < thing.height; h++) {
-				for (let w = 0; w < thing.width; w++) {
+			for (let w = 0; w < thing.width; w++) {
+				for (let h = 0; h < thing.height; h++) {
 					const index = getSpriteIndex(thing, w, h, l, defaultPatternX, 0, 0, 0);
 					if (index < thing.spriteIndex.length) {
 						const posX = (thing.width - w - 1) * spriteSize;
@@ -132,8 +132,8 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 
 		for (const py of patternYsToRender) {
 			for (let l = 0; l < thing.layers; l++) {
-				for (let h = 0; h < thing.height; h++) {
-					for (let w = 0; w < thing.width; w++) {
+				for (let w = 0; w < thing.width; w++) {
+					for (let h = 0; h < thing.height; h++) {
 						const index = getSpriteIndex(thing, w, h, l, patternX, py, patternZ, currentFrame);
 						if (index < thing.spriteIndex.length) {
 							const posX = (thing.width - w - 1) * spriteSize + offsetX;
@@ -172,8 +172,8 @@ export const computeSpriteLayout = (params: ComputeLayoutParams): LayoutResult =
 					const fy = row * pixelsHeight;
 
 					for (let l = 0; l < thing.layers; l++) {
-						for (let h = 0; h < thing.height; h++) {
-							for (let w = 0; w < thing.width; w++) {
+						for (let w = 0; w < thing.width; w++) {
+							for (let h = 0; h < thing.height; h++) {
 								const spriteIndex = getSpriteIndex(thing, w, h, l, x, y, z, currentFrame);
 
 								if (spriteIndex < thing.spriteIndex.length) {
