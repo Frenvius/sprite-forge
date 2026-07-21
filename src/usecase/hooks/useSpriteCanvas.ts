@@ -38,6 +38,7 @@ export interface SpriteCanvasProps {
 	showGrid?: boolean;
 	showEmpty?: boolean;
 	sceneWidth?: number;
+	layerFilter?: number;
 	spriteIds?: number[];
 	sceneHeight?: number;
 	isPanEnabled?: boolean;
@@ -75,6 +76,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		height = 1,
 		outfitData,
 		sceneTiles,
+		layerFilter,
 		onPanChange,
 		fill = false,
 		patternX = 0,
@@ -127,7 +129,11 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		[thing, formatConfig]
 	);
 
-	const { canvasWidth, canvasHeight, spriteLayout } = React.useMemo(
+	const {
+		canvasWidth,
+		canvasHeight,
+		spriteLayout: rawSpriteLayout
+	} = React.useMemo(
 		() =>
 			computeSpriteLayout({
 				thing,
@@ -165,6 +171,11 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 			sceneHeight,
 			spriteLoadVersion
 		]
+	);
+
+	const spriteLayout = React.useMemo(
+		() => (layerFilter === undefined ? rawSpriteLayout : rawSpriteLayout.filter((s) => s.layer === layerFilter)),
+		[rawSpriteLayout, layerFilter]
 	);
 
 	const offscreenCanvasRef = React.useRef<null | HTMLCanvasElement>(null);

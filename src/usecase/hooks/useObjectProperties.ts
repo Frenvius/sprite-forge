@@ -323,7 +323,13 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 	const [patternY, setPatternY] = React.useState(0);
 	const [patternZ, setPatternZ] = React.useState(0);
 	const [currentLayer, setCurrentLayer] = React.useState(0);
+	const [showAllLayers, setShowAllLayers] = React.useState(false);
 	const { isPlaying, currentFrame, setCurrentFrame, setPlaying: setIsPlaying } = useAnimation();
+
+	React.useEffect(() => {
+		const maxLayer = Math.max(0, (draftItem?.layers ?? 1) - 1);
+		if (currentLayer > maxLayer) setCurrentLayer(maxLayer);
+	}, [draftItem?.layers, currentLayer]);
 
 	const [outfitData, setOutfitData] = React.useState<OutfitData>({
 		head: 0,
@@ -1066,6 +1072,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 		setPatternZ(0);
 		setCurrentFrame(0);
 		setCurrentLayer(0);
+		setShowAllLayers(false);
 		setIsPlaying(init.frames > 1);
 		setOutfitData({ head: 0, body: 0, legs: 0, feet: 0, addons: Array(Math.max(0, init.patternY - 1)).fill(false) });
 	}, [override?.item]);
@@ -1125,7 +1132,9 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 			showExactSize,
 			firstSpriteId,
 			handleZoomOut,
+			showAllLayers,
 			handleResetPan,
+			setCurrentLayer,
 			setIsPanEnabled,
 			hoveredSpriteId,
 			handlePatternUp,
@@ -1133,6 +1142,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 			handleNextFrame,
 			handleLastFrame,
 			handlePlayPause,
+			setShowAllLayers,
 			setShowExactSize,
 			handleCopySprite,
 			handleFirstFrame,

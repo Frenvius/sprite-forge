@@ -7,6 +7,7 @@ import {
 	Pause,
 	Undo2,
 	Blend,
+	Layers,
 	ZoomIn,
 	ZoomOut,
 	ArrowUp,
@@ -34,6 +35,7 @@ import { ZOOM_LEVELS } from '~/usecase/util/constants';
 import { CheckerBoard } from '~/components/CheckerBoard';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { usePropertiesContext } from '~/usecase/context/PropertiesContext';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip';
 
 interface PreviewPanelProps {
 	preview: ReturnType<typeof useObjectProperties>['preview'];
@@ -66,7 +68,9 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 		setShowSmooth,
 		showExactSize,
 		handleZoomOut,
+		showAllLayers,
 		handleResetPan,
+		setCurrentLayer,
 		setIsPanEnabled,
 		hoveredSpriteId,
 		handlePatternUp,
@@ -74,6 +78,7 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 		handleNextFrame,
 		handleLastFrame,
 		handlePlayPause,
+		setShowAllLayers,
 		handleCopySprite,
 		handleFirstFrame,
 		handleSpriteDrop,
@@ -402,8 +407,64 @@ export const PreviewPanel = ({ preview }: PreviewPanelProps) => {
 								setPanX(x);
 								setPanY(y);
 							}}
+							layerFilter={draftItem.layers > 1 && !showAllLayers ? currentLayer : undefined}
 						/>
 					</CheckerBoard>
+
+					{draftItem.layers > 1 && (
+						<div className="absolute top-9 left-2 z-10 w-[34px] flex flex-col items-center bg-secondary/90 backdrop-blur-sm rounded-md border border-border/50 shadow-lg overflow-hidden">
+							<TooltipProvider delayDuration={150}>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="icon"
+											aria-label="Show all layers"
+											variant={showAllLayers ? 'secondary' : 'ghost'}
+											onClick={() => setShowAllLayers(!showAllLayers)}
+											className={cn(
+												'w-full h-auto py-1 rounded-none border-b border-border/40',
+												showAllLayers
+													? 'bg-primary/20 text-primary hover:bg-primary/30'
+													: 'bg-secondary/60 hover:bg-secondary text-muted-foreground'
+											)}
+										>
+											<Layers className="h-3 w-3" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="right" sideOffset={6}>
+										{showAllLayers ? 'Showing all layers' : 'Show all layers'}
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<Button
+								size="icon"
+								variant="ghost"
+								disabled={showAllLayers || currentLayer === 0}
+								onClick={() => setCurrentLayer(Math.max(0, currentLayer - 1))}
+								className="h-5 w-full rounded-none hover:bg-primary/20 hover:text-primary text-muted-foreground p-0"
+							>
+								<ChevronUp className="h-3 w-3" />
+							</Button>
+							<div
+								className={cn(
+									'w-full py-0.5 text-[11px] font-mono font-semibold text-center tabular-nums border-y border-border/40 bg-background/30',
+									showAllLayers ? 'text-muted-foreground/50' : 'text-foreground'
+								)}
+							>
+								{showAllLayers ? 'All' : currentLayer + 1}
+								{!showAllLayers && <span className="text-muted-foreground font-normal">/{draftItem.layers}</span>}
+							</div>
+							<Button
+								size="icon"
+								variant="ghost"
+								disabled={showAllLayers || currentLayer >= draftItem.layers - 1}
+								onClick={() => setCurrentLayer(Math.min(draftItem.layers - 1, currentLayer + 1))}
+								className="h-5 w-full rounded-none hover:bg-primary/20 hover:text-primary text-muted-foreground p-0"
+							>
+								<ChevronDown className="h-3 w-3" />
+							</Button>
+						</div>
+					)}
 
 					{draftItem.frames > 1 && (
 						<>
