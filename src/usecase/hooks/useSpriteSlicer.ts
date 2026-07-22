@@ -260,12 +260,21 @@ export const useSpriteSlicer = () => {
 
 	React.useEffect(() => {
 		if (data) return;
-		void emit('slicer:query-project');
-		const unlistenPromise = listen<boolean>('slicer:project-state', (e) => {
+		let unlisten: (() => void) | undefined;
+		let cancelled = false;
+		void listen<boolean>('slicer:project-state', (e) => {
 			setRemoteProjectLoaded(!!e.payload);
+		}).then((u) => {
+			if (cancelled) {
+				u();
+				return;
+			}
+			unlisten = u;
+			void emit('slicer:query-project');
 		});
 		return () => {
-			void unlistenPromise.then((u) => u());
+			cancelled = true;
+			unlisten?.();
 		};
 	}, [data]);
 
