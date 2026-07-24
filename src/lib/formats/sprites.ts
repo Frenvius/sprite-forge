@@ -1,3 +1,5 @@
+import type { OptimizeResult } from './registry';
+
 import { getFormat } from './registry';
 import { type AssetData } from './tibia/types';
 
@@ -19,7 +21,7 @@ export async function loadSpritesLz4(data: AssetData, ids: number[]): Promise<vo
 export async function optimizeSprites(
 	data: AssetData,
 	onProgress?: (m: string, c: number, t: number) => void
-): Promise<{ oldTotal: number; newTotal: number; tempPath: string; removedCount: number }> {
+): Promise<OptimizeResult> {
 	const h = handlerOf(data);
 	if (!h?.optimize) throw new Error(`format '${data.formatId ?? 'tibia'}' has no optimizer`);
 	return h.optimize(data, onProgress);

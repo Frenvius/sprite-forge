@@ -2,11 +2,22 @@ import type { Sprite, AssetData, ThingType, FormatConfig, ThingCategory } from '
 
 type ModifiedItemMap = Map<string, { id: number; data: ThingType; category: ThingCategory }>;
 
+export type RemovedReason = 'empty' | 'unused' | 'duplicate';
+
+export interface RemovedSprite {
+	id: number;
+	duplicateOf?: number;
+	reason: RemovedReason;
+}
+
 export interface OptimizeResult {
 	oldTotal: number;
 	newTotal: number;
 	tempPath: string;
 	removedCount: number;
+	previewPath?: string;
+	removed?: RemovedSprite[];
+	removedByReason?: Record<RemovedReason, number>;
 }
 
 export type SpriteLoader = (data: AssetData, ids: number[]) => Promise<void>;

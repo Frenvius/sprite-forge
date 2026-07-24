@@ -1,3 +1,5 @@
+import type { OptimizeResult } from '~/lib/formats/registry';
+
 import { useState, useEffect } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -98,9 +100,7 @@ export const Toolbar = () => {
 	const [optimizerOpen, setOptimizerOpen] = useState(false);
 	const [isOptimizing, setIsOptimizing] = useState(false);
 	const [optimizerProgress, setOptimizerProgress] = useState({ total: 0, current: 0, message: '' });
-	const [optimizerResult, setOptimizerResult] = useState<null | { oldTotal: number; newTotal: number; removedCount: number }>(
-		null
-	);
+	const [optimizerResult, setOptimizerResult] = useState<null | OptimizeResult>(null);
 	const [sceneEditorOpen, setSceneEditorOpen] = useState(false);
 	const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
 	const [luaDialogOpen, setLuaDialogOpen] = useState(false);

@@ -29,7 +29,7 @@ pub async fn optimize_sprites_rust(
     
     let app_handle = app.clone();
     
-    let (remap_blob, removed_count, old_total, new_total, temp_path) = tauri::async_runtime::spawn_blocking(move || {
+    let (remap_blob, removed_blob, reason_counts, removed_count, old_total, new_total, temp_path) = tauri::async_runtime::spawn_blocking(move || {
         use tauri::Emitter;
         
         let mut reader = SprFileReader::open(&path_clone, extended)
@@ -116,6 +116,34 @@ pub async fn optimize_sprites_rust(
             }
         }
         
+        let mut removed_blob: Vec<u8> = Vec::new();
+        let mut empty_count: u32 = 0;
+        let mut duplicate_count: u32 = 0;
+        let mut unused_count: u32 = 0;
+
+        for id in 1..=old_total {
+            let (canonical, reason) = if empty_ids.contains(&id) {
+                empty_count += 1;
+                (0u32, 0u8)
+            } else {
+                match remap.get(&id) {
+                    Some(&canon) if canon != id => {
+                        duplicate_count += 1;
+                        (canon, 1u8)
+                    }
+                    Some(&canon) if !canonical_to_new.contains_key(&canon) => {
+                        unused_count += 1;
+                        (0u32, 2u8)
+                    }
+                    _ => continue,
+                }
+            };
+
+            removed_blob.extend_from_slice(&id.to_le_bytes());
+            removed_blob.extend_from_slice(&canonical.to_le_bytes());
+            removed_blob.push(reason);
+        }
+
         let _ = app_handle.emit("optimizer-progress", "Writing optimized file...");
 
         let temp_file = tempfile::Builder::new()
@@ -144,8 +172,10 @@ pub async fn optimize_sprites_rust(
             remap_blob.extend_from_slice(&new.to_le_bytes());
         }
 
-        Ok::<(Vec<u8>, u32, u32, u32, String), String>((
+        Ok::<(Vec<u8>, Vec<u8>, (u32, u32, u32), u32, u32, u32, String), String>((
             remap_blob,
+            removed_blob,
+            (duplicate_count, unused_count, empty_count),
             old_total - (new_id_counter - 1),
             old_total,
             new_id_counter - 1,
@@ -153,14 +183,21 @@ pub async fn optimize_sprites_rust(
         ))
     }).await.map_err(|e| format!("Task join error: {}", e))??;
 
+    let (duplicate_count, unused_count, empty_count) = reason_counts;
     let path_bytes = temp_path.as_bytes();
-    let mut response = Vec::with_capacity(4 + 4 + 4 + 2 + path_bytes.len() + remap_blob.len());
+    let mut response =
+        Vec::with_capacity(6 * 4 + 2 + path_bytes.len() + 4 + remap_blob.len() + removed_blob.len());
     response.extend_from_slice(&old_total.to_le_bytes());
     response.extend_from_slice(&new_total.to_le_bytes());
     response.extend_from_slice(&removed_count.to_le_bytes());
+    response.extend_from_slice(&duplicate_count.to_le_bytes());
+    response.extend_from_slice(&unused_count.to_le_bytes());
+    response.extend_from_slice(&empty_count.to_le_bytes());
     response.extend_from_slice(&(path_bytes.len() as u16).to_le_bytes());
     response.extend_from_slice(path_bytes);
+    response.extend_from_slice(&(remap_blob.len() as u32).to_le_bytes());
     response.extend_from_slice(&remap_blob);
+    response.extend_from_slice(&removed_blob);
 
     Ok(tauri::ipc::Response::new(response))
 }

@@ -3,8 +3,14 @@ import { invoke } from '@tauri-apps/api/core';
 import { ByteWriter } from '~/lib/formats/tibia/compiler';
 import { parseRgbaSprites } from '~/lib/formats/tibia/loader';
 import { collectReferencedSpriteIds } from '~/lib/formats/tibia/transfer';
-import { registerFormat, type FormatHandler } from '~/lib/formats/registry';
 import { ForgeThing, forgeThings, forgeLoadAssets, forgeLoadItemdb } from '~/adapter/forge';
+import {
+	registerFormat,
+	type RemovedReason,
+	type RemovedSprite,
+	type FormatHandler,
+	type OptimizeResult
+} from '~/lib/formats/registry';
 import {
 	AssetData,
 	ThingType,
@@ -40,7 +46,7 @@ function hashRgba(px: Uint8Array): string {
 async function optimizeScripted(
 	data: AssetData,
 	onProgress?: (m: string, c: number, t: number) => void
-): Promise<{ oldTotal: number; newTotal: number; tempPath: string; removedCount: number }> {
+): Promise<OptimizeResult> {
 	const steps = 3;
 	let step = 0;
 	if (onProgress) onProgress('Scanning used sprites...', step++, steps);
@@ -129,8 +135,31 @@ async function optimizeScripted(
 	}
 	await invoke('forge_set_sprites', w);
 
+	const removed: RemovedSprite[] = [];
+	const removedByReason: Record<RemovedReason, number> = { empty: 0, unused: 0, duplicate: 0 };
+	for (let id = 1; id <= oldTotal; id++) {
+		const canon = canonical.get(id);
+		if (canon === undefined) {
+			removed.push({ id, reason: 'unused' });
+			removedByReason.unused++;
+		} else if (canon === 0) {
+			removed.push({ id, reason: 'empty' });
+			removedByReason.empty++;
+		} else if (canon !== id) {
+			removed.push({ id, duplicateOf: canon, reason: 'duplicate' });
+			removedByReason.duplicate++;
+		}
+	}
+
 	if (onProgress) onProgress('Optimization complete', steps, steps);
-	return { oldTotal, newTotal: next - 1, tempPath: data.sprPath!, removedCount: Math.max(0, oldTotal - (next - 1)) };
+	return {
+		removed,
+		oldTotal,
+		removedByReason,
+		newTotal: next - 1,
+		tempPath: data.sprPath!,
+		removedCount: Math.max(0, oldTotal - (next - 1))
+	};
 }
 
 interface LuaCategoryRendering {

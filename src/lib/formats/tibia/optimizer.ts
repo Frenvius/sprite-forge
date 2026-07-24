@@ -1,12 +1,15 @@
 import type { AssetData } from './types';
+import type { RemovedReason, RemovedSprite, OptimizeResult } from '~/lib/formats/registry';
 
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
+const REASONS: RemovedReason[] = ['empty', 'duplicate', 'unused'];
+
 export async function optimizeSprites(
 	data: AssetData,
 	onProgress?: (message: string, current: number, total: number) => void
-): Promise<{ oldTotal: number; newTotal: number; tempPath: string; removedCount: number }> {
+): Promise<OptimizeResult> {
 	const steps = 4;
 	let currentStep = 0;
 
@@ -72,11 +75,30 @@ export async function optimizeSprites(
 		ro += 4;
 		const removedCount = rv.getUint32(ro, true);
 		ro += 4;
+		const duplicateCount = rv.getUint32(ro, true);
+		ro += 4;
+		const unusedCount = rv.getUint32(ro, true);
+		ro += 4;
+		const emptyCount = rv.getUint32(ro, true);
+		ro += 4;
 		const pathLen = rv.getUint16(ro, true);
 		ro += 2;
 		const tempPath = new TextDecoder().decode(resultBytes.subarray(ro, ro + pathLen));
 		ro += pathLen;
-		const remapBytes = resultBytes.subarray(ro);
+		const remapLen = rv.getUint32(ro, true);
+		ro += 4;
+		const remapBytes = resultBytes.subarray(ro, ro + remapLen);
+		ro += remapLen;
+		const removedBytes = resultBytes.subarray(ro);
+
+		const removed: RemovedSprite[] = [];
+		const removedView = new DataView(removedBytes.buffer, removedBytes.byteOffset, removedBytes.byteLength);
+		for (let i = 0; i + 9 <= removedBytes.length; i += 9) {
+			const id = removedView.getUint32(i, true);
+			const duplicateOf = removedView.getUint32(i + 4, true);
+			const reason = REASONS[removedView.getUint8(i + 8)] ?? 'unused';
+			removed.push(duplicateOf > 0 ? { id, reason, duplicateOf } : { id, reason });
+		}
 
 		if (onProgress) onProgress('Updating object references...', currentStep++, steps);
 
@@ -136,10 +158,13 @@ export async function optimizeSprites(
 		if (onProgress) onProgress('Optimization complete', steps, steps);
 
 		return {
+			removed,
 			oldTotal,
 			newTotal,
 			tempPath,
-			removedCount
+			removedCount,
+			previewPath: data.sprPath,
+			removedByReason: { empty: emptyCount, unused: unusedCount, duplicate: duplicateCount }
 		};
 	} catch (error) {
 		unlisten();
