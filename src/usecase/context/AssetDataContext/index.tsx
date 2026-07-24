@@ -10,6 +10,7 @@ import {
 	ThingCategory,
 	getCategoryMap,
 	thingHasSprites,
+	createThingType,
 	createServerItem,
 	getCategoryCount,
 	setCategoryCount,
@@ -43,6 +44,7 @@ interface AssetDataContextType {
 	data: null | AssetData;
 	autoSyncServer: boolean;
 	openedItems: ThingType[];
+	markDatDirty: () => void;
 	spriteLoadVersion: number;
 	undo: () => null | string;
 	redo: () => null | string;
@@ -68,7 +70,6 @@ interface AssetDataContextType {
 	setFormatConfig: (config: FormatConfig) => void;
 	ensureServerItem: (clientId: number) => boolean;
 	reloadServerAttributes: () => { synced: number };
-	duplicateServerItemsForClient: (sourceClientId: number, targetClientId: number) => boolean;
 	notifyDataChanged: (spriteIds?: number[]) => void;
 	setHighlightedItemId: (id: null | number) => void;
 	setHighlightedSpriteId: (id: null | number) => void;
@@ -94,6 +95,8 @@ interface AssetDataContextType {
 	setData: (data: AssetData, reader: SpriteReader, skipBackendSync?: boolean) => void;
 	markUnsavedChanges: (id: number, category: ThingCategory, hasChanges: boolean) => void;
 	updateThing: (id: number, category: ThingCategory, updates: Partial<ThingType>) => void;
+	duplicateServerItemsForClient: (sourceClientId: number, targetClientId: number) => boolean;
+	markThingModified: (id: number, category: ThingCategory, before?: null | ThingType) => void;
 	modifiedSinceCompile: Map<string, { id: number; data: ThingType; category: ThingCategory }>;
 	setLoading: (loading: boolean, progress?: { stage: string; total: number; current: number }) => void;
 	restoreCommit: (
@@ -154,6 +157,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	>(new Map());
 	const [modifiedSprites, setModifiedSprites] = React.useState<Map<number, Sprite>>(new Map());
 	const [modifiedServerIds, setModifiedServerIds] = React.useState<Set<number>>(new Set());
+	const [datDirty, setDatDirty] = React.useState(false);
 	const undoStackRef = React.useRef<UndoEntry[]>([]);
 	const redoStackRef = React.useRef<UndoEntry[]>([]);
 	const [historyVersion, setHistoryVersion] = React.useState(0);
@@ -640,6 +644,31 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		}
 	}, [data, getThing]);
 
+	const markThingModified = React.useCallback(
+		(id: number, category: ThingCategory, before?: null | ThingType) => {
+			if (!data) return;
+			const key = `${category}-${id}`;
+
+			if (before) {
+				setOriginalItemsSinceCompile((prev) => {
+					if (prev.has(key)) return prev;
+					const next = new Map(prev);
+					next.set(key, { id, category, data: structuredClone(before) as ThingType });
+					return next;
+				});
+			}
+
+			const thing = getCategoryMap(data, category).get(id) ?? createThingType(id, category, formatConfig);
+
+			setModifiedSinceCompile((prev) => {
+				const next = new Map(prev);
+				next.set(key, { id, category, data: { ...thing } });
+				return next;
+			});
+		},
+		[data, formatConfig]
+	);
+
 	const updateThing = React.useCallback(
 		(id: number, category: ThingCategory, updates: Partial<ThingType>) => {
 			if (!data) return;
@@ -649,29 +678,10 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			if (collection.has(id)) {
 				const thing = collection.get(id)!;
 				const key = `${category}-${id}`;
-
-				setOriginalItemsSinceCompile((prev) => {
-					if (prev.has(key)) return prev;
-					const next = new Map(prev);
-					next.set(key, {
-						id,
-						category,
-						data: JSON.parse(JSON.stringify(thing)) as ThingType
-					});
-					return next;
-				});
+				const before = structuredClone(thing) as ThingType;
 
 				Object.assign(thing, updates);
-
-				setModifiedSinceCompile((prev) => {
-					const next = new Map(prev);
-					next.set(key, {
-						id,
-						category,
-						data: { ...thing }
-					});
-					return next;
-				});
+				markThingModified(id, category, before);
 
 				setUpdateCounter((prev) => prev + 1);
 				setUnsavedChanges((prev) => {
@@ -681,7 +691,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				});
 			}
 		},
-		[data]
+		[data, markThingModified]
 	);
 
 	const hasUnsavedChanges = React.useCallback(
@@ -793,12 +803,14 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			if (!data) return;
 			const map = getCategoryMap(data, snap.category);
 			for (const entry of snap.entries) {
+				const before = map.get(entry.id) ?? null;
 				if (entry.thing === null) map.delete(entry.id);
 				else map.set(entry.id, structuredClone(entry.thing) as ThingType);
+				markThingModified(entry.id, snap.category, before);
 			}
 			setCategoryCount(data, snap.category, snap.count);
 		},
-		[data]
+		[data, markThingModified]
 	);
 
 	const undo = React.useCallback((): null | string => {
@@ -856,11 +868,14 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		[data]
 	);
 
+	const markDatDirty = React.useCallback(() => setDatDirty(true), []);
+
 	const hasModifiedItems = React.useCallback(() => {
-		return modifiedSinceCompile.size > 0 || modifiedSprites.size > 0 || modifiedServerIds.size > 0;
-	}, [modifiedSinceCompile, modifiedSprites, modifiedServerIds]);
+		return datDirty || modifiedSinceCompile.size > 0 || modifiedSprites.size > 0 || modifiedServerIds.size > 0;
+	}, [datDirty, modifiedSinceCompile, modifiedSprites, modifiedServerIds]);
 
 	const clearModifiedTracking = React.useCallback(() => {
+		setDatDirty(false);
 		setModifiedSinceCompile(new Map());
 		setOriginalItemsSinceCompile(new Map());
 		setModifiedSprites(new Map());
@@ -885,6 +900,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				autoSyncServer,
 				modifiedSprites,
 				modifiedServerIds,
+				forceDatWrite: datDirty,
 				modifiedItems: modifiedSinceCompile,
 				originalItems: originalItemsSinceCompile,
 				onProgress: (stage, current, total) => {
@@ -911,6 +927,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 	}, [
 		data,
 		confirm,
+		datDirty,
 		formatConfig,
 		modifiedSinceCompile,
 		modifiedSprites,
@@ -1008,6 +1025,7 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				compileFiles,
 				clearNewItem,
 				formatConfig,
+				markDatDirty,
 				restoreCommit,
 				updateCounter,
 				markAsNewItem,
@@ -1024,9 +1042,9 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				updateServerItem,
 				setServerProfile,
 				ensureServerItem,
+				markThingModified,
 				attachServerItems,
 				highlightedItemId,
-				duplicateServerItemsForClient,
 				setOpenedSpriteId,
 				spriteLoadVersion,
 				hasUnsavedChanges,
@@ -1047,7 +1065,8 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 				getServerItemsForClient,
 				createMissingServerItems,
 				setSelectedCategoryAndItem,
-				deleteServerItemsForClients
+				deleteServerItemsForClients,
+				duplicateServerItemsForClient
 			}}
 		>
 			{children}

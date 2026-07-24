@@ -80,6 +80,7 @@ export const Toolbar = () => {
 		setLoading,
 		compileFiles,
 		formatConfig,
+		markDatDirty,
 		setFormatConfig,
 		loadingProgress,
 		hasModifiedItems,
@@ -199,9 +200,8 @@ export const Toolbar = () => {
 				description: `Removed ${result.removedCount} sprites. New total: ${result.newTotal}. Click Compile to save changes.`
 			});
 
-			if (newData) {
-				notifyDataChanged();
-			}
+			markDatDirty();
+			notifyDataChanged();
 		} catch (error) {
 			toast({
 				variant: 'destructive',
@@ -323,8 +323,8 @@ export const Toolbar = () => {
 			missiles: new Map(),
 			extended: opts.extended,
 			frameGroups: opts.frameGroups,
-			transparency: handler.alphaChannel || opts.transparency,
 			frameDurations: opts.improvedAnimations,
+			transparency: handler.alphaChannel || opts.transparency,
 			version: isTibia ? opts.version : { ...opts.version, value: 0, label: handler.config.name }
 		};
 		setData(emptyData, null as any);

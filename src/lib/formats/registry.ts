@@ -49,6 +49,7 @@ export interface LoadResult {
 export interface CompileRequest {
 	data: AssetData;
 	autoSyncServer: boolean;
+	forceDatWrite?: boolean;
 	modifiedItems: ModifiedItemMap;
 	modifiedServerIds: Set<number>;
 	originalItems: ModifiedItemMap;

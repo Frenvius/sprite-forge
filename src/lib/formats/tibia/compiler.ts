@@ -483,6 +483,7 @@ export interface CompileFilesArgs {
 	data: AssetData;
 	datPath: string;
 	sprPath: string;
+	forceDatWrite?: boolean;
 	directlyModifiedSprites: Map<number, Sprite>;
 	onProgress?: (stage: string, current: number, total: number) => void;
 	modifiedItems: Map<string, { id: number; data: ThingType; category: ThingCategory }>;
@@ -490,7 +491,7 @@ export interface CompileFilesArgs {
 }
 
 export async function compileFiles(args: CompileFilesArgs): Promise<void> {
-	const { data, datPath, sprPath, onProgress, modifiedItems, originalItems, directlyModifiedSprites } = args;
+	const { data, datPath, sprPath, onProgress, modifiedItems, originalItems, forceDatWrite, directlyModifiedSprites } = args;
 	const startTime = Date.now();
 
 	try {
@@ -498,7 +499,7 @@ export async function compileFiles(args: CompileFilesArgs): Promise<void> {
 		const modifiedSpritesFromItems = collectModifiedSprites(data, modifiedItems);
 		const modifiedSprites = new Map([...modifiedSpritesFromItems, ...directlyModifiedSprites]);
 
-		const datChanged = modifiedItems.size > 0;
+		const datChanged = modifiedItems.size > 0 || !!forceDatWrite;
 		const sprChanged = modifiedSprites.size > 0;
 
 		const datBackup = datChanged ? invoke('backup_file', { path: datPath }) : Promise.resolve();

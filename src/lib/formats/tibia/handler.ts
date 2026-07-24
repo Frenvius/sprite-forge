@@ -42,6 +42,7 @@ export const tibiaHandler: FormatHandler = {
 			onProgress,
 			modifiedItems,
 			originalItems,
+			forceDatWrite,
 			autoSyncServer,
 			modifiedSprites,
 			modifiedServerIds,
@@ -51,7 +52,7 @@ export const tibiaHandler: FormatHandler = {
 			throw new Error('No data or file paths available for compilation');
 		}
 
-		const datChanged = modifiedItems.size > 0 || modifiedSprites.size > 0;
+		const datChanged = modifiedItems.size > 0 || modifiedSprites.size > 0 || !!forceDatWrite;
 		const hasOtb = !!data.otbPath && !!data.serverItems;
 		const serverChanged = hasOtb && (modifiedServerIds.size > 0 || (autoSyncServer && datChanged));
 
@@ -62,6 +63,7 @@ export const tibiaHandler: FormatHandler = {
 			await compileFiles({
 				data,
 				onProgress,
+				forceDatWrite,
 				modifiedItems,
 				originalItems,
 				datPath: data.datPath,

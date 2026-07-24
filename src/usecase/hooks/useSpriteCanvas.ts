@@ -108,6 +108,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 		formatConfig,
 		spriteLoadVersion,
 		notifyDataChanged,
+		markThingModified,
 		notifySpriteImport,
 		notifySpritesLoaded
 	} = useAssetData();
@@ -756,8 +757,10 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 					const mode = await confirmSpriteReplace(thing, data, confirmDialog);
 					if (!mode) return;
 
+					const before = structuredClone(thing) as ThingType;
 					const result = await importObjectSheet(thing, data, imagePath, { isNew: mode.allocateNewSprites });
 					if (result.success && result.updatedThing) {
+						markThingModified(thing.id, thing.category, before);
 						notifySpritesLoaded();
 						if (notifyDataChanged && result.spriteIds) {
 							notifyDataChanged(result.spriteIds);
@@ -777,7 +780,7 @@ export const useSpriteCanvas = (props: SpriteCanvasProps) => {
 			cancelled = true;
 			unlisten?.();
 		};
-	}, [thing, data, allowFileDrop, confirmDialog, notifySpritesLoaded, notifyDataChanged, notifySpriteImport]);
+	}, [thing, data, allowFileDrop, confirmDialog, markThingModified, notifySpritesLoaded, notifyDataChanged, notifySpriteImport]);
 
 	const transformStyle = React.useMemo(() => {
 		const baseStyle = {

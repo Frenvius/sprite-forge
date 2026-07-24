@@ -3,12 +3,12 @@ import { open } from '@tauri-apps/plugin-dialog';
 
 import { useToast } from './useToast';
 import { importObjectSheet } from '~/lib/formats/tibia';
-import { confirmSpriteReplace } from '~/usecase/util/spriteImportUtils';
 import { useConfirm } from '~/usecase/context/ConfirmContext';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useListViewMode } from '~/usecase/hooks/useListViewMode';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { getThumbnailSpriteIds } from '~/usecase/util/thumbnailUtils';
+import { confirmSpriteReplace } from '~/usecase/util/spriteImportUtils';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import {
 	ThingCategory,
@@ -36,6 +36,7 @@ export const useItemList = () => {
 		ensureServerItem,
 		selectedCategory,
 		removeOpenedItem,
+		markThingModified,
 		highlightedItemId,
 		hasUnsavedChanges,
 		notifyDataChanged,
@@ -43,8 +44,8 @@ export const useItemList = () => {
 		setSelectedCategory,
 		notifySpritesLoaded,
 		setHighlightedItemId,
-		duplicateServerItemsForClient,
-		deleteServerItemsForClients
+		deleteServerItemsForClients,
+		duplicateServerItemsForClient
 	} = useAssetData();
 	const { toast } = useToast();
 	const confirmDialog = useConfirm();
@@ -418,6 +419,7 @@ export const useItemList = () => {
 
 		markAsNewItem(newId, selectedCategory);
 		markUnsavedChanges(newId, selectedCategory, true);
+		markThingModified(newId, selectedCategory, null);
 		if (selectedCategory === ThingCategory.ITEM) ensureServerItem(newId);
 
 		pendingNewItemId.current = newId;
@@ -497,10 +499,8 @@ export const useItemList = () => {
 			map.set(newId, duplicate);
 			markAsNewItem(newId, selectedCategory);
 			markUnsavedChanges(newId, selectedCategory, true);
-			if (
-				selectedCategory === ThingCategory.ITEM &&
-				!duplicateServerItemsForClient(sourceId, newId)
-			) {
+			markThingModified(newId, selectedCategory, null);
+			if (selectedCategory === ThingCategory.ITEM && !duplicateServerItemsForClient(sourceId, newId)) {
 				ensureServerItem(newId);
 			}
 			newIds.push(newId);
@@ -589,10 +589,12 @@ export const useItemList = () => {
 		const mode = await confirmSpriteReplace(item, data, confirmDialog, { confirmWhenUnshared: true });
 		if (!mode) return;
 
+		const before = structuredClone(item) as ThingType;
 		const result = await importObjectSheet(item, data, image, { isNew: mode.allocateNewSprites });
 		if (result.success) {
+			markThingModified(item.id, selectedCategory, before);
 			notifySpritesLoaded();
-			notifyDataChanged([item.id]);
+			notifyDataChanged(result.spriteIds ?? []);
 		} else if (result.error) {
 			toast({ variant: 'destructive', description: `Import rejected: ${result.error}` });
 		}
@@ -629,8 +631,9 @@ export const useItemList = () => {
 
 		const result = await importObjectSheet(item, data, image, { isNew: true });
 		if (result.success) {
+			markThingModified(newId, selectedCategory, null);
 			notifySpritesLoaded();
-			notifyDataChanged([newId]);
+			notifyDataChanged(result.spriteIds ?? []);
 		} else if (result.error) {
 			toast({ variant: 'destructive', description: `Import rejected: ${result.error}` });
 		}
@@ -668,6 +671,7 @@ export const useItemList = () => {
 		}
 
 		setCategoryCount(data, selectedCategory, map.size);
+		for (const entry of undoBefore.entries) markThingModified(entry.id, selectedCategory, entry.thing);
 		pushUndo(undoBefore, captureUndo(selectedCategory, toRemove), 'Remove');
 
 		if (selectedCategory === ThingCategory.ITEM) deleteServerItemsForClients(toRemove);
