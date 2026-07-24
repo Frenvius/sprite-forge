@@ -121,6 +121,10 @@ fn crop(atlas: &Atlas, r: &Region, ss: u32) -> Vec<u8> {
 }
 
 impl ScriptedAssets {
+    fn max_sprite_id(&self) -> u32 {
+        self.sprites.keys().copied().max().unwrap_or(0)
+    }
+
     fn pack(&self, ids: &[u32]) -> Vec<u8> {
         let ss = SPRITE_SIZE;
         let sds = (ss * ss * 4) as usize;
@@ -409,7 +413,7 @@ pub fn forge_load_assets(
         )
     };
 
-    let count = assets.sprites.len();
+    let count = assets.max_sprite_id() as usize;
     *assets_state.lock().map_err(|e| e.to_string())? = Some(assets);
     *things_state.lock().map_err(|e| e.to_string())? = things;
     Ok(count)
@@ -839,6 +843,7 @@ mod tests {
             ScriptedAssets { atlases: b.atlases, sprites: b.sprites, item_map: b.item_map, client_map: b.client_map }
         };
         assert_eq!(assets.sprite_for_item(5), Some(100));
+        assert_eq!(assets.max_sprite_id(), 101, "count must be highest id, not entry count");
         let sds = (SPRITE_SIZE * SPRITE_SIZE * 4) as usize;
         let out = assets.pack(&[100, 101]);
         assert_eq!(&out[0..4], &2u32.to_le_bytes());
