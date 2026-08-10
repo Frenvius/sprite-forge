@@ -196,6 +196,30 @@ interface LuaFormatMeta {
 }
 
 const toCamelKey = (k: string): string => k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+const toSnakeKey = (k: string): string => k.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
+
+interface SchemaKeyField {
+	key?: string;
+	valueKey?: string;
+	type?: string;
+	fields?: SchemaKeyField[];
+}
+interface SchemaKeySection {
+	fields?: SchemaKeyField[];
+}
+const collectSchemaKeys = (schema: unknown[] | undefined): string[] => {
+	const out = new Set<string>();
+	const walk = (f: SchemaKeyField) => {
+		if (f.key) out.add(f.key);
+		if (f.valueKey) out.add(f.valueKey);
+		if (f.fields) for (const c of f.fields) walk(c);
+	};
+	for (const s of schema ?? []) {
+		const sec = s as SchemaKeySection;
+		if (sec.fields) for (const f of sec.fields) walk(f);
+	}
+	return [...out];
+};
 
 const deepCamel = (v: unknown): unknown => {
 	if (Array.isArray(v)) return v.map(deepCamel);
@@ -226,7 +250,8 @@ const toCategoryDef = (c: LuaCategory): CategoryDef => ({
 		: undefined
 });
 
-const toThingType = (t: ForgeThing, name: string): ThingType => ({
+const toThingType = (t: ForgeThing, name: string): ThingType => {
+	const tt: ThingType = {
 	id: t.id,
 	lensHelp: 0,
 	cloth: false,
@@ -305,7 +330,16 @@ const toThingType = (t: ForgeThing, name: string): ThingType => ({
 	spriteIndex: t.spriteIndex || [],
 	isGroundBorder: t.isGroundBorder,
 	isAnimation: (t.frames || 1) > 1
-});
+	};
+	const attrs = t.attrs ?? {};
+	const originalKeys: string[] = [];
+	for (const [k, v] of Object.entries(attrs)) {
+		(tt as unknown as Record<string, unknown>)[toCamelKey(k)] = v;
+		originalKeys.push(k);
+	}
+	(tt as unknown as { _attrKeys?: string[] })._attrKeys = originalKeys;
+	return tt;
+};
 
 const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 	const config: FormatConfig = {
@@ -355,7 +389,28 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 			await loadSpritesScripted(data, ids);
 
 			const present = ids.filter((id) => (data.sprites.get(id)?.rgbaPixels?.length ?? 0) === 4096);
-			const thingsJson = new TextEncoder().encode(JSON.stringify(things));
+
+			const schemaAttrKeys = collectSchemaKeys(config.properties);
+			const wireThings = things.map((t) => {
+				const rec = t as unknown as Record<string, unknown>;
+				const originalKeys = (rec._attrKeys as string[] | undefined) ?? [];
+				const attrs: Record<string, unknown> = {};
+				const knownCamel = new Set<string>();
+				for (const orig of originalKeys) {
+					const camel = toCamelKey(orig);
+					attrs[orig] = rec[camel];
+					knownCamel.add(camel);
+				}
+				for (const camel of schemaAttrKeys) {
+					if (knownCamel.has(camel)) continue;
+					if (!(camel in rec)) continue;
+					attrs[toSnakeKey(camel)] = rec[camel];
+				}
+				const { _attrKeys, ...rest } = rec;
+				void _attrKeys;
+				return { ...rest, attrs };
+			});
+			const thingsJson = new TextEncoder().encode(JSON.stringify(wireThings));
 			const pathBytes = new TextEncoder().encode(data.sprPath);
 
 			const w = new ByteWriter(2 + pathBytes.length + 4 + thingsJson.length + 4 + present.length * (4 + 4096));
