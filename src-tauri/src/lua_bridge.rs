@@ -9,6 +9,17 @@ use crate::lua_host::LuaState;
 pub fn register(lua: &Lua) -> mlua::Result<()> {
     let forge: Table = lua.globals().get("forge")?;
     forge.set("_formats", lua.create_table()?)?;
+    forge.set("_server_profiles", lua.create_table()?)?;
+
+    forge.set(
+        "register_server_profile",
+        lua.create_function(|lua, t: Table| {
+            let forge: Table = lua.globals().get("forge")?;
+            let profiles: Table = forge.get("_server_profiles")?;
+            profiles.set(profiles.raw_len() + 1, t)?;
+            Ok(())
+        })?,
+    )?;
 
     forge.set(
         "register_format",
@@ -53,10 +64,11 @@ pub fn register(lua: &Lua) -> mlua::Result<()> {
 #[serde(rename_all = "camelCase")]
 pub struct LuaUiConfig {
     pub client_versions: bool,
+    pub builtin_server_profiles: bool,
 }
 
 fn read_ui_config(lua: &Lua) -> LuaUiConfig {
-    let mut cfg = LuaUiConfig { client_versions: true };
+    let mut cfg = LuaUiConfig { client_versions: true, builtin_server_profiles: true };
     let Ok(forge) = lua.globals().get::<Table>("forge") else {
         return cfg;
     };
@@ -66,7 +78,18 @@ fn read_ui_config(lua: &Lua) -> LuaUiConfig {
     if let Ok(cv) = ui.get::<bool>("client_versions") {
         cfg.client_versions = cv;
     }
+    if let Ok(bsp) = ui.get::<bool>("builtin_server_profiles") {
+        cfg.builtin_server_profiles = bsp;
+    }
     cfg
+}
+
+#[tauri::command]
+pub fn forge_server_profiles(lua_state: State<LuaState>) -> Result<serde_json::Value, String> {
+    let guard = lua_state.lock().map_err(|e| e.to_string())?;
+    let forge: Table = guard.lua.globals().get("forge").map_err(|e| e.to_string())?;
+    let profiles: Table = forge.get("_server_profiles").map_err(|e| e.to_string())?;
+    Ok(lua_value_to_json(mlua::Value::Table(profiles)))
 }
 
 #[tauri::command]
@@ -205,6 +228,27 @@ mod tests {
         let comp: mlua::String = deflate.call(lua.create_string(original).unwrap()).unwrap();
         let back: mlua::String = inflate.call((comp, original.len())).unwrap();
         assert_eq!(&back.as_bytes()[..], &original[..]);
+    }
+
+    #[test]
+    fn server_profiles_collect_in_registration_order() {
+        let lua = host_with(
+            "forge.register_server_profile{ id='a', label='A', attributes={ { key='armor', type='number', category='Combat' } } }\n\
+             forge.register_server_profile{ id='b', label='B' }",
+        );
+        let forge: Table = lua.globals().get("forge").unwrap();
+        let profiles: Table = forge.get("_server_profiles").unwrap();
+        let json = lua_value_to_json(mlua::Value::Table(profiles));
+        assert_eq!(json[0]["id"], "a");
+        assert_eq!(json[0]["attributes"][0]["key"], "armor");
+        assert_eq!(json[1]["id"], "b");
+    }
+
+    #[test]
+    fn builtin_server_profiles_default_on() {
+        assert!(read_ui_config(&host_with("")).builtin_server_profiles);
+        let lua = host_with("forge.ui = { builtin_server_profiles = false }");
+        assert!(!read_ui_config(&lua).builtin_server_profiles);
     }
 
     #[test]

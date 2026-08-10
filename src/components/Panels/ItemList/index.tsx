@@ -55,7 +55,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	} = useItemList();
 
 	const { getServerItemsForClient } = useAssetData();
-	const showServerInfo = !!data?.otbPath && selectedCategory === ThingCategory.ITEM;
+	const showServerInfo = !!data?.serverItems && selectedCategory === ThingCategory.ITEM;
 	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	const selectionCount = selectedItemIds.size;

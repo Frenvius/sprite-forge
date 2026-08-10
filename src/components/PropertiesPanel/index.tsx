@@ -73,7 +73,7 @@ export const PropertiesPanel = () => {
 
 						<PropertyColumns />
 
-						{c.visibility.isItem && c.data?.otbPath && <ServerSection clientId={draftItem.id} />}
+						{c.visibility.isItem && c.data?.serverItems && <ServerSection clientId={draftItem.id} />}
 					</div>
 				</ScrollArea>
 

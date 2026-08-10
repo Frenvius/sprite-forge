@@ -14,7 +14,7 @@ use crate::lua_host::LuaState;
 
 const SPRITE_SIZE: u32 = 32;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum AttrValue {
     Bool(bool),
@@ -59,6 +59,7 @@ pub struct ItemDef {
     pub flags: u32,
     pub ground: bool,
     pub client: u32,
+    pub attrs: HashMap<String, AttrValue>,
 }
 
 #[derive(Default)]
@@ -437,6 +438,7 @@ pub fn register_builders(lua: &Lua) -> mlua::Result<()> {
             flags: def.get("flags").unwrap_or(0),
             ground: def.get("ground").unwrap_or(false),
             client: def.get("client").unwrap_or(id),
+            attrs: read_attrs(def),
         })
     };
 
@@ -474,6 +476,7 @@ pub fn register_builders(lua: &Lua) -> mlua::Result<()> {
                 flags: def.get("flags").unwrap_or(0),
                 ground: def.get("ground").unwrap_or(false),
                 client: def.get("client").unwrap_or(id),
+                attrs: read_attrs(&def),
             };
             with_live_items_mut(|db| {
                 if d.client > 0 {
@@ -901,14 +904,64 @@ pub fn forge_set_sprites(request: tauri::ipc::Request, assets_state: State<Forge
     Ok(())
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemRow {
+    pub id: u32,
+    pub name: String,
+    pub group: u32,
+    pub kind: u32,
+    pub flags: u32,
+    pub client: u32,
+    pub attrs: HashMap<String, AttrValue>,
+}
+
 #[tauri::command]
-pub fn forge_save_itemdb(path: String, items_state: State<ForgeItemsState>, lua_state: State<LuaState>) -> Result<(), String> {
+pub fn forge_items(items_state: State<ForgeItemsState>) -> Result<Vec<ItemRow>, String> {
+    let db = items_state.lock().map_err(|e| e.to_string())?;
+    let mut rows: Vec<ItemRow> = db
+        .items
+        .iter()
+        .map(|(&id, d)| ItemRow {
+            id,
+            name: d.name.clone(),
+            group: d.group,
+            kind: d.kind,
+            flags: d.flags,
+            client: d.client,
+            attrs: d.attrs.clone(),
+        })
+        .collect();
+    rows.sort_by_key(|r| r.id);
+    Ok(rows)
+}
+
+#[tauri::command]
+pub fn forge_save_itemdb(
+    path: String,
+    attrs: Option<HashMap<u32, HashMap<String, AttrValue>>>,
+    items_state: State<ForgeItemsState>,
+    lua_state: State<LuaState>,
+) -> Result<(), String> {
     let ext = ext_of(&path);
     let lua_guard = lua_state.lock().map_err(|e| format!("Lock error: {}", e))?;
     let lua = &lua_guard.lua;
     let write = format_fn(lua, &ext, "write")?;
 
-    let db = items_state.lock().map_err(|e| e.to_string())?;
+    let mut db = items_state.lock().map_err(|e| e.to_string())?;
+    if let Some(attrs) = attrs {
+        for (id, mut bag) in attrs {
+            let item = db.items.entry(id).or_default();
+            if let Some(AttrValue::Str(n)) = bag.remove("name") {
+                item.name = n;
+            }
+            if let Some(AttrValue::Num(c)) = bag.get("client_id") {
+                item.client = *c as u32;
+            }
+            item.attrs.extend(bag);
+        }
+    }
+    let db = &*db;
     let build = || -> mlua::Result<mlua::String> {
         let arr = lua.create_table()?;
         let mut i = 1;
@@ -921,6 +974,15 @@ pub fn forge_save_itemdb(path: String, items_state: State<ForgeItemsState>, lua_
             t.set("flags", d.flags)?;
             t.set("ground", d.ground)?;
             t.set("client", d.client)?;
+            let attrs = lua.create_table()?;
+            for (k, v) in &d.attrs {
+                match v {
+                    AttrValue::Bool(b) => attrs.set(k.as_str(), *b)?,
+                    AttrValue::Num(n) => attrs.set(k.as_str(), *n)?,
+                    AttrValue::Str(s) => attrs.set(k.as_str(), s.clone())?,
+                }
+            }
+            t.set("attrs", attrs)?;
             arr.set(i, t)?;
             i += 1;
         }

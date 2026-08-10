@@ -21,6 +21,7 @@ export interface ServerProfile {
 	id: string;
 	label: string;
 	attributes: AttrDef[];
+	separateXmlName: boolean;
 	supportsFromToId: boolean;
 	byKey: Map<string, AttrDef>;
 }
@@ -70,14 +71,59 @@ function parseProfile(fallbackId: string, xml: string): ServerProfile {
 		}
 	}
 
-	return { id, label, byKey, attributes, supportsFromToId };
+	return { id, label, byKey, attributes, supportsFromToId, separateXmlName: true };
 }
 
 let cache: null | ServerProfile[] = null;
+let scripted: ServerProfile[] = [];
+let hideBuiltins = false;
 
-export function getServerProfiles(): ServerProfile[] {
+export interface ScriptedProfile {
+	id: string;
+	label?: string;
+	separate_xml_name?: boolean;
+	supports_from_to_id?: boolean;
+	attributes?: Array<{ key: string; type?: string; tag?: boolean; category?: string; values?: string[] }>;
+}
+
+export function setScriptedProfiles(profiles: ScriptedProfile[], hideBuiltinProfiles: boolean): void {
+	hideBuiltins = hideBuiltinProfiles;
+	scripted = profiles
+		.filter((p) => typeof p?.id === 'string' && p.id.length > 0)
+		.map((p) => {
+			const attributes: AttrDef[] = (p.attributes ?? [])
+				.filter((a) => typeof a?.key === 'string' && a.key.length > 0)
+				.map((a) => ({
+					key: a.key,
+					values: a.values,
+					tag: a.tag === true,
+					category: a.category || 'General',
+					type: a.type === 'number' || a.type === 'boolean' ? a.type : 'string'
+				}));
+			return {
+				id: p.id,
+				attributes,
+				label: p.label || p.id,
+				separateXmlName: p.separate_xml_name !== false,
+				supportsFromToId: p.supports_from_to_id === true,
+				byKey: new Map(attributes.map((a) => [a.key, a]))
+			};
+		});
+}
+
+function builtinProfiles(): ServerProfile[] {
 	if (!cache) cache = RAW.map((r) => parseProfile(r.id, r.xml));
 	return cache;
+}
+
+export function getServerProfiles(): ServerProfile[] {
+	if (hideBuiltins && scripted.length > 0) return scripted;
+	return [...builtinProfiles(), ...scripted];
+}
+
+export function getDefaultProfileId(): string {
+	const profiles = getServerProfiles();
+	return profiles.find((p) => p.id === DEFAULT_PROFILE_ID)?.id ?? profiles[0]?.id ?? DEFAULT_PROFILE_ID;
 }
 
 export function getServerProfile(id: string): ServerProfile {

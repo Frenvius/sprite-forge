@@ -22,7 +22,7 @@ export const ServerSection = ({ clientId }: ServerSectionProps) => {
 	} = useAssetData();
 	const [collapsed, setCollapsed] = useState(false);
 
-	if (!data?.otbPath || !data.serverItems) return null;
+	if (!data?.serverItems) return null;
 
 	void updateCounter;
 	const serverItems = getServerItemsForClient(clientId);
@@ -37,7 +37,7 @@ export const ServerSection = ({ clientId }: ServerSectionProps) => {
 					className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground hover:text-primary"
 				>
 					<Server className="h-3.5 w-3.5" />
-					Server Item (OTB)
+					Server Item
 				</button>
 				<div className="flex items-center gap-3">
 					{serverItems.length === 0 && (

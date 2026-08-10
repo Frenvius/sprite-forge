@@ -1,8 +1,13 @@
+import type { ServerItemData } from '~/lib/formats/tibia/otb';
+
 import { invoke } from '@tauri-apps/api/core';
 
+import { toCamelKey, toSnakeKey } from './keys';
 import { ByteWriter } from '~/lib/formats/tibia/compiler';
 import { parseRgbaSprites } from '~/lib/formats/tibia/loader';
 import { collectReferencedSpriteIds } from '~/lib/formats/tibia/transfer';
+import { getDefaultProfileId } from '~/lib/formats/tibia/serverAttributes';
+import { type ItemRow, serverItemsToAttrs, buildServerItemData } from './serverItems';
 import { ForgeThing, forgeThings, forgeListTools, forgeLoadAssets, forgeLoadItemdb } from '~/adapter/forge';
 import {
 	registerFormat,
@@ -195,13 +200,10 @@ interface LuaFormatMeta {
 	companion?: { ext: string; label: string };
 }
 
-const toCamelKey = (k: string): string => k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-const toSnakeKey = (k: string): string => k.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
-
 interface SchemaKeyField {
 	key?: string;
-	valueKey?: string;
 	type?: string;
+	valueKey?: string;
 	fields?: SchemaKeyField[];
 }
 interface SchemaKeySection {
@@ -252,84 +254,84 @@ const toCategoryDef = (c: LuaCategory): CategoryDef => ({
 
 const toThingType = (t: ForgeThing, name: string): ThingType => {
 	const tt: ThingType = {
-	id: t.id,
-	lensHelp: 0,
-	cloth: false,
-	clothSlot: 0,
-	loopCount: 0,
-	usable: false,
-	lightLevel: 0,
-	lightColor: 0,
-	startFrame: 0,
-	isFluid: false,
-	miniMap: false,
-	forceUse: false,
-	multiUse: false,
-	writable: false,
-	hangable: false,
-	hasLight: false,
-	dontHide: false,
-	hasBones: false,
-	miniMapColor: 0,
-	marketShowAs: 0,
-	marketName: name,
-	stackable: false,
-	rotatable: false,
-	wrappable: false,
-	topEffect: false,
-	maxTextLength: 0,
-	marketTradeAs: 0,
-	defaultAction: 0,
-	animationMode: 0,
-	bonesOffsetX: [],
-	bonesOffsetY: [],
-	pickupable: false,
-	isVertical: false,
-	isLensHelp: false,
-	ignoreLook: false,
-	hasCharges: false,
-	marketCategory: 0,
-	isOnTop: t.isOnTop,
-	isContainer: false,
-	floorChange: false,
-	unwrappable: false,
-	frameDurations: [],
-	width: t.width || 1,
-	writableOnce: false,
-	isUnmoveable: false,
-	blockMissile: false,
-	isHorizontal: false,
-	isFullGround: false,
-	isMarketItem: false,
-	isGround: t.isGround,
-	blockPathfind: false,
-	isTranslucent: false,
-	isLyingObject: false,
-	animateAlways: false,
-	height: t.height || 1,
-	layers: t.layers || 1,
-	frames: t.frames || 1,
-	hasOffset: t.hasOffset,
-	noMoveAnimation: false,
-	marketRestrictLevel: 0,
-	offsetX: t.offsetX || 0,
-	offsetY: t.offsetY || 0,
-	isFluidContainer: false,
-	hasDefaultAction: false,
-	isOnBottom: t.isOnBottom,
-	patternX: t.patternX || 1,
-	patternY: t.patternY || 1,
-	patternZ: t.patternZ || 1,
-	elevation: t.elevation || 0,
-	marketRestrictProfession: 0,
-	exactSize: t.exactSize || 32,
-	isUnpassable: t.isUnpassable,
-	hasElevation: t.hasElevation,
-	category: ThingCategory.ITEM,
-	groundSpeed: t.groundSpeed || 0,
-	spriteIndex: t.spriteIndex || [],
-	isGroundBorder: t.isGroundBorder,
-	isAnimation: (t.frames || 1) > 1
+		id: t.id,
+		lensHelp: 0,
+		cloth: false,
+		clothSlot: 0,
+		loopCount: 0,
+		usable: false,
+		lightLevel: 0,
+		lightColor: 0,
+		startFrame: 0,
+		isFluid: false,
+		miniMap: false,
+		forceUse: false,
+		multiUse: false,
+		writable: false,
+		hangable: false,
+		hasLight: false,
+		dontHide: false,
+		hasBones: false,
+		miniMapColor: 0,
+		marketShowAs: 0,
+		marketName: name,
+		stackable: false,
+		rotatable: false,
+		wrappable: false,
+		topEffect: false,
+		maxTextLength: 0,
+		marketTradeAs: 0,
+		defaultAction: 0,
+		animationMode: 0,
+		bonesOffsetX: [],
+		bonesOffsetY: [],
+		pickupable: false,
+		isVertical: false,
+		isLensHelp: false,
+		ignoreLook: false,
+		hasCharges: false,
+		marketCategory: 0,
+		isOnTop: t.isOnTop,
+		isContainer: false,
+		floorChange: false,
+		unwrappable: false,
+		frameDurations: [],
+		width: t.width || 1,
+		writableOnce: false,
+		isUnmoveable: false,
+		blockMissile: false,
+		isHorizontal: false,
+		isFullGround: false,
+		isMarketItem: false,
+		isGround: t.isGround,
+		blockPathfind: false,
+		isTranslucent: false,
+		isLyingObject: false,
+		animateAlways: false,
+		height: t.height || 1,
+		layers: t.layers || 1,
+		frames: t.frames || 1,
+		hasOffset: t.hasOffset,
+		noMoveAnimation: false,
+		marketRestrictLevel: 0,
+		offsetX: t.offsetX || 0,
+		offsetY: t.offsetY || 0,
+		isFluidContainer: false,
+		hasDefaultAction: false,
+		isOnBottom: t.isOnBottom,
+		patternX: t.patternX || 1,
+		patternY: t.patternY || 1,
+		patternZ: t.patternZ || 1,
+		elevation: t.elevation || 0,
+		marketRestrictProfession: 0,
+		exactSize: t.exactSize || 32,
+		isUnpassable: t.isUnpassable,
+		hasElevation: t.hasElevation,
+		category: ThingCategory.ITEM,
+		groundSpeed: t.groundSpeed || 0,
+		spriteIndex: t.spriteIndex || [],
+		isGroundBorder: t.isGroundBorder,
+		isAnimation: (t.frames || 1) > 1
 	};
 	const attrs = t.attrs ?? {};
 	const originalKeys: string[] = [];
@@ -427,8 +429,9 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 			await invoke('backup_file', { path: data.sprPath });
 			await invoke('forge_save_assets', w.finish());
 			if (data.itemdbPath) {
+				const attrs = data.serverItems ? serverItemsToAttrs(data.serverItems) : undefined;
 				await invoke('backup_file', { path: data.itemdbPath });
-				await invoke('forge_save_itemdb', { path: data.itemdbPath });
+				await invoke('forge_save_itemdb', { attrs, path: data.itemdbPath });
 			}
 			return null;
 		},
@@ -486,16 +489,25 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 				mapFor(catId).set(t.id, tt);
 			}
 
+			let serverItems: undefined | ServerItemData;
+			if (itemdbPath) {
+				const rows = await invoke<ItemRow[]>('forge_items').catch(() => []);
+				if (rows.length > 0) {
+					serverItems = buildServerItemData(rows, items, getDefaultProfileId(), version.value, itemdbPath);
+				}
+			}
+
 			const data: AssetData = {
 				items,
 				outfits,
 				effects,
 				version,
 				missiles,
+				itemdbPath,
+				serverItems,
 				extended: false,
 				datPath: primary,
 				sprPath: primary,
-				itemdbPath,
 				formatId: meta.id,
 				frameGroups: false,
 				sprites: new Map(),

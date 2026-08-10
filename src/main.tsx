@@ -7,6 +7,7 @@ import { registerLuaFormats } from './lib/formats/lua';
 import { registerFormat } from './lib/formats/registry';
 import { isLuaEnabled } from './usecase/util/luaSettings';
 import { tibiaHandler } from './lib/formats/tibia/handler';
+import { setScriptedProfiles, type ScriptedProfile } from './lib/formats/tibia/serverAttributes';
 
 if (typeof window !== 'undefined') {
 	document.addEventListener('contextmenu', (e) => {
@@ -30,9 +31,17 @@ async function boot() {
 	let appName: string | undefined;
 
 	if (luaEnabled) {
+		let builtinServerProfiles = true;
 		try {
-			const ui = await invoke<{ clientVersions: boolean }>('forge_ui_config');
+			const ui = await invoke<{ clientVersions: boolean; builtinServerProfiles: boolean }>('forge_ui_config');
 			clientVersions = ui.clientVersions;
+			builtinServerProfiles = ui.builtinServerProfiles;
+		} catch {
+			void 0;
+		}
+		try {
+			const profiles = await invoke<ScriptedProfile[]>('forge_server_profiles');
+			setScriptedProfiles(profiles ?? [], !builtinServerProfiles);
 		} catch {
 			void 0;
 		}

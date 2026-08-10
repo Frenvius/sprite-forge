@@ -109,7 +109,11 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 				</div>
 				<div className="space-y-1 flex-1 min-w-0">
 					<Label className={labelCls}>Name</Label>
-					<Input className={inputCls} value={item.nameXml ?? ''} onChange={(e) => set({ nameXml: e.target.value })} />
+					{profile.separateXmlName ? (
+						<Input className={inputCls} value={item.nameXml ?? ''} onChange={(e) => set({ nameXml: e.target.value })} />
+					) : (
+						<Input className={inputCls} value={item.name ?? ''} onChange={(e) => set({ name: e.target.value })} />
+					)}
 				</div>
 				<div className="space-y-1 flex-1 min-w-0">
 					<Label className={labelCls}>Plural</Label>
@@ -183,10 +187,12 @@ export const ServerItemEditor = ({ item, profile, autoSync, onChange }: ServerIt
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="space-y-1">
-							<Label className={labelCls}>OTB Name</Label>
-							<Input className={inputCls} value={item.name ?? ''} onChange={(e) => set({ name: e.target.value })} />
-						</div>
+						{profile.separateXmlName && (
+							<div className="space-y-1">
+								<Label className={labelCls}>OTB Name</Label>
+								<Input className={inputCls} value={item.name ?? ''} onChange={(e) => set({ name: e.target.value })} />
+							</div>
+						)}
 						{SYNCED_NUMBERS.map((f) => (
 							<div key={String(f.key)} className="space-y-1">
 								<Label className={labelCls}>{f.label}</Label>
