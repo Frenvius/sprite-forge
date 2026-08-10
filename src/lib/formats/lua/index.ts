@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ByteWriter } from '~/lib/formats/tibia/compiler';
 import { parseRgbaSprites } from '~/lib/formats/tibia/loader';
 import { collectReferencedSpriteIds } from '~/lib/formats/tibia/transfer';
-import { ForgeThing, forgeThings, forgeLoadAssets, forgeLoadItemdb } from '~/adapter/forge';
+import { ForgeThing, forgeThings, forgeListTools, forgeLoadAssets, forgeLoadItemdb } from '~/adapter/forge';
 import {
 	registerFormat,
 	type RemovedReason,
@@ -426,6 +426,10 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 
 			await invoke('backup_file', { path: data.sprPath });
 			await invoke('forge_save_assets', w.finish());
+			if (data.itemdbPath) {
+				await invoke('backup_file', { path: data.itemdbPath });
+				await invoke('forge_save_itemdb', { path: data.itemdbPath });
+			}
 			return null;
 		},
 
@@ -433,6 +437,7 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 			const primary = req.filePath ?? req.folderPath;
 			const spriteCount = await forgeLoadAssets(primary);
 
+			let itemdbPath: string | undefined;
 			if (meta.companion) {
 				const compExt = meta.companion.ext;
 				const compRe = new RegExp(`\\.${meta.exts[0]}$`, 'i');
@@ -444,7 +449,10 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 					const ok = await forgeLoadItemdb(cand)
 						.then(() => true)
 						.catch(() => false);
-					if (ok) break;
+					if (ok) {
+						itemdbPath = cand;
+						break;
+					}
 				}
 			}
 
@@ -487,6 +495,7 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 				extended: false,
 				datPath: primary,
 				sprPath: primary,
+				itemdbPath,
 				formatId: meta.id,
 				frameGroups: false,
 				sprites: new Map(),
@@ -509,7 +518,10 @@ export const registerLuaFormats = async (): Promise<void> => {
 	const list = await invoke<LuaFormatMeta[]>('forge_list_formats').catch(() => []);
 	for (const meta of list) {
 		try {
-			registerFormat(makeHandler(meta));
+			const handler = makeHandler(meta);
+			const tools = await forgeListTools(meta.id).catch(() => []);
+			if (tools.length > 0) handler.tools = tools;
+			registerFormat(handler);
 		} catch (e) {
 			console.error(`Failed to register lua format ${meta.id ?? meta.ext}:`, e);
 		}

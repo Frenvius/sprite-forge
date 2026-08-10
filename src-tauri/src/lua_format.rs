@@ -176,6 +176,71 @@ thread_local! {
     static ASSETS: RefCell<Option<AssetsBuilder>> = const { RefCell::new(None) };
     static THINGS: RefCell<Option<Vec<ThingDef>>> = const { RefCell::new(None) };
     static ITEMS: RefCell<Option<ItemDbBuilder>> = const { RefCell::new(None) };
+    static LIVE_ITEMS: RefCell<Option<*mut ItemDb>> = const { RefCell::new(None) };
+    static LIVE_THINGS: RefCell<Option<*const Vec<ThingDef>>> = const { RefCell::new(None) };
+}
+
+struct ScopedLive;
+impl ScopedLive {
+    fn enter(items: &mut ItemDb, things: &Vec<ThingDef>) -> Self {
+        LIVE_ITEMS.with(|b| *b.borrow_mut() = Some(items as *mut _));
+        LIVE_THINGS.with(|b| *b.borrow_mut() = Some(things as *const _));
+        ScopedLive
+    }
+}
+impl Drop for ScopedLive {
+    fn drop(&mut self) {
+        LIVE_ITEMS.with(|b| *b.borrow_mut() = None);
+        LIVE_THINGS.with(|b| *b.borrow_mut() = None);
+    }
+}
+
+fn with_live_items<R>(f: impl FnOnce(&ItemDb) -> R) -> Option<R> {
+    LIVE_ITEMS.with(|b| b.borrow().map(|p| unsafe { f(&*p) }))
+}
+
+fn with_live_items_mut<R>(f: impl FnOnce(&mut ItemDb) -> R) -> Option<R> {
+    LIVE_ITEMS.with(|b| b.borrow().map(|p| unsafe { f(&mut *p) }))
+}
+
+fn with_live_things<R>(f: impl FnOnce(&[ThingDef]) -> R) -> Option<R> {
+    LIVE_THINGS.with(|b| b.borrow().map(|p| unsafe { f(&*p) }))
+}
+
+fn item_def_to_table(lua: &Lua, id: u32, d: &ItemDef) -> mlua::Result<Table> {
+    let t = lua.create_table()?;
+    t.set("id", id)?;
+    t.set("name", d.name.clone())?;
+    t.set("group", d.group)?;
+    t.set("kind", d.kind)?;
+    t.set("flags", d.flags)?;
+    t.set("ground", d.ground)?;
+    t.set("client", d.client)?;
+    Ok(t)
+}
+
+fn thing_def_to_table(lua: &Lua, t: &ThingDef) -> mlua::Result<Table> {
+    let tb = lua.create_table()?;
+    tb.set("id", t.id)?;
+    tb.set("category", t.category.clone())?;
+    tb.set("width", t.width)?;
+    tb.set("height", t.height)?;
+    tb.set("layers", t.layers)?;
+    tb.set("frames", t.frames)?;
+    tb.set("is_ground", t.is_ground)?;
+    tb.set("is_on_top", t.is_on_top)?;
+    tb.set("is_on_bottom", t.is_on_bottom)?;
+    tb.set("is_unpassable", t.is_unpassable)?;
+    let attrs = lua.create_table()?;
+    for (k, v) in &t.attrs {
+        match v {
+            AttrValue::Bool(b) => attrs.set(k.as_str(), *b)?,
+            AttrValue::Num(n) => attrs.set(k.as_str(), *n)?,
+            AttrValue::Str(s) => attrs.set(k.as_str(), s.clone())?,
+        }
+    }
+    tb.set("attrs", attrs)?;
+    Ok(tb)
 }
 
 struct ScopedAssets;
@@ -343,12 +408,64 @@ pub fn register_builders(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
     things.set("finish", lua.create_function(|_, ()| Ok(()))?)?;
+    things.set(
+        "list",
+        lua.create_function(|lua, ()| {
+            let arr = lua.create_table()?;
+            if let Some(res) = with_live_things(|list| -> mlua::Result<()> {
+                for (i, t) in list.iter().enumerate() {
+                    arr.set(i + 1, thing_def_to_table(lua, t)?)?;
+                }
+                Ok(())
+            }) {
+                res?;
+            }
+            Ok(arr)
+        })?,
+    )?;
+    things.set(
+        "count",
+        lua.create_function(|_, ()| Ok(with_live_things(|list| list.len()).unwrap_or(0)))?,
+    )?;
     forge.set("things", things)?;
+
+    let build_item_def = |id: u32, def: &Table| -> mlua::Result<ItemDef> {
+        Ok(ItemDef {
+            name: def.get("name").unwrap_or_default(),
+            group: def.get("group").unwrap_or(0),
+            kind: def.get("kind").unwrap_or(0),
+            flags: def.get("flags").unwrap_or(0),
+            ground: def.get("ground").unwrap_or(false),
+            client: def.get("client").unwrap_or(id),
+        })
+    };
 
     let items = lua.create_table()?;
     items.set("begin", lua.create_function(|_, ()| Ok(()))?)?;
     items.set(
         "add",
+        lua.create_function(move |_, (id, def): (u32, Table)| {
+            let d = build_item_def(id, &def)?;
+            if with_live_items_mut(|db| {
+                if def.get::<u32>("client").ok().unwrap_or(0) > 0 {
+                    db.server_to_client.insert(id, d.client);
+                    db.client_to_server.insert(d.client, id);
+                }
+                db.items.insert(id, d.clone());
+            })
+            .is_none()
+            {
+                ITEMS.with(|b| {
+                    if let Some(b) = b.borrow_mut().as_mut() {
+                        b.items.insert(id, d);
+                    }
+                });
+            }
+            Ok(())
+        })?,
+    )?;
+    items.set(
+        "set",
         lua.create_function(|_, (id, def): (u32, Table)| {
             let d = ItemDef {
                 name: def.get("name").unwrap_or_default(),
@@ -358,16 +475,74 @@ pub fn register_builders(lua: &Lua) -> mlua::Result<()> {
                 ground: def.get("ground").unwrap_or(false),
                 client: def.get("client").unwrap_or(id),
             };
-            ITEMS.with(|b| {
-                if let Some(b) = b.borrow_mut().as_mut() {
-                    b.items.insert(id, d);
+            with_live_items_mut(|db| {
+                if d.client > 0 {
+                    db.server_to_client.insert(id, d.client);
+                    db.client_to_server.insert(d.client, id);
                 }
+                db.items.insert(id, d);
             });
             Ok(())
         })?,
     )?;
+    items.set(
+        "has",
+        lua.create_function(|_, id: u32| Ok(with_live_items(|db| db.items.contains_key(&id)).unwrap_or(false)))?,
+    )?;
+    items.set(
+        "get",
+        lua.create_function(|lua, id: u32| {
+            let def = with_live_items(|db| db.items.get(&id).cloned()).flatten();
+            match def {
+                Some(d) => Ok(mlua::Value::Table(item_def_to_table(lua, id, &d)?)),
+                None => Ok(mlua::Value::Nil),
+            }
+        })?,
+    )?;
+    items.set(
+        "list",
+        lua.create_function(|lua, ()| {
+            let arr = lua.create_table()?;
+            if let Some(res) = with_live_items(|db| -> mlua::Result<()> {
+                let mut i = 1;
+                for (&id, d) in &db.items {
+                    arr.set(i, item_def_to_table(lua, id, d)?)?;
+                    i += 1;
+                }
+                Ok(())
+            }) {
+                res?;
+            }
+            Ok(arr)
+        })?,
+    )?;
+    items.set(
+        "count",
+        lua.create_function(|_, ()| Ok(with_live_items(|db| db.items.len()).unwrap_or(0)))?,
+    )?;
     items.set("finish", lua.create_function(|_, ()| Ok(()))?)?;
     forge.set("items", items)?;
+
+    forge.set("_tools", lua.create_table()?)?;
+    forge.set(
+        "register_tool",
+        lua.create_function(|lua, t: Table| {
+            let format: String = t.get("format")?;
+            let forge: Table = lua.globals().get("forge")?;
+            let tools: Table = forge.get("_tools")?;
+            let list: Table = match tools.get::<Table>(format.clone()) {
+                Ok(l) => l,
+                Err(_) => {
+                    let l = lua.create_table()?;
+                    tools.set(format.clone(), l.clone())?;
+                    l
+                }
+            };
+            let len = list.len()?;
+            list.set(len + 1, t)?;
+            Ok(())
+        })?,
+    )?;
 
     Ok(())
 }
@@ -743,6 +918,83 @@ pub fn forge_save_itemdb(path: String, items_state: State<ForgeItemsState>, lua_
     let bytes = build().map_err(|e| format!("lua write error: {}", e))?;
     std::fs::write(&path, &bytes.as_bytes()).map_err(|e| format!("Failed to write {}: {}", path, e))?;
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+pub struct ToolMeta {
+    pub id: String,
+    pub label: String,
+    pub description: Option<String>,
+}
+
+#[tauri::command]
+pub fn forge_list_tools(format_id: String, lua_state: State<LuaState>) -> Result<Vec<ToolMeta>, String> {
+    let guard = lua_state.lock().map_err(|e| e.to_string())?;
+    let forge: Table = guard.lua.globals().get("forge").map_err(|e| e.to_string())?;
+    let tools: Table = forge.get("_tools").map_err(|e| e.to_string())?;
+    let Ok(list) = tools.get::<Table>(format_id) else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for pair in list.sequence_values::<Table>() {
+        let t = pair.map_err(|e| e.to_string())?;
+        out.push(ToolMeta {
+            id: t.get("id").map_err(|e| e.to_string())?,
+            label: t.get("label").map_err(|e| e.to_string())?,
+            description: t.get("description").ok(),
+        });
+    }
+    Ok(out)
+}
+
+#[derive(serde::Serialize)]
+pub struct ToolResult {
+    pub message: Option<String>,
+    pub items_changed: bool,
+}
+
+#[tauri::command]
+pub fn forge_run_tool(
+    format_id: String,
+    tool_id: String,
+    lua_state: State<LuaState>,
+    items_state: State<ForgeItemsState>,
+    things_state: State<ForgeThingsState>,
+) -> Result<ToolResult, String> {
+    let lua_guard = lua_state.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let lua = &lua_guard.lua;
+    let forge: Table = lua.globals().get("forge").map_err(|e| e.to_string())?;
+    let tools: Table = forge.get("_tools").map_err(|e| e.to_string())?;
+    let list: Table = tools
+        .get(format_id.clone())
+        .map_err(|_| format!("no tools registered for format '{}'", format_id))?;
+    let mut run: Option<Function> = None;
+    for pair in list.sequence_values::<Table>() {
+        let t = pair.map_err(|e| e.to_string())?;
+        let id: String = t.get("id").map_err(|e| e.to_string())?;
+        if id == tool_id {
+            run = Some(t.get("run").map_err(|e| format!("tool '{}' has no run fn: {}", tool_id, e))?);
+            break;
+        }
+    }
+    let run = run.ok_or_else(|| format!("tool '{}' not found for format '{}'", tool_id, format_id))?;
+
+    let mut items = items_state.lock().map_err(|e| e.to_string())?;
+    let things = things_state.lock().map_err(|e| e.to_string())?;
+    let ret: mlua::Value = {
+        let _live = ScopedLive::enter(&mut items, &things);
+        run.call(()).map_err(|e| format!("tool '{}' error: {}", tool_id, e))?
+    };
+    let message = match &ret {
+        mlua::Value::Table(t) => t.get::<String>("message").ok(),
+        mlua::Value::String(s) => s.to_str().ok().map(|c| c.to_string()),
+        _ => None,
+    };
+    let items_changed = match &ret {
+        mlua::Value::Table(t) => t.get::<bool>("items_changed").unwrap_or(true),
+        _ => true,
+    };
+    Ok(ToolResult { message, items_changed })
 }
 
 #[cfg(test)]

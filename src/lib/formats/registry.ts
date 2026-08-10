@@ -60,10 +60,17 @@ export interface CompileRequest {
 
 export type CompileResult = null | { synced: number; created: number };
 
+export interface FormatTool {
+	id: string;
+	label: string;
+	description?: string;
+}
+
 export interface FormatHandler {
 	id: string;
 	exts: string[];
 	config: FormatConfig;
+	tools?: FormatTool[];
 	alphaChannel?: boolean;
 	kind: 'file' | 'folder';
 	loadDialogTitle?: string;

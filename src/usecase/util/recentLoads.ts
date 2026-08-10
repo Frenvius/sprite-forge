@@ -12,6 +12,7 @@ export interface RecentLoad {
 	extended: boolean;
 	folderPath: string;
 	primaryPath: string;
+	itemdbPath?: string;
 	frameGroups: boolean;
 	transparency: boolean;
 	improvedAnimations: boolean;

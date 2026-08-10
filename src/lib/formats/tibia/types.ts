@@ -310,6 +310,7 @@ export interface AssetData {
 	formatId?: string;
 	extended: boolean;
 	itemsCount: number;
+	itemdbPath?: string;
 	spritesCount: number;
 
 	outfitsCount: number;

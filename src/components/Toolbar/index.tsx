@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
+import { forgeRunTool } from '~/adapter/forge';
 import { Button } from '~/components/ui/button';
 import { errorToString } from '~/lib/errorMessage';
 import { useToast } from '~/usecase/hooks/useToast';
@@ -260,6 +261,7 @@ export const Toolbar = () => {
 					folderPath: selectedPath,
 					otbPath: serverPaths?.otbPath,
 					xmlPath: serverPaths?.xmlPath,
+					itemdbPath: loaded.itemdbPath,
 					extended: !!overrides?.extended,
 					frameGroups: !!overrides?.frameGroups,
 					improvedAnimations: !!overrides?.frameDurations,
@@ -340,7 +342,12 @@ export const Toolbar = () => {
 		await handleFolderSelect(
 			entry.folderPath,
 			entry.transparency,
-			{ datPath: entry.datPath, sprPath: entry.sprPath, filePath: entry.formatId === 'tibia' ? undefined : entry.primaryPath },
+			{
+				datPath: entry.datPath,
+				sprPath: entry.sprPath,
+				itemdbPath: entry.itemdbPath,
+				filePath: entry.formatId === 'tibia' ? undefined : entry.primaryPath
+			},
 			{ extended: entry.extended, frameGroups: entry.frameGroups, frameDurations: entry.improvedAnimations },
 			{ otbPath: entry.otbPath, xmlPath: entry.xmlPath },
 			entry.formatId
@@ -563,6 +570,27 @@ export const Toolbar = () => {
 		});
 	};
 
+	const activeHandler = data?.formatId ? getFormat(data.formatId) : undefined;
+	const formatTools = activeHandler?.tools ?? [];
+
+	const handleRunTool = async (toolId: string, label: string) => {
+		if (!data?.formatId) return;
+		try {
+			const res = await forgeRunTool(data.formatId, toolId);
+			if (res.itemsChanged) markDatDirty();
+			toast({
+				title: label,
+				description: res.message ?? (res.itemsChanged ? 'Compile to save changes.' : 'No changes')
+			});
+		} catch (e) {
+			toast({
+				title: label,
+				variant: 'destructive',
+				description: e instanceof Error ? e.message : String(e)
+			});
+		}
+	};
+
 	const handleCheckUpdates = async () => {
 		toast({ title: 'Checking for updates...' });
 		const result = await updater.checkForUpdate();
@@ -759,6 +787,13 @@ export const Toolbar = () => {
 								<RotateCw className="mr-2 h-3.5 w-3.5" />
 								Reload Item Attributes
 							</MenubarItem>
+							{formatTools.length > 0 && <MenubarSeparator />}
+							{formatTools.map((tool) => (
+								<MenubarItem key={tool.id} disabled={!data || isLoading} onSelect={() => void handleRunTool(tool.id, tool.label)}>
+									<PackagePlus className="mr-2 h-3.5 w-3.5" />
+									{tool.label}
+								</MenubarItem>
+							))}
 						</MenubarContent>
 					</MenubarMenu>
 

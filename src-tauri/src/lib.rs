@@ -2733,7 +2733,9 @@ pub fn run() {
             lua_format::forge_item_sprite,
             lua_format::forge_save_assets,
             lua_format::forge_set_sprites,
-            lua_format::forge_save_itemdb
+            lua_format::forge_save_itemdb,
+            lua_format::forge_list_tools,
+            lua_format::forge_run_tool
         ])
         .setup(move |app| {
             #[cfg(target_os = "macos")]
