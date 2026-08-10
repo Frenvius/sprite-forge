@@ -490,6 +490,19 @@ pub fn register_builders(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|_, id: u32| Ok(with_live_items(|db| db.items.contains_key(&id)).unwrap_or(false)))?,
     )?;
     items.set(
+        "delete",
+        lua.create_function(|_, id: u32| {
+            Ok(with_live_items_mut(|db| {
+                let removed = db.items.remove(&id).is_some();
+                if let Some(client) = db.server_to_client.remove(&id) {
+                    db.client_to_server.remove(&client);
+                }
+                removed
+            })
+            .unwrap_or(false))
+        })?,
+    )?;
+    items.set(
         "get",
         lua.create_function(|lua, id: u32| {
             let def = with_live_items(|db| db.items.get(&id).cloned()).flatten();
