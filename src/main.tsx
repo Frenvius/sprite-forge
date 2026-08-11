@@ -24,11 +24,24 @@ if (typeof window !== 'undefined') {
 	});
 }
 
+function isPageReload(): boolean {
+	const nav = performance.getEntriesByType('navigation')[0] as undefined | PerformanceNavigationTiming;
+	return nav?.type === 'reload';
+}
+
 async function boot() {
 	const luaEnabled = isLuaEnabled();
 
 	let clientVersions = true;
 	let appName: string | undefined;
+
+	if (luaEnabled && isPageReload()) {
+		try {
+			await invoke<number>('reload_scripts');
+		} catch (err) {
+			console.error('lua reload failed', err);
+		}
+	}
 
 	if (luaEnabled) {
 		let builtinServerProfiles = true;
