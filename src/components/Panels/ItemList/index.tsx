@@ -1,4 +1,17 @@
-import { Edit, Copy, Plus, Circle, Trash2, Upload, Package, Sparkles, Download, Clipboard, ClipboardPaste } from 'lucide-react';
+import {
+	Edit,
+	Copy,
+	Save,
+	Plus,
+	Circle,
+	Trash2,
+	Upload,
+	Package,
+	Sparkles,
+	Download,
+	Clipboard,
+	ClipboardPaste
+} from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -40,6 +53,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 		duplicateItem,
 		canFindSimilar,
 		copyProperties,
+		saveItemChanges,
 		selectedItemIds,
 		pasteProperties,
 		handlePageChange,
@@ -297,6 +311,17 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 												>
 													<ClipboardPaste className="mr-2 h-4 w-4" />
 													<span>{isMulti ? `Paste Properties (${selectionCount})` : 'Paste Properties'}</span>
+												</ContextMenuItem>
+												<ContextMenuItem
+													disabled={
+														isMulti
+															? !selectionIds.some((sid) => hasUnsavedChanges(sid, selectedCategory))
+															: !hasUnsavedChanges(id, selectedCategory)
+													}
+													onClick={() => saveItemChanges(isMulti ? selectionIds : id)}
+												>
+													<Save className="mr-2 h-4 w-4" />
+													<span>{isMulti ? `Save Changes (${selectionCount})` : 'Save Changes'}</span>
 												</ContextMenuItem>
 												<ContextMenuItem onClick={() => exportSheets(isMulti ? selectionIds : id)}>
 													<Download className="mr-2 h-4 w-4" />

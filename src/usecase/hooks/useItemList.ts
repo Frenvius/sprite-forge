@@ -594,6 +594,19 @@ export const useItemList = () => {
 		});
 	};
 
+	const saveItemChanges = (ids: number | number[]) => {
+		const idList = Array.isArray(ids) ? ids : [ids];
+		let saved = 0;
+		for (const id of idList) {
+			if (hasUnsavedChanges(id, selectedCategory)) {
+				markUnsavedChanges(id, selectedCategory, false);
+				saved++;
+			}
+		}
+		if (saved === 0) return;
+		toast({ description: saved > 1 ? `Saved ${saved} items` : 'Changes saved' });
+	};
+
 	const exportSheet = (item: ThingType) => {
 		if (data) openExport([item.id]);
 	};
@@ -833,6 +846,7 @@ export const useItemList = () => {
 		duplicateItem,
 		canFindSimilar,
 		copyProperties,
+		saveItemChanges,
 		selectedItemIds,
 		pasteProperties,
 		handlePageChange,
