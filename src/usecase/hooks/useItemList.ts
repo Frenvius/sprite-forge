@@ -1,3 +1,5 @@
+import type { ServerItem } from '~/lib/formats/tibia/otb';
+
 import React from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 
@@ -21,6 +23,15 @@ import {
 	getCategoryMap as getCategoryMapUtil
 } from '~/lib/formats/tibia';
 
+type CopiedProperties = {
+	server?: Partial<ServerItem>;
+	properties: Partial<ThingType>;
+};
+
+const camelToSnake = (k: string) => k.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
+
+const isDescriptionAttr = (key: string) => key === 'description';
+
 export const useItemList = () => {
 	const {
 		data,
@@ -34,6 +45,7 @@ export const useItemList = () => {
 		markAsNewItem,
 		setOpenedItemId,
 		ensureServerItem,
+		updateServerItem,
 		selectedCategory,
 		removeOpenedItem,
 		markThingModified,
@@ -44,6 +56,7 @@ export const useItemList = () => {
 		setSelectedCategory,
 		notifySpritesLoaded,
 		setHighlightedItemId,
+		getServerItemsForClient,
 		deleteServerItemsForClients,
 		duplicateServerItemsForClient
 	} = useAssetData();
@@ -52,7 +65,7 @@ export const useItemList = () => {
 	const { openExport, openImport } = useTransfer();
 	const { viewMode, setViewMode } = useListViewMode('get_item_list_view_mode', 'set_item_list_view_mode');
 	const [currentPage, setCurrentPage] = React.useState<number>(1);
-	const [copiedProperties, setCopiedProperties] = React.useState<null | Partial<ThingType>>(null);
+	const [copiedProperties, setCopiedProperties] = React.useState<null | CopiedProperties>(null);
 	const [inputValue, setInputValue] = React.useState<string>('');
 	const [selectedItemIds, setSelectedItemIds] = React.useState<Set<number>>(new Set());
 
@@ -534,19 +547,51 @@ export const useItemList = () => {
 	const copyProperties = (item: ThingType) => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { id: _, category: ___, spriteIndex: __, frameGroupsData: ____, ...properties } = item;
-		setCopiedProperties(properties);
-		toast({ description: 'Properties copied' });
+		let server: undefined | Partial<ServerItem>;
+		if (selectedCategory === ThingCategory.ITEM) {
+			const [source] = getServerItemsForClient(item.id);
+			if (source) {
+				const { clientId: _c, serverId: _s, xmlAttributes, spriteHash: _h, ...rest } = source;
+				void _s;
+				void _c;
+				void _h;
+				server = { ...rest };
+				if (xmlAttributes) {
+					const mirrored = new Set<string>();
+					for (const k of Object.keys(source)) mirrored.add(camelToSnake(k));
+					const filtered = xmlAttributes.filter((a) => isDescriptionAttr(a.key) || !mirrored.has(a.key));
+					if (filtered.length > 0) server.xmlAttributes = filtered.map((a) => ({ ...a }));
+				}
+			}
+		}
+		setCopiedProperties({ server, properties });
+		toast({ description: server ? 'Properties + server data copied' : 'Properties copied' });
 	};
 
 	const pasteProperties = (ids: number | number[]) => {
 		if (!copiedProperties) return;
 		const idList = Array.isArray(ids) ? ids : [ids];
+		let serverTargets = 0;
 		for (const id of idList) {
-			updateThing(id, selectedCategory, copiedProperties);
+			updateThing(id, selectedCategory, copiedProperties.properties);
 			markUnsavedChanges(id, selectedCategory, true);
+			if (copiedProperties.server && selectedCategory === ThingCategory.ITEM) {
+				const targets = getServerItemsForClient(id);
+				for (const target of targets) {
+					const patch: Partial<ServerItem> = { ...copiedProperties.server };
+					if (copiedProperties.server.xmlAttributes) {
+						patch.xmlAttributes = copiedProperties.server.xmlAttributes.map((a) => ({ ...a }));
+					}
+					updateServerItem(target.serverId, patch);
+					serverTargets++;
+				}
+			}
 		}
 		notifyDataChanged(idList);
-		toast({ description: idList.length > 1 ? `Properties pasted to ${idList.length} items` : 'Properties pasted' });
+		const suffix = serverTargets > 0 ? ` (+${serverTargets} server)` : '';
+		toast({
+			description: idList.length > 1 ? `Properties pasted to ${idList.length} items${suffix}` : `Properties pasted${suffix}`
+		});
 	};
 
 	const exportSheet = (item: ThingType) => {

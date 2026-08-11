@@ -1,6 +1,6 @@
 import type { ThingType } from '~/lib/formats/tibia/types';
 
-import { toSnakeKey } from './keys';
+import { toCamelKey, toSnakeKey } from './keys';
 import { getServerProfile } from '~/lib/formats/tibia/serverAttributes';
 import { type ServerItem, createServerItem, type ServerItemData, createServerItemFromThing } from '~/lib/formats/tibia/otb';
 
@@ -17,9 +17,21 @@ export interface ItemRow {
 const ARTICLE = 'article';
 const PLURAL = 'plural';
 
-// Derived or structural fields. Everything else, including the item columns the
-// backend owns, goes through the bag.
 const RESERVED = new Set(['serverId', 'nameXml', 'spriteHash', 'xmlAttributes']);
+
+const coerceForField = (current: unknown, value: number | string | boolean): unknown => {
+	if (typeof current === 'boolean') {
+		if (typeof value === 'boolean') return value;
+		if (typeof value === 'number') return value !== 0;
+		const s = String(value).toLowerCase();
+		return s !== '' && s !== '0' && s !== 'false';
+	}
+	if (typeof current === 'number') {
+		const n = Number(value);
+		return Number.isFinite(n) ? n : 0;
+	}
+	return String(value);
+};
 
 export function buildServerItemData(
 	rows: ItemRow[],
@@ -43,11 +55,21 @@ export function buildServerItemData(
 		for (const [key, value] of Object.entries(row.attrs ?? {})) {
 			if (key === ARTICLE) {
 				item.article = String(value);
-			} else if (key === PLURAL) {
-				item.plural = String(value);
-			} else {
-				xmlAttributes.push({ key, value: typeof value === 'boolean' ? (value ? '1' : '0') : String(value) });
+				continue;
 			}
+			if (key === PLURAL) {
+				item.plural = String(value);
+				continue;
+			}
+			const camel = toCamelKey(key);
+			if (!RESERVED.has(camel) && camel in item) {
+				(item as unknown as Record<string, unknown>)[camel] = coerceForField(
+					(item as unknown as Record<string, unknown>)[camel],
+					value
+				);
+				continue;
+			}
+			xmlAttributes.push({ key, value: typeof value === 'boolean' ? (value ? '1' : '0') : String(value) });
 		}
 		if (xmlAttributes.length > 0) item.xmlAttributes = xmlAttributes;
 
