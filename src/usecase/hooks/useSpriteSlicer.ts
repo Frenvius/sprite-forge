@@ -853,7 +853,7 @@ export const useSpriteSlicer = () => {
 			if (empty && !keepEmpty) continue;
 			out.push({ empty, pixels, keep: true });
 		}
-		setSlices(out);
+		setSlices((prev) => [...prev, ...out]);
 	}, [hasLayers, hasSelection, compositeVisible, selectedCells, gridSize, keepEmpty]);
 
 	const toggleKeep = React.useCallback((index: number) => {
