@@ -13,6 +13,8 @@ import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '~/usecase/util/itemStateUtils';
 
+const SPRITE_INDEX_DIMS = new Set(['width', 'height', 'layers', 'frames', 'patternX', 'patternY', 'patternZ']);
+
 export const useObjectProperties = (override?: { item: null | ThingType; getSprite: (id: number) => Sprite | undefined }) => {
 	const {
 		data,
@@ -151,6 +153,23 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 				if (!prev) return null;
 				const newItem = { ...prev, [property]: finalValue };
 
+				if (SPRITE_INDEX_DIMS.has(property) && Array.isArray(newItem.spriteIndex)) {
+					const total =
+						newItem.width *
+						newItem.height *
+						newItem.layers *
+						newItem.patternX *
+						newItem.patternY *
+						newItem.patternZ *
+						newItem.frames;
+					if (Number.isFinite(total) && total >= 0 && total !== newItem.spriteIndex.length) {
+						const resized = new Array(total).fill(0);
+						const copyLen = Math.min(total, newItem.spriteIndex.length);
+						for (let i = 0; i < copyLen; i++) resized[i] = newItem.spriteIndex[i];
+						newItem.spriteIndex = resized;
+					}
+				}
+
 				const currentFrameGroup = selectedFrameGroupRef.current;
 				if (newItem.frameGroupsData && newItem.frameGroupsData[currentFrameGroup]) {
 					const newGroups = [...newItem.frameGroupsData];
@@ -158,6 +177,17 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 						...newGroups[currentFrameGroup],
 						[property]: finalValue
 					};
+					if (SPRITE_INDEX_DIMS.has(property)) {
+						const g = newGroups[currentFrameGroup];
+						const total = g.width * g.height * g.layers * g.patternX * g.patternY * g.patternZ * g.frames;
+						if (Number.isFinite(total) && total >= 0 && total !== g.spriteIndex.length) {
+							const resized = new Array(total).fill(0);
+							const copyLen = Math.min(total, g.spriteIndex.length);
+							for (let i = 0; i < copyLen; i++) resized[i] = g.spriteIndex[i];
+							g.spriteIndex = resized;
+						}
+						newItem.spriteIndex = g.spriteIndex;
+					}
 					newItem.frameGroupsData = newGroups;
 				}
 				return newItem;
