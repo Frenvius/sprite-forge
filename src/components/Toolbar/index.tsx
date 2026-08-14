@@ -25,7 +25,8 @@ import {
 	HardDrive,
 	FolderOpen,
 	HelpCircle,
-	PackagePlus
+	PackagePlus,
+	LayoutTemplate
 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
@@ -48,6 +49,7 @@ import { LuaScriptsDialog } from '~/components/LuaScriptsDialog';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { FolderSelectDialog } from '~/components/FolderSelectDialog';
 import { useWindowControls } from '~/usecase/hooks/useWindowControls';
+import { useTemplateBridge } from '~/usecase/hooks/useTemplateBridge';
 import { useErrorDialog } from '~/usecase/context/ErrorDialogContext';
 import { getFormat, formatByConfigName } from '~/lib/formats/registry';
 import { ThemeSettingsDialog } from '~/components/ThemeSettingsDialog';
@@ -89,6 +91,7 @@ export const Toolbar = () => {
 		reloadServerAttributes,
 		createMissingServerItems
 	} = useAssetData();
+	useTemplateBridge();
 	const { settings, togglePanel } = usePanelSettings();
 	const { panels: luaPanels, toggle: toggleLua, isVisible: luaVisible } = useLuaPanels();
 	const { showError } = useErrorDialog();
@@ -127,11 +130,17 @@ export const Toolbar = () => {
 			void handleOpenSlicer();
 		};
 
+		const handleOpenTemplateLocal = () => {
+			void handleOpenTemplateEditor();
+		};
+
 		window.addEventListener('open-scene-editor', handleOpenScene as EventListener);
 		window.addEventListener('open-sprite-slicer', handleOpenSlicerLocal as EventListener);
+		window.addEventListener('open-template-editor', handleOpenTemplateLocal as EventListener);
 		return () => {
 			window.removeEventListener('open-scene-editor', handleOpenScene as EventListener);
 			window.removeEventListener('open-sprite-slicer', handleOpenSlicerLocal as EventListener);
+			window.removeEventListener('open-template-editor', handleOpenTemplateLocal as EventListener);
 		};
 	}, []);
 
@@ -484,6 +493,40 @@ export const Toolbar = () => {
 		}
 	};
 
+	const handleOpenTemplateEditor = async () => {
+		try {
+			const existingWindow = await WebviewWindow.getByLabel('template');
+			if (existingWindow) {
+				await existingWindow.show();
+				await existingWindow.setFocus();
+			} else {
+				const newWindow = new WebviewWindow('template', {
+					width: 1500,
+					height: 900,
+					center: true,
+					shadow: true,
+					minWidth: 1100,
+					minHeight: 700,
+					resizable: true,
+					transparent: true,
+					decorations: false,
+					url: 'template.html',
+					backgroundColor: [0, 0, 0, 0],
+					title: 'Template Editor - Sprite Forge'
+				});
+				newWindow.once('tauri://error', () => {
+					toast({ title: 'Error', variant: 'destructive', description: 'Failed to create template window' });
+				});
+			}
+		} catch (error: any) {
+			toast({
+				title: 'Error',
+				variant: 'destructive',
+				description: error instanceof Error ? error.message : String(error) || 'Failed to open template window'
+			});
+		}
+	};
+
 	const handleOpenSlicer = async () => {
 		try {
 			const existingWindow = await WebviewWindow.getByLabel('slicer');
@@ -760,6 +803,10 @@ export const Toolbar = () => {
 							<MenubarItem onSelect={() => void handleOpenSlicer()}>
 								<Scissors className="mr-2 h-3.5 w-3.5" />
 								Slice Editor
+							</MenubarItem>
+							<MenubarItem onSelect={() => void handleOpenTemplateEditor()}>
+								<LayoutTemplate className="mr-2 h-3.5 w-3.5" />
+								Template Editor
 							</MenubarItem>
 							<MenubarItem disabled={!data} onSelect={() => setSceneEditorOpen(true)}>
 								<Grid3x3 className="mr-2 h-3.5 w-3.5" />

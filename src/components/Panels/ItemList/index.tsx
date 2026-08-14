@@ -10,7 +10,8 @@ import {
 	Sparkles,
 	Download,
 	Clipboard,
-	ClipboardPaste
+	ClipboardPaste,
+	LayoutTemplate
 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
@@ -313,12 +314,12 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 													<span>{isMulti ? `Paste Properties (${selectionCount})` : 'Paste Properties'}</span>
 												</ContextMenuItem>
 												<ContextMenuItem
+													onClick={() => saveItemChanges(isMulti ? selectionIds : id)}
 													disabled={
 														isMulti
 															? !selectionIds.some((sid) => hasUnsavedChanges(sid, selectedCategory))
 															: !hasUnsavedChanges(id, selectedCategory)
 													}
-													onClick={() => saveItemChanges(isMulti ? selectionIds : id)}
 												>
 													<Save className="mr-2 h-4 w-4" />
 													<span>{isMulti ? `Save Changes (${selectionCount})` : 'Save Changes'}</span>
@@ -330,6 +331,15 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 												<ContextMenuItem onClick={() => importInto(item)}>
 													<Upload className="mr-2 h-4 w-4" />
 													<span>Import…</span>
+												</ContextMenuItem>
+												<ContextMenuItem
+													disabled={isMulti}
+													onClick={() =>
+														window.dispatchEvent(new CustomEvent('open-template-editor', { detail: { seed: item } }))
+													}
+												>
+													<LayoutTemplate className="mr-2 h-4 w-4" />
+													<span>Create Template…</span>
 												</ContextMenuItem>
 												<ContextMenuItem
 													className="text-destructive focus:text-destructive"

@@ -34,6 +34,7 @@ export default defineConfig(async ({ mode }) => ({
         main: path.resolve(__dirname, "index.html"),
         find: path.resolve(__dirname, "find.html"),
         slicer: path.resolve(__dirname, "slicer.html"),
+        template: path.resolve(__dirname, "template.html"),
       },
     },
   },

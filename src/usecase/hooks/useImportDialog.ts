@@ -6,6 +6,7 @@ import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { useToast } from './useToast';
+import { nextSpriteBase } from '~/usecase/util/spriteIds';
 import { useConfirm } from '~/usecase/context/ConfirmContext';
 import { useTransfer } from '~/usecase/context/TransferContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
@@ -29,12 +30,6 @@ import {
 const CELL = 150;
 const WINDOW_ROWS = 6;
 const THUMB_CAP = 6000;
-
-const nextSpriteBase = (sprites: Map<number, unknown>, spritesCount: number): number => {
-	let base = spritesCount + 1;
-	for (const id of sprites.keys()) if (id >= base) base = id + 1;
-	return base;
-};
 
 export const useImportDialog = () => {
 	const { toast } = useToast();

@@ -835,6 +835,81 @@ fn delete_scene(name: String) -> Result<(), String> {
     Ok(())
 }
 
+fn templates_dir() -> Result<PathBuf, String> {
+    let mut dir = get_config_dir()?;
+    dir.push("templates");
+    Ok(dir)
+}
+
+fn template_path(name: &str) -> Result<PathBuf, String> {
+    let safe_name = name.replace(|c: char| !c.is_alphanumeric() && c != '-' && c != '_', "_");
+    if safe_name.is_empty() {
+        return Err("Invalid template name".to_string());
+    }
+    Ok(templates_dir()?.join(format!("{}.json", safe_name)))
+}
+
+#[tauri::command]
+fn save_template(name: String, content: String) -> Result<String, String> {
+    let dir = templates_dir()?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create templates directory: {}", e))?;
+
+    let file_path = template_path(&name)?;
+    fs::write(&file_path, content).map_err(|e| format!("Failed to write template file: {}", e))?;
+
+    Ok(file_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn list_templates() -> Result<Vec<String>, String> {
+    let dir = templates_dir()?;
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut templates = Vec::new();
+    for entry in fs::read_dir(dir).map_err(|e| format!("Failed to read templates dir: {}", e))? {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let path = entry.path();
+        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
+            let content = fs::read_to_string(&path)
+                .map_err(|e| format!("Failed to read template file: {}", e))?;
+            templates.push(content);
+        }
+    }
+    Ok(templates)
+}
+
+#[tauri::command]
+fn cache_template_sheet(request: tauri::ipc::Request) -> Result<String, String> {
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(data) => data,
+        _ => return Err("Expected raw sheet bytes".to_string()),
+    };
+
+    let mut dir = templates_dir()?;
+    dir.push("sheets");
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create sheets directory: {}", e))?;
+
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| format!("Failed to read clock: {}", e))?
+        .as_millis();
+    let file_path = dir.join(format!("sheet-{}.png", stamp));
+
+    fs::write(&file_path, bytes).map_err(|e| format!("Failed to write sheet file: {}", e))?;
+    Ok(file_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn delete_template(name: String) -> Result<(), String> {
+    let file_path = template_path(&name)?;
+    if file_path.exists() {
+        fs::remove_file(&file_path).map_err(|e| format!("Failed to delete template file: {}", e))?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn write_dat_bin(request: tauri::ipc::Request) -> Result<(), String> {
     match request.body() {
@@ -2675,6 +2750,10 @@ pub fn run() {
             list_scenes,
             load_scene,
             delete_scene,
+            save_template,
+            list_templates,
+            delete_template,
+            cache_template_sheet,
             write_dat_bin,
             update_spr_sprites_bin,
             copy_spr_file_with_mods,

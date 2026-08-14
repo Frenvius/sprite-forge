@@ -1,5 +1,7 @@
+import type { PropertiesPanelProps } from './types';
 import type { PropertiesContextValue } from '~/usecase/context/PropertiesContext/types';
 
+import React from 'react';
 import { X, Save, RotateCcw } from 'lucide-react';
 
 import { EmptyState } from './EmptyState';
@@ -24,18 +26,24 @@ import {
 	AlertDialogDescription
 } from '~/components/ui/alert-dialog';
 
-export const PropertiesPanel = () => {
-	const c = useObjectProperties();
+export const PropertiesPanel = ({ embed }: PropertiesPanelProps) => {
+	const override = React.useMemo(
+		() => (embed ? { item: embed.item, getSprite: embed.getSprite, clientVersion: embed.clientVersion } : undefined),
+		[embed?.item, embed?.getSprite, embed?.clientVersion]
+	);
+	const c = useObjectProperties(override);
 
-	if (!c.data || !c.item) {
+	if (!embed && (!c.data || !c.item)) {
 		return <EmptyState category={c.itemCategory} />;
 	}
 
-	if (!c.draftItem) {
+	if (!c.item || !c.draftItem) {
 		return <EmptyState category={c.itemCategory} />;
 	}
 
 	const { item, isOutfit, draftItem } = { item: c.item, draftItem: c.draftItem, isOutfit: c.visibility.isOutfit };
+
+	const embedApi = { draft: draftItem, setProperty: c.handlePropertyChange };
 
 	const contextValue: PropertiesContextValue = {
 		item,
@@ -53,11 +61,15 @@ export const PropertiesPanel = () => {
 	return (
 		<PropertiesContext.Provider value={contextValue}>
 			<div className="w-full h-full bg-card rounded-lg shadow-island-lg flex flex-col overflow-hidden">
-				<div className="h-8 px-4 flex items-center border-b border-border/50 bg-secondary/80">
+				<div className="h-8 px-4 flex items-center gap-2 border-b border-border/50 bg-secondary/80">
 					<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">
-						{categoryTitle(c.itemCategory)} Properties - ID {draftItem.id}
-						{draftItem.isMarketItem && draftItem.marketName && ` - ${draftItem.marketName}`}
+						{embed
+							? embed.title
+							: `${categoryTitle(c.itemCategory)} Properties - ID ${draftItem.id}${
+									draftItem.isMarketItem && draftItem.marketName ? ` - ${draftItem.marketName}` : ''
+								}`}
 					</h2>
+					{embed?.headerExtra && <div className="ml-auto flex items-center gap-2">{embed.headerExtra}</div>}
 				</div>
 
 				<ScrollArea className="flex-1">
@@ -73,25 +85,31 @@ export const PropertiesPanel = () => {
 
 						<PropertyColumns />
 
-						{c.visibility.isItem && c.data?.serverItems && <ServerSection clientId={draftItem.id} />}
+						{!embed && c.visibility.isItem && c.data?.serverItems && <ServerSection clientId={draftItem.id} />}
 					</div>
 				</ScrollArea>
 
 				<div className="border-t border-border/50 bg-secondary/30 p-2 flex items-center gap-2 justify-between h-[45px]">
-					<Button size="sm" className="h-7" variant="outline" disabled={!c.hasChanges} onClick={c.handleDiscardChanges}>
-						<RotateCcw className="h-3.5 w-3.5 mr-1" />
-						Discard Changes
-					</Button>
-					<div className="flex items-center gap-2">
-						<Button size="sm" className="h-7" variant="outline" onClick={c.handleClose}>
-							<X className="h-3.5 w-3.5 mr-1" />
-							Close
-						</Button>
-						<Button size="sm" className="h-7" onClick={c.handleSave} disabled={!c.hasChanges}>
-							<Save className="h-3.5 w-3.5 mr-1" />
-							Save Changes
-						</Button>
-					</div>
+					{embed ? (
+						embed.footer?.(embedApi)
+					) : (
+						<>
+							<Button size="sm" className="h-7" variant="outline" disabled={!c.hasChanges} onClick={c.handleDiscardChanges}>
+								<RotateCcw className="h-3.5 w-3.5 mr-1" />
+								Discard Changes
+							</Button>
+							<div className="flex items-center gap-2">
+								<Button size="sm" className="h-7" variant="outline" onClick={c.handleClose}>
+									<X className="h-3.5 w-3.5 mr-1" />
+									Close
+								</Button>
+								<Button size="sm" className="h-7" onClick={c.handleSave} disabled={!c.hasChanges}>
+									<Save className="h-3.5 w-3.5 mr-1" />
+									Save Changes
+								</Button>
+							</div>
+						</>
+					)}
 				</div>
 
 				<AlertDialog open={c.showCloseConfirm} onOpenChange={c.setShowCloseConfirm}>

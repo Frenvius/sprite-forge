@@ -3,6 +3,7 @@ export * from './types';
 export * from './loader';
 export * from './outfit';
 export * from './compiler';
+export * from './template';
 export * from './datReader';
 export * from './optimizer';
 export * from './datDecoder';
@@ -33,6 +34,6 @@ export {
 	type ImportSource,
 	type ExtractResult,
 	collectThingSpriteIds,
-	collectReferencedSpriteIds,
-	thingSpritesAreShared
+	thingSpritesAreShared,
+	collectReferencedSpriteIds
 } from './transfer';

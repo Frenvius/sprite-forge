@@ -15,7 +15,11 @@ import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState
 
 const SPRITE_INDEX_DIMS = new Set(['width', 'height', 'layers', 'frames', 'patternX', 'patternY', 'patternZ']);
 
-export const useObjectProperties = (override?: { item: null | ThingType; getSprite: (id: number) => Sprite | undefined }) => {
+export const useObjectProperties = (override?: {
+	item: null | ThingType;
+	clientVersion?: number;
+	getSprite: (id: number) => Sprite | undefined;
+}) => {
 	const {
 		data,
 		getThing,
@@ -142,7 +146,8 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 
 	const handlePropertyChange = React.useCallback(
 		(property: string, value: any) => {
-			if (!draftItem || !openedItemId || !openedItemCategory) return;
+			if (!draftItem) return;
+			if (!override && (!openedItemId || !openedItemCategory)) return;
 
 			let finalValue = value;
 			if (typeof (draftItem as any)[property] === 'number' && typeof value === 'string') {
@@ -193,9 +198,9 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 				return newItem;
 			});
 			setHasChanges(true);
-			markUnsavedChanges(openedItemId, openedItemCategory, true);
+			if (!override && openedItemId && openedItemCategory) markUnsavedChanges(openedItemId, openedItemCategory, true);
 		},
-		[draftItem, openedItemId, openedItemCategory, markUnsavedChanges]
+		[draftItem, override, openedItemId, openedItemCategory, markUnsavedChanges]
 	);
 
 	const handleSave = () => {
@@ -242,7 +247,8 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 	};
 
 	const handleUndoProperty = (property: string) => {
-		if (!originalItemRef.current || !draftItem || !openedItemId || !openedItemCategory) return;
+		if (!originalItemRef.current || !draftItem) return;
+		if (!override && (!openedItemId || !openedItemCategory)) return;
 
 		const originalValue = (originalItemRef.current as any)[property];
 		setDraftItem((prev) => {
@@ -261,10 +267,10 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 				return orig !== curr;
 			});
 
-			const isNew = isNewItem(openedItemId, openedItemCategory);
+			const isNew = !override && openedItemId && openedItemCategory ? isNewItem(openedItemId, openedItemCategory) : false;
 			const effective = stillHasChanges || isNew;
 			setHasChanges(effective);
-			markUnsavedChanges(openedItemId, openedItemCategory, effective);
+			if (!override && openedItemId && openedItemCategory) markUnsavedChanges(openedItemId, openedItemCategory, effective);
 
 			return updated;
 		});
@@ -299,7 +305,7 @@ export const useObjectProperties = (override?: { item: null | ThingType; getSpri
 		setShowCloseConfirm(false);
 	};
 
-	const clientVersion = data?.version.value || 0;
+	const clientVersion = override?.clientVersion ?? data?.version.value ?? 0;
 	const itemCategory = override?.item ? (override.item.category as ThingCategory) : openedItemCategory || selectedCategory;
 	const isItem = itemCategory === ThingCategory.ITEM;
 	const isOutfit = itemCategory === ThingCategory.OUTFIT;
