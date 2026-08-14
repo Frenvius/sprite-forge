@@ -65,6 +65,7 @@ export interface ForgeToolMeta {
 }
 
 export interface ForgeToolResult {
+	compile: boolean;
 	message?: string;
 	itemsChanged: boolean;
 }

@@ -623,8 +623,10 @@ export const Toolbar = () => {
 			if (res.itemsChanged) markDatDirty();
 			toast({
 				title: label,
-				description: res.message ?? (res.itemsChanged ? 'Compile to save changes.' : 'No changes')
+				description:
+					res.message ?? (res.itemsChanged ? (res.compile ? 'Compiling...' : 'Compile to save changes.') : 'No changes')
 			});
+			if (res.compile) await handleCompile();
 		} catch (e) {
 			toast({
 				title: label,

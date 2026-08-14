@@ -1023,7 +1023,9 @@ pub fn forge_list_tools(format_id: String, lua_state: State<LuaState>) -> Result
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolResult {
+    pub compile: bool,
     pub message: Option<String>,
     pub items_changed: bool,
 }
@@ -1044,11 +1046,13 @@ pub fn forge_run_tool(
         .get(format_id.clone())
         .map_err(|_| format!("no tools registered for format '{}'", format_id))?;
     let mut run: Option<Function> = None;
+    let mut tool_compile = false;
     for pair in list.sequence_values::<Table>() {
         let t = pair.map_err(|e| e.to_string())?;
         let id: String = t.get("id").map_err(|e| e.to_string())?;
         if id == tool_id {
             run = Some(t.get("run").map_err(|e| format!("tool '{}' has no run fn: {}", tool_id, e))?);
+            tool_compile = t.get::<bool>("compile").unwrap_or(false);
             break;
         }
     }
@@ -1069,7 +1073,11 @@ pub fn forge_run_tool(
         mlua::Value::Table(t) => t.get::<bool>("items_changed").unwrap_or(true),
         _ => true,
     };
-    Ok(ToolResult { message, items_changed })
+    let compile = match &ret {
+        mlua::Value::Table(t) => t.get::<bool>("compile").unwrap_or(tool_compile),
+        _ => tool_compile,
+    };
+    Ok(ToolResult { compile, message, items_changed })
 }
 
 #[cfg(test)]
