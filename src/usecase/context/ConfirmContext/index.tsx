@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
-import { type ConfirmOptions, type ConfirmResult, type ConfirmContextValue } from './types';
+import { type ConfirmResult, type ConfirmOptions, type ConfirmContextValue } from './types';
 import {
 	AlertDialog,
 	AlertDialogTitle,

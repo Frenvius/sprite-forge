@@ -260,7 +260,7 @@ export const useSpriteSlicer = () => {
 
 	React.useEffect(() => {
 		if (data) return;
-		let unlisten: (() => void) | undefined;
+		let unlisten: undefined | (() => void);
 		let cancelled = false;
 		void listen<boolean>('slicer:project-state', (e) => {
 			setRemoteProjectLoaded(!!e.payload);

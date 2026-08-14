@@ -9,7 +9,7 @@ interface DropPlaceholderProps {
 	stretch?: boolean;
 }
 
-const DropPlaceholder = ({ size, animate, vertical, stretch }: DropPlaceholderProps) => {
+const DropPlaceholder = ({ size, animate, stretch, vertical }: DropPlaceholderProps) => {
 	const [open, setOpen] = React.useState(!animate);
 	React.useEffect(() => {
 		if (!animate) return;

@@ -4,11 +4,7 @@ import { type SceneTile } from '../types';
 import { isValidSpriteId } from '~/lib/formats/tibia';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 
-function collectSceneSpriteIds(
-	tiles: SceneTile[][],
-	items: Map<number, { spriteIndex: number[] }>,
-	spritesCount?: number
-): number[] {
+function collectSceneSpriteIds(tiles: SceneTile[][], items: Map<number, { spriteIndex: number[] }>): number[] {
 	const spriteIds = new Set<number>();
 
 	for (const row of tiles) {
@@ -46,7 +42,7 @@ export const SceneCanvas = memo(({ width, tiles, height, scale = 1, onTileClick 
 		if (!data || !data.sprPath || tiles.length === 0) return;
 
 		const loadSceneSprites = async () => {
-			const spriteIds = collectSceneSpriteIds(tiles, data.items, data.spritesCount);
+			const spriteIds = collectSceneSpriteIds(tiles, data.items);
 			if (spriteIds.length === 0) return;
 
 			const missingIds = spriteIds.filter((id) => !data.sprites.has(id));

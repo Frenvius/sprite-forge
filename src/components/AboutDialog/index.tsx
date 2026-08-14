@@ -1,5 +1,5 @@
-import { Bug, Star, Github } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Bug, Star, Github } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { openUrl } from '@tauri-apps/plugin-opener';
 

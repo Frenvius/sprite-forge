@@ -8,8 +8,7 @@ import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
 
 export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
-	const { data, openedItems, openedItemId, setOpenedItemId, removeOpenedItem, selectedCategory, setSelectedCategoryAndItem } =
-		useAssetData();
+	const { data, openedItems, openedItemId, setOpenedItemId, removeOpenedItem, setSelectedCategoryAndItem } = useAssetData();
 	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	if (!data) {

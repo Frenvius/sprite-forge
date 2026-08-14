@@ -590,7 +590,7 @@ export const useSpriteList = () => {
 	React.useEffect(() => {
 		const handlePaste = async (e: ClipboardEvent) => {
 			if (!data) return;
-			const target = e.target as HTMLElement | null;
+			const target = e.target as null | HTMLElement;
 			if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
 
 			e.preventDefault();

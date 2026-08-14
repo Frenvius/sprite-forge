@@ -1,20 +1,13 @@
 import type { SearchCriteria } from './searchProtocol';
 
 import { ThingType, AssetData, ThingCategory } from './types';
-import { packSearchResults, packSearchCriteria } from './searchProtocol';
 
 export async function searchThingTypes(
 	data: AssetData,
 	criteria: SearchCriteria,
 	limit: number = 0
 ): Promise<Array<{ id: number; category: ThingCategory }>> {
-	const criteriaBuffer = packSearchCriteria(criteria, limit);
-
-	const results = performSearch(data, criteria, limit);
-
-	const resultsBuffer = packSearchResults(results);
-
-	return results;
+	return performSearch(data, criteria, limit);
 }
 
 function performSearch(data: AssetData, criteria: SearchCriteria, limit: number): Array<{ id: number; category: ThingCategory }> {
