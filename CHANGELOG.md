@@ -5,6 +5,22 @@ All notable changes to Sprite Forge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-13
+
+### Added
+- Template editor window for creating batches of items from a single layout.
+- Bulk "Save Changes" action in the item list context menu, covering the whole selection.
+- Sprite optimizer now shows exactly which sprites were removed, and why.
+- Copying properties now carries the server item data along.
+
+### Fixed
+- Creating, deleting and importing items now count as pending changes, so Compile no longer skips them.
+- Pasting properties no longer marks unrelated sprites as changed, which could blank them on compile.
+- Deleting a sprite that was not loaded yet now works instead of silently doing nothing.
+- Slicer cuts are appended to the existing set instead of replacing it.
+- Changing an object's dimensions resizes its sprite index instead of leaving stale slots.
+- Slice Editor no longer misses the project state when it opens.
+
 ## [0.3.1] - 2026-07-20
 
 ### Added
