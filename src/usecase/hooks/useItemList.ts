@@ -587,7 +587,7 @@ export const useItemList = () => {
 				}
 			}
 		}
-		notifyDataChanged(idList);
+		notifyDataChanged();
 		const suffix = serverTargets > 0 ? ` (+${serverTargets} server)` : '';
 		toast({
 			description: idList.length > 1 ? `Properties pasted to ${idList.length} items${suffix}` : `Properties pasted${suffix}`

@@ -234,18 +234,28 @@ export const useSpriteList = () => {
 		const modified: number[] = [];
 
 		for (const id of idList) {
+			if (id < 1 || id > data.spritesCount) continue;
 			const sprite = data.sprites.get(id);
-			if (!sprite) continue;
 
 			if (id === data.spritesCount) {
 				data.sprites.delete(id);
 				data.spritesCount--;
-			} else {
+			} else if (sprite) {
 				sprite.isEmpty = true;
 				sprite.rgbaPixels = new Uint8Array(4096);
 				sprite.pixels = undefined;
 				sprite.compressedPixels = new Uint8Array(0);
 				sprite.imageData = undefined;
+			} else {
+				data.sprites.set(id, {
+					id,
+					isEmpty: true,
+					pixels: undefined,
+					imageData: undefined,
+					transparent: data.transparency,
+					rgbaPixels: new Uint8Array(4096),
+					compressedPixels: new Uint8Array(0)
+				});
 			}
 
 			if (openedSpriteId === id) setOpenedSpriteId(null);
