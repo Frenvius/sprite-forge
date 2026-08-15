@@ -173,8 +173,8 @@ export const TemplateEditorWindow = () => {
 							onEdit={editor.editItem}
 							selected={editor.selected}
 							onSelect={editor.setSelected}
-							editingIndex={editor.editingIndex}
 							onRemove={() => editor.removeItems(editor.selected)}
+							onDuplicate={() => editor.duplicateItems(editor.selected)}
 						/>
 						<Resizer gap dir="y" side="top" onResize={({ dy }) => resize('itemsHeight', -dy)} />
 					</div>

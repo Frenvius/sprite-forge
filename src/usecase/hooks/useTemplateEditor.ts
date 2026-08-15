@@ -212,6 +212,20 @@ export const useTemplateEditor = () => {
 		[editingIndex, items.length]
 	);
 
+	const duplicateItems = React.useCallback(
+		(indices: Set<number>) => {
+			const copies = items
+				.filter((_, index) => indices.has(index))
+				.map((item) => ({ ...item, cells: [...item.cells], label: `${item.label} copy` }));
+			if (!copies.length) return;
+
+			setItems([...items, ...copies]);
+			setSelected(new Set(copies.map((_, offset) => items.length + offset)));
+			setEditingIndex(null);
+		},
+		[items]
+	);
+
 	const removeItems = React.useCallback((indices: Set<number>) => {
 		setItems((current) => current.filter((_, index) => !indices.has(index)));
 		setSelected(new Set());
@@ -379,6 +393,7 @@ export const useTemplateEditor = () => {
 		editingIndex,
 		templateName,
 		seedFromThing,
+		duplicateItems,
 		setTemplateName,
 		loadSheetFromPath,
 		loadSheetFromBytes,

@@ -14,8 +14,8 @@ export interface ItemsStripProps {
 	onRemove: () => void;
 	items: TemplateItem[];
 	selected: Set<number>;
+	onDuplicate: () => void;
 	sheet: null | SheetTiles;
-	editingIndex: null | number;
 	onEdit: (index: number) => void;
 	onSelect: (selected: Set<number>) => void;
 }
