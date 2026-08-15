@@ -1247,6 +1247,17 @@ export const SlicerWindow = () => {
 									Auto-select layer
 								</label>
 							)}
+							{v.tool === 'cursor' && (
+								<label className="flex cursor-pointer select-none items-center gap-1.5 text-[11px] text-foreground/80">
+									<input
+										type="checkbox"
+										checked={v.snap}
+										onChange={(e) => v.setSnap(e.target.checked)}
+										className="h-3 w-3 cursor-pointer accent-primary"
+									/>
+									Snap to grid
+								</label>
+							)}
 							{v.tool === 'wand' && (
 								<>
 									<label className="flex cursor-pointer select-none items-center gap-1.5 text-[11px] text-foreground/80">
