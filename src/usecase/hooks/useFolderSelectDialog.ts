@@ -117,6 +117,25 @@ const saveOtbLink = (datPath: string, link: OtbLink): void => {
 	}
 };
 
+const companionLinkKey = (primaryPath: string): string => `sprite-forge-companion-link:${primaryPath}`;
+
+const loadCompanionLink = (primaryPath: string): null | string => {
+	try {
+		if (typeof window === 'undefined') return null;
+		return localStorage.getItem(companionLinkKey(primaryPath));
+	} catch {
+		return null;
+	}
+};
+
+const saveCompanionLink = (primaryPath: string, companionPath: string): void => {
+	try {
+		if (typeof window !== 'undefined') localStorage.setItem(companionLinkKey(primaryPath), companionPath);
+	} catch {
+		void 0;
+	}
+};
+
 const removeOtbLink = (datPath: string): void => {
 	try {
 		if (typeof window !== 'undefined') localStorage.removeItem(otbLinkKey(datPath));
@@ -504,15 +523,23 @@ export const useFolderSelectDialog = ({
 	const dialogTitle = activeHandler?.loadDialogTitle ?? null;
 
 	React.useEffect(() => {
-		if (!companionExt) {
+		if (!companionExt || !pickedSingle) {
 			setCompanionPath(null);
 			return;
 		}
+		let cancelled = false;
 		const ext = '.' + companionExt.toLowerCase();
 		const hit = entries.find((e) => !e.is_dir && e.name.toLowerCase().endsWith(ext));
-		if (hit) void join(currentPathString, hit.name).then(setCompanionPath);
-		else setCompanionPath(null);
-	}, [companionExt, entries, currentPathString]);
+		void (async () => {
+			const primary = await join(currentPathString, pickedSingle.name);
+			const saved = loadCompanionLink(primary);
+			const next = saved ?? (hit ? await join(currentPathString, hit.name) : null);
+			if (!cancelled) setCompanionPath(next);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [companionExt, entries, currentPathString, pickedSingle]);
 
 	const matchesPick = (name: string): boolean => !!pickExt && name.toLowerCase().endsWith('.' + pickExt.toLowerCase());
 
@@ -568,6 +595,8 @@ export const useFolderSelectDialog = ({
 				} catch {
 					/* */
 				}
+				const primaryPath = await join(target, singleName);
+				if (companionPath) saveCompanionLink(primaryPath, companionPath);
 				onLoad({
 					formatId,
 					extended,
@@ -575,8 +604,8 @@ export const useFolderSelectDialog = ({
 					transparency,
 					folderPath: target,
 					improvedAnimations,
-					itemdbPath: companionPath ?? undefined,
-					filePath: await join(target, singleName)
+					filePath: primaryPath,
+					itemdbPath: companionPath ?? undefined
 				});
 				onOpenChange(false);
 				return;

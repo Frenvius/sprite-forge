@@ -65,7 +65,9 @@ async function store(entries: RecentLoad[]): Promise<RecentLoad[]> {
 
 export async function addRecentLoad(entry: RecentLoad): Promise<RecentLoad[]> {
 	const current = await getRecentLoads();
-	return store([entry, ...current.filter((e) => e.primaryPath !== entry.primaryPath)].slice(0, MAX));
+	const previous = current.find((e) => e.primaryPath === entry.primaryPath);
+	const merged: RecentLoad = { ...entry, itemdbPath: entry.itemdbPath ?? previous?.itemdbPath };
+	return store([merged, ...current.filter((e) => e.primaryPath !== entry.primaryPath)].slice(0, MAX));
 }
 
 export async function clearRecentLoads(): Promise<RecentLoad[]> {
