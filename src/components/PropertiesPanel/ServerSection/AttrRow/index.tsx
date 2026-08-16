@@ -23,8 +23,8 @@ export const AttrRow = ({ def, attr, onChange, onRemove }: AttrRowProps) => {
 				</SelectTrigger>
 				<SelectContent>
 					{def.values.map((v) => (
-						<SelectItem key={v} value={v} className="text-xs">
-							{v}
+						<SelectItem key={v.value} value={v.value} className="text-xs">
+							{v.label}
 						</SelectItem>
 					))}
 				</SelectContent>

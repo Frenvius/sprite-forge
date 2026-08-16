@@ -9,12 +9,32 @@ import tfs036 from './attributes/tfs0.3.6.xml?raw';
 
 export type AttrType = 'string' | 'number' | 'boolean';
 
+export interface AttrOption {
+	value: string;
+	label: string;
+}
+
 export interface AttrDef {
 	key: string;
 	tag: boolean;
 	type: AttrType;
 	category: string;
-	values?: string[];
+	values?: AttrOption[];
+}
+
+function toOptions(raw: unknown): AttrOption[] | undefined {
+	if (!Array.isArray(raw) || raw.length === 0) return undefined;
+	const out: AttrOption[] = [];
+	for (const entry of raw) {
+		if (typeof entry === 'string' || typeof entry === 'number') {
+			out.push({ value: String(entry), label: String(entry) });
+		} else if (entry && typeof entry === 'object') {
+			const o = entry as { value?: unknown; label?: unknown };
+			if (o.value === undefined) continue;
+			out.push({ value: String(o.value), label: String(o.label ?? o.value) });
+		}
+	}
+	return out.length > 0 ? out : undefined;
 }
 
 export interface ServerProfile {
@@ -64,7 +84,7 @@ function parseProfile(fallbackId: string, xml: string): ServerProfile {
 				type,
 				category,
 				tag: el.getAttribute('placement') === 'tag',
-				values: valuesRaw ? valuesRaw.split(',').map((v) => v.trim()) : undefined
+				values: valuesRaw ? toOptions(valuesRaw.split(',').map((v) => v.trim())) : undefined
 			};
 			attributes.push(def);
 			byKey.set(key, def);
@@ -83,7 +103,13 @@ export interface ScriptedProfile {
 	label?: string;
 	separate_xml_name?: boolean;
 	supports_from_to_id?: boolean;
-	attributes?: Array<{ key: string; type?: string; tag?: boolean; category?: string; values?: string[] }>;
+	attributes?: Array<{
+		key: string;
+		type?: string;
+		tag?: boolean;
+		category?: string;
+		values?: Array<string | number | { value: string | number; label?: string }>;
+	}>;
 }
 
 export function setScriptedProfiles(profiles: ScriptedProfile[], hideBuiltinProfiles: boolean): void {
@@ -95,7 +121,7 @@ export function setScriptedProfiles(profiles: ScriptedProfile[], hideBuiltinProf
 				.filter((a) => typeof a?.key === 'string' && a.key.length > 0)
 				.map((a) => ({
 					key: a.key,
-					values: a.values,
+					values: toOptions(a.values),
 					tag: a.tag === true,
 					category: a.category || 'General',
 					type: a.type === 'number' || a.type === 'boolean' ? a.type : 'string'
@@ -132,7 +158,7 @@ export function getServerProfile(id: string): ServerProfile {
 }
 
 export function defaultValueFor(def: AttrDef): string {
-	if (def.values && def.values.length > 0) return def.values[0];
+	if (def.values && def.values.length > 0) return def.values[0].value;
 	if (def.type === 'boolean') return '0';
 	if (def.type === 'number') return '0';
 	return '';
