@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 export interface GeneralSettings {
 	defaultZoom: number;
 	backupOnSave: boolean;
+	listThumbScale: number;
 	listAmountObjects: number;
 	listAmountSprites: number;
 	autoPlayAnimation: boolean;
@@ -16,6 +17,7 @@ interface GeneralSettingsContextType {
 
 const DEFAULT_SETTINGS: GeneralSettings = {
 	defaultZoom: 2,
+	listThumbScale: 1,
 	backupOnSave: true,
 	listAmountObjects: 100,
 	listAmountSprites: 100,
@@ -31,6 +33,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 		invoke<{
 			default_zoom: number;
 			backup_on_save: boolean;
+			list_thumb_scale: number;
 			list_amount_objects: number;
 			list_amount_sprites: number;
 			auto_play_animation: boolean;
@@ -39,6 +42,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 				setSettingsState({
 					defaultZoom: saved.default_zoom ?? 2,
 					backupOnSave: saved.backup_on_save ?? true,
+					listThumbScale: saved.list_thumb_scale ?? 1,
 					listAmountObjects: saved.list_amount_objects,
 					listAmountSprites: saved.list_amount_sprites,
 					autoPlayAnimation: saved.auto_play_animation
@@ -55,6 +59,7 @@ export const GeneralSettingsProvider = ({ children }: { children: React.ReactNod
 			settings: {
 				default_zoom: next.defaultZoom,
 				backup_on_save: next.backupOnSave,
+				list_thumb_scale: next.listThumbScale,
 				list_amount_objects: next.listAmountObjects,
 				list_amount_sprites: next.listAmountSprites,
 				auto_play_animation: next.autoPlayAnimation

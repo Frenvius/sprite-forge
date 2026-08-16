@@ -20,13 +20,15 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 	const { settings, setSettings } = useGeneralSettings();
 	const [objects, setObjects] = useState(settings.listAmountObjects);
 	const [sprites, setSprites] = useState(settings.listAmountSprites);
+	const [thumbScale, setThumbScale] = useState(settings.listThumbScale);
 
 	useEffect(() => {
 		if (open) {
 			setObjects(settings.listAmountObjects);
 			setSprites(settings.listAmountSprites);
+			setThumbScale(settings.listThumbScale);
 		}
-	}, [open, settings.listAmountObjects, settings.listAmountSprites]);
+	}, [open, settings.listAmountObjects, settings.listAmountSprites, settings.listThumbScale]);
 
 	const commit = (next: { objects: number; sprites: number }) => {
 		setSettings({
@@ -82,6 +84,23 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
 						<p className="text-[10px] text-muted-foreground">
 							Items per page in the object and sprite lists. Affects pagination, prefetch, and scroll behavior.
 						</p>
+					</section>
+
+					<section className="space-y-3">
+						<h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Thumbnail Size</h3>
+						<div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+							<Slider
+								min={100}
+								max={300}
+								step={10}
+								className="flex-1"
+								value={[Math.round(thumbScale * 100)]}
+								onValueChange={(v) => setThumbScale(v[0] / 100)}
+								onValueCommit={(v) => setSettings({ ...settings, listThumbScale: v[0] / 100 })}
+							/>
+							<span className="w-12 text-right text-sm font-mono text-foreground">{Math.round(thumbScale * 100)}%</span>
+						</div>
+						<p className="text-[10px] text-muted-foreground">Size of the sprite thumbnails in the object list.</p>
 					</section>
 
 					<section className="space-y-3">

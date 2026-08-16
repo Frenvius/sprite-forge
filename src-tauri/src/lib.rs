@@ -395,6 +395,12 @@ struct GeneralSettings {
     backup_on_save: bool,
     #[serde(default = "default_zoom")]
     default_zoom: u32,
+    #[serde(default = "default_thumb_scale")]
+    list_thumb_scale: f32,
+}
+
+fn default_thumb_scale() -> f32 {
+    1.0
 }
 
 impl Default for GeneralSettings {
@@ -405,6 +411,7 @@ impl Default for GeneralSettings {
             auto_play_animation: false,
             backup_on_save: true,
             default_zoom: 2,
+            list_thumb_scale: 1.0,
         }
     }
 }

@@ -25,6 +25,8 @@ import { ViewModeMenu } from '~/components/commons/ViewModeMenu';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { ListPagination } from '~/components/commons/ListPagination';
 import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
+import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
+import { THUMB_BASE_PX, CANVAS_BASE_PX } from '~/components/Panels/ItemList/constants';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
 import { ContextMenu, ContextMenuItem, ContextMenuContent, ContextMenuTrigger } from '~/components/ui/context-menu';
@@ -70,6 +72,9 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 	} = useItemList();
 
 	const { getServerItemsForClient } = useAssetData();
+	const { settings } = useGeneralSettings();
+	const thumbScale = settings.listThumbScale;
+	const thumbPx = viewMode === 'large-2' ? 0 : Math.round((THUMB_BASE_PX[viewMode] ?? 32) * thumbScale);
 	const showServerInfo = !!data?.serverItems && selectedCategory === ThingCategory.ITEM;
 	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
@@ -153,7 +158,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
-					<ScrollArea className="flex-1" ref={scrollViewportRef}>
+					<ScrollArea ref={scrollViewportRef} className="flex-1 [&>div>div]:!block">
 						<TooltipProvider>
 							<div
 								key={updateCounter}
@@ -197,13 +202,9 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 													)}
 												>
 													<CheckerBoard
+														style={thumbPx ? { width: thumbPx, height: thumbPx } : undefined}
 														className={cn(
 															'rounded-md border border-border/50 flex items-center justify-center flex-shrink-0 overflow-hidden',
-															viewMode === 'list' && 'w-8 h-8',
-															viewMode === 'grid' && 'w-12 h-12',
-															viewMode === 'grid-3' && 'w-11 h-11',
-															viewMode === 'grid-4' && 'w-9 h-9',
-															viewMode === 'large' && 'w-24 h-24',
 															viewMode === 'large-2' && 'w-full aspect-square'
 														)}
 													>
@@ -215,8 +216,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 															height={item.height}
 															fill={viewMode === 'large-2'}
 															scale={
-																({ list: 36, grid: 48, large: 96, 'grid-3': 44, 'grid-4': 36 }[viewMode] ?? 96) /
-																(Math.max(item.width, item.height) * spriteSize)
+																((CANVAS_BASE_PX[viewMode] ?? 96) * thumbScale) / (Math.max(item.width, item.height) * spriteSize)
 															}
 														/>
 													</CheckerBoard>
