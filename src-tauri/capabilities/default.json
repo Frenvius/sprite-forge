@@ -23,7 +23,8 @@
     "core:webview:allow-create-webview",
     "updater:default",
     "process:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "mcp-bridge:default"
   ]
 }
 

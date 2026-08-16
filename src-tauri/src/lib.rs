@@ -2684,11 +2684,21 @@ pub fn run() {
 
     logger::session_start();
 
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_process::init());
+
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(tauri_plugin_mcp_bridge::init_with_config(
+            tauri_plugin_mcp_bridge::Config { base_port: 9623, ..Default::default() },
+        ));
+    }
+
+    builder
         .register_asynchronous_uri_scheme_protocol(
             sprite_protocol::SCHEME,
             sprite_protocol::handle,
