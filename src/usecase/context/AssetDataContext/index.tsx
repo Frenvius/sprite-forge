@@ -406,10 +406,17 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			if (!sd) return;
 			const item = sd.items.get(serverId);
 			if (!item) return;
+			const previousClientId = item.clientId;
 			Object.assign(item, updates);
 			setModifiedServerIds((prev) => {
 				const next = new Set(prev);
 				next.add(serverId);
+				return next;
+			});
+			setUnsavedChanges((prev) => {
+				const next = new Set(prev);
+				next.add(`${ThingCategory.ITEM}-${previousClientId}`);
+				next.add(`${ThingCategory.ITEM}-${item.clientId}`);
 				return next;
 			});
 			setUpdateCounter((c) => c + 1);
@@ -465,6 +472,11 @@ export const AssetDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 			setModifiedServerIds((prev) => {
 				const next = new Set(prev);
 				next.add(newItem.serverId);
+				return next;
+			});
+			setUnsavedChanges((prev) => {
+				const next = new Set(prev);
+				next.add(`${ThingCategory.ITEM}-${clientId}`);
 				return next;
 			});
 			setUpdateCounter((c) => c + 1);
