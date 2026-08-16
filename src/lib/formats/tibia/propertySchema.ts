@@ -46,6 +46,8 @@ const MARKET_OPTIONS = Object.entries(MarketCategory)
 	.filter(([key]) => isNaN(Number(key)))
 	.map(([key, value]) => ({ value: Number(value), label: key.replace(/_/g, ' ') }));
 
+export const FLAG_DEPENDENT_VALUES: Record<string, Array<{ key: string; reset: number | string }>> = {};
+
 export const TIBIA_PROPERTY_SCHEMA: SchemaEntry[] = [
 	{
 		column: 1,
@@ -288,3 +290,22 @@ export const TIBIA_PROPERTY_SCHEMA: SchemaEntry[] = [
 		]
 	}
 ];
+
+function registerDependent(flag: string, key: string, type: PropertyFieldType) {
+	const list = (FLAG_DEPENDENT_VALUES[flag] ??= []);
+	if (!list.some((d) => d.key === key)) list.push({ key, reset: type === 'text' ? '' : 0 });
+}
+
+for (const entry of TIBIA_PROPERTY_SCHEMA) {
+	if (entry.kind !== 'schema') continue;
+	for (const sectionField of entry.fields) {
+		const fields = sectionField.type === 'grid' ? sectionField.fields : [sectionField];
+		for (const field of fields) {
+			if (field.valueKey) registerDependent(field.key, field.valueKey, 'number');
+			if (!field.enabledBy) continue;
+			for (const flag of Array.isArray(field.enabledBy) ? field.enabledBy : [field.enabledBy]) {
+				registerDependent(flag, field.key, field.type);
+			}
+		}
+	}
+}

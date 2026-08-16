@@ -10,6 +10,7 @@ import { ZOOM_LEVELS } from '~/usecase/util/constants';
 import { type Sprite, type ThingType } from '~/lib/formats/tibia';
 import { useAnimation } from '~/usecase/context/AnimationContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
+import { FLAG_DEPENDENT_VALUES } from '~/lib/formats/tibia/propertySchema';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '~/usecase/util/itemStateUtils';
 
@@ -52,6 +53,7 @@ export const useObjectProperties = (override?: {
 	const [selectedFrameGroup, setSelectedFrameGroup] = React.useState(0);
 	const selectedFrameGroupRef = React.useRef(0);
 	const originalItemRef = React.useRef<typeof item>(null);
+	const stashedValuesRef = React.useRef<Record<string, Record<string, any>>>({});
 	const isNewItemRef = React.useRef(isNewItem);
 	const hasUnsavedChangesRef = React.useRef(hasUnsavedChanges);
 	isNewItemRef.current = isNewItem;
@@ -130,6 +132,7 @@ export const useObjectProperties = (override?: {
 				}
 			}
 
+			stashedValuesRef.current = {};
 			const isNew = isNewItemRef.current(openedItemId, openedItemCategory);
 			const wasMarkedUnsaved = hasUnsavedChangesRef.current(openedItemId, openedItemCategory);
 			setDraftItem(initialItem);
@@ -157,6 +160,22 @@ export const useObjectProperties = (override?: {
 			setDraftItem((prev) => {
 				if (!prev) return null;
 				const newItem = { ...prev, [property]: finalValue };
+
+				const deps = FLAG_DEPENDENT_VALUES[property];
+				if (deps && typeof finalValue === 'boolean') {
+					if (finalValue) {
+						const stashed = stashedValuesRef.current[property];
+						if (stashed) for (const dep of deps) (newItem as any)[dep.key] = stashed[dep.key];
+						delete stashedValuesRef.current[property];
+					} else {
+						const stash: Record<string, any> = {};
+						for (const dep of deps) {
+							stash[dep.key] = (prev as any)[dep.key];
+							(newItem as any)[dep.key] = dep.reset;
+						}
+						stashedValuesRef.current[property] = stash;
+					}
+				}
 
 				if (SPRITE_INDEX_DIMS.has(property) && Array.isArray(newItem.spriteIndex)) {
 					const total =
@@ -214,6 +233,7 @@ export const useObjectProperties = (override?: {
 		});
 
 		updateThing(openedItemId, openedItemCategory, updates);
+		stashedValuesRef.current = {};
 		setHasChanges(false);
 		markUnsavedChanges(openedItemId, openedItemCategory, false);
 		clearNewItem(openedItemId, openedItemCategory);
