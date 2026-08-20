@@ -14,6 +14,7 @@ pub struct SprHeader {
     pub signature: u32,
     pub sprite_count: u32,
     pub extended: bool,
+    pub skip_colorkey: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -28,6 +29,7 @@ pub struct SprFileReader {
     file: BufReader<File>,
     header: SprHeader,
     header_size: u64,
+    sprite_prefix_size: u64,
 }
 
 impl SprFileReader {
@@ -56,16 +58,21 @@ impl SprFileReader {
 
         let header_size = if extended { 8 } else { 6 };
 
+        let skip_colorkey = detect_skip_colorkey(&mut reader, header_size, sprite_count);
+        let sprite_prefix_size: u64 = if skip_colorkey { 3 } else { 0 };
+
         let header = SprHeader {
             signature,
             sprite_count,
             extended,
+            skip_colorkey,
         };
 
         Ok(Self {
             file: reader,
             header,
             header_size,
+            sprite_prefix_size,
         })
     }
 
@@ -95,7 +102,7 @@ impl SprFileReader {
             });
         }
 
-        let data_start = address as u64 + 3;
+        let data_start = address as u64 + self.sprite_prefix_size;
         self.file.seek(SeekFrom::Start(data_start))
             .map_err(|e| format!("Failed to seek to sprite data: {}", e))?;
 
@@ -126,6 +133,61 @@ impl SprFileReader {
     pub fn get_header(&self) -> &SprHeader {
         &self.header
     }
+}
+
+fn detect_skip_colorkey(reader: &mut BufReader<File>, header_size: u64, sprite_count: u32) -> bool {
+    if sprite_count < 2 {
+        return true;
+    }
+
+    if reader.seek(SeekFrom::Start(header_size)).is_err() {
+        return true;
+    }
+
+    let table_size = (sprite_count as usize) * 4;
+    let mut table = vec![0u8; table_size];
+    if reader.read_exact(&mut table).is_err() {
+        return true;
+    }
+
+    let mut addrs: Vec<u64> = (0..sprite_count as usize)
+        .map(|i| u32::from_le_bytes([
+            table[i * 4],
+            table[i * 4 + 1],
+            table[i * 4 + 2],
+            table[i * 4 + 3],
+        ]) as u64)
+        .filter(|&a| a != 0)
+        .collect();
+    addrs.sort_unstable();
+
+    let mut votes_std = 0i32;
+    let mut votes_no = 0i32;
+
+    for pair in addrs.windows(2).take(16) {
+        let (a, b) = (pair[0], pair[1]);
+        if b <= a + 5 {
+            continue;
+        }
+        if reader.seek(SeekFrom::Start(a)).is_err() {
+            continue;
+        }
+        let mut buf = [0u8; 5];
+        if reader.read_exact(&mut buf).is_err() {
+            continue;
+        }
+        let len_no = u16::from_le_bytes([buf[0], buf[1]]) as u64;
+        let len_std = u16::from_le_bytes([buf[3], buf[4]]) as u64;
+        let match_no = len_no > 0 && a + 2 + len_no == b;
+        let match_std = len_std > 0 && a + 5 + len_std == b;
+        match (match_no, match_std) {
+            (true, false) => votes_no += 1,
+            (false, true) => votes_std += 1,
+            _ => {}
+        }
+    }
+
+    votes_no <= votes_std
 }
 
 pub struct SprManager {
@@ -279,12 +341,14 @@ impl SprManager {
                 let bytes_read = reader.file.read(&mut file_buf)
                     .map_err(|e| format!("Failed to read data block: {}", e))?;
 
+                let prefix = reader.sprite_prefix_size as usize;
+
                 for (id, pos) in valid_sprites {
                     let local_offset = (pos - min_pos) as usize;
 
-                    if local_offset + 5 > bytes_read { continue; }
+                    if local_offset + prefix + 2 > bytes_read { continue; }
 
-                    let len_offset = local_offset + 3;
+                    let len_offset = local_offset + prefix;
                     let length = u16::from_le_bytes([
                         file_buf[len_offset],
                         file_buf[len_offset + 1]
@@ -311,7 +375,7 @@ impl SprManager {
                     .map_err(|e| format!("Failed to get stream pos: {}", e))?;
 
                 for (id, pos) in valid_sprites {
-                    let target_pos = pos + 3;
+                    let target_pos = pos + reader.sprite_prefix_size;
 
                     if current_pos != target_pos {
                         reader.file.seek(SeekFrom::Start(target_pos))
