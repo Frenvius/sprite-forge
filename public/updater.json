@@ -1,7 +1,7 @@
 {
-  "version": "0.4.0",
-  "notes": "### Added\n- Template editor window for creating batches of items from a single layout.\n- Bulk \"Save Changes\" action in the item list context menu, covering the whole selection.\n- Sprite optimizer now shows exactly which sprites were removed, and why.\n- Copying properties now carries the server item data along.\n\n### Fixed\n- Creating, deleting and importing items now count as pending changes, so Compile no longer skips them.\n- Pasting properties no longer marks unrelated sprites as changed, which could blank them on compile.\n- Deleting a sprite that was not loaded yet now works instead of silently doing nothing.\n- Slicer cuts are appended to the existing set instead of replacing it.\n- Changing an object's dimensions resizes its sprite index instead of leaving stale slots.\n- Slice Editor no longer misses the project state when it opens.",
-  "pub_date": "2026-08-14T02:11:38Z",
-  "url": "https://github.com/Frenvius/sprite-forge/releases/download/v0.4.0/sprite-forge_0.4.0_x64-setup.exe",
-  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTcEJYRTBaa2tIcEFmczdyZXJzeXYrczljTkdITFAyUEdmejFNdUZmUXNoV0hyeTVqNVhXa2RXOFRLQWg3OXJGR1lFWHlISm1YYUdRd29jQmhoM1dwVFEvNlZLVHVOa2dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NjczNDk1CWZpbGU6c3ByaXRlLWZvcmdlXzAuNC4wX3g2NC1zZXR1cC5leGUKZTFVSDFwNXJGeVVaNjFmZVUzVms4VDNKcE5yMkM4VExKNk56RGhVV3kxNndpYno2eU9QMWQyQ3pTT3VOaTFGejdEMnNlN0xzSGIzaFhIQjJ5czNwQkE9PQo="
+  "version": "0.4.1",
+  "notes": "### Fixed\n- Find window now opens with all its data wired up and the format dropdown working.",
+  "pub_date": "2026-08-23T16:08:33Z",
+  "url": "https://github.com/Frenvius/sprite-forge/releases/download/v0.4.1/sprite-forge_0.4.1_x64-setup.exe",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTcEJYRTBaa2tIcElFVW9uTzZMaFM5QlZXcng1YWJHUGhVZHZ5NktVNkNUdHlmTm5LZDBwVjVKaElabWNyUVQwR3R3bm43VWozR2dPVU9aanN4VjJMVVhvWVNuYmxzeVF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3NTAxMzEwCWZpbGU6c3ByaXRlLWZvcmdlXzAuNC4xX3g2NC1zZXR1cC5leGUKM2ZQcnc2bHpMNFFZSlJaQlo1RnNmeEIzY3BZYlcxOVRSR3dMWVBCWXd4RlpRQVFJaEZOVHkrYUhKZkhpSXhKQTVEc1l5RWM5Vk5ROE52aU9NUkd3REE9PQo="
 }
