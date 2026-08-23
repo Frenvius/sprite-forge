@@ -4,6 +4,7 @@ import { Toaster } from '~/components/ui/toaster';
 import { FindWindow } from '~/components/FindWindow';
 import { TooltipProvider } from '~/components/ui/tooltip';
 import { ThemeProvider } from '~/usecase/context/ThemeContext';
+import { ConfirmProvider } from '~/usecase/context/ConfirmContext';
 import { DragDropProvider } from '~/usecase/context/DragDropContext';
 import { AssetDataProvider } from '~/usecase/context/AssetDataContext';
 
@@ -13,12 +14,14 @@ const FindApp = () => (
 	<QueryClientProvider client={queryClient}>
 		<ThemeProvider>
 			<TooltipProvider>
-				<AssetDataProvider>
-					<DragDropProvider>
-						<FindWindow />
-						<Toaster />
-					</DragDropProvider>
-				</AssetDataProvider>
+				<ConfirmProvider>
+					<AssetDataProvider>
+						<DragDropProvider>
+							<FindWindow />
+							<Toaster />
+						</DragDropProvider>
+					</AssetDataProvider>
+				</ConfirmProvider>
 			</TooltipProvider>
 		</ThemeProvider>
 	</QueryClientProvider>

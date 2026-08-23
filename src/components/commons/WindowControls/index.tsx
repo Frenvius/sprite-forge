@@ -7,9 +7,10 @@ import { useWindowControls } from '~/usecase/hooks/useWindowControls';
 
 interface WindowControlsProps {
 	className?: string;
+	onClose?: () => void | Promise<void>;
 }
 
-export const WindowControls = ({ className }: WindowControlsProps) => {
+export const WindowControls = ({ onClose, className }: WindowControlsProps) => {
 	const { minimize, isMaximized, toggleMaximize } = useWindowControls();
 	const [isMac, setIsMac] = React.useState(false);
 
@@ -31,7 +32,8 @@ export const WindowControls = ({ className }: WindowControlsProps) => {
 
 	const handleClose = async (e: React.MouseEvent) => {
 		e.stopPropagation();
-		await getCurrentWindow().close();
+		if (onClose) await onClose();
+		else await getCurrentWindow().close();
 	};
 
 	if (isMac) {

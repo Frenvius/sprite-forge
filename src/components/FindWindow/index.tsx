@@ -7,7 +7,6 @@ import {
 	Edit,
 	Copy,
 	List,
-	Minus,
 	Square,
 	Upload,
 	Trash2,
@@ -31,7 +30,7 @@ import { type ViewMode, type SimilarityRef } from './types';
 import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { PROPERTIES, VIEW_MODES, CATEGORY_BYTE } from './constants';
-import { useWindowControls } from '~/usecase/hooks/useWindowControls';
+import { WindowControls } from '~/components/commons/WindowControls';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
 import { ThingType, ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia/types';
 import { Select, SelectItem, SelectValue, SelectContent, SelectTrigger } from '~/components/ui/select';
@@ -80,7 +79,6 @@ function encodeFindSimilarPayload(
 
 export const FindWindow = () => {
 	const { data, setData, spriteSize, setOpenedItemId, notifySpritesLoaded } = useAssetData();
-	const { minimize, toggleMaximize } = useWindowControls();
 	const [selectedCategory, setSelectedCategory] = useState<'all' | ThingCategory>('all');
 	const [properties, setProperties] = useState<Record<string, boolean>>(
 		PROPERTIES.reduce((acc, prop) => ({ ...acc, [prop.property]: false }), {})
@@ -545,25 +543,11 @@ export const FindWindow = () => {
 		setAnchorKey(null);
 	}, []);
 
-	const handleMinimize = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-		await minimize();
-	};
-
-	const handleMaximize = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-		await toggleMaximize();
-	};
-
-	const handleClose = useCallback(
-		async (e?: React.MouseEvent) => {
-			e?.stopPropagation();
-			handleClear();
-			const appWindow = getCurrentWindow();
-			await appWindow.hide();
-		},
-		[handleClear]
-	);
+	const handleClose = useCallback(async () => {
+		handleClear();
+		const appWindow = getCurrentWindow();
+		await appWindow.hide();
+	}, [handleClear]);
 
 	useEffect(() => {
 		let unlisten: undefined | (() => void);
@@ -672,70 +656,12 @@ export const FindWindow = () => {
 		<div className="h-screen w-screen flex flex-col bg-background rounded-xl overflow-hidden border border-white/10 shadow-2xl">
 			<div
 				data-tauri-drag-region
-				className="h-8 bg-toolbar-bg border-b border-border/50 flex items-center justify-between px-4 relative flex-shrink-0"
+				className="h-8 bg-toolbar-bg border-b border-border/50 flex items-center pl-1.5 pr-3 gap-1 flex-shrink-0"
 			>
-				{isMac ? (
-					<>
-						<div className="flex items-center gap-2 group">
-							<div
-								onClick={handleClose}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="w-3 h-3 rounded-full bg-[#FF5F56] hover:bg-[#FF5F56]/80 cursor-pointer flex items-center justify-center border border-black/10 transition-colors"
-							>
-								<X className="w-2 h-2 text-black/50 opacity-0 group-hover:opacity-100" />
-							</div>
-							<div
-								onClick={handleMinimize}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="w-3 h-3 rounded-full bg-[#FFBD2E] hover:bg-[#FFBD2E]/80 cursor-pointer flex items-center justify-center border border-black/10 transition-colors"
-							>
-								<Minus className="w-2 h-2 text-black/50 opacity-0 group-hover:opacity-100" />
-							</div>
-							<div
-								onClick={handleMaximize}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="w-3 h-3 rounded-full bg-[#27C93F] hover:bg-[#27C93F]/80 cursor-pointer flex items-center justify-center border border-black/10 transition-colors"
-							>
-								<Square className="w-2 h-2 text-black/50 opacity-0 group-hover:opacity-100" />
-							</div>
-						</div>
-						<span className="text-sm font-medium absolute left-1/2 -translate-x-1/2">Find</span>
-						<div></div>
-					</>
-				) : (
-					<>
-						<span className="text-sm font-medium">Find</span>
-						<div className="flex items-center gap-1">
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={handleMinimize}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="h-8 w-8 hover:bg-secondary/50"
-							>
-								<Minus className="h-4 w-4" />
-							</Button>
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={handleMaximize}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="h-8 w-8 hover:bg-secondary/50"
-							>
-								<Square className="h-3.5 w-3.5" />
-							</Button>
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={handleClose}
-								onMouseDown={(e) => e.stopPropagation()}
-								className="h-8 w-8 hover:bg-destructive/20 hover:text-destructive"
-							>
-								<X className="h-4 w-4" />
-							</Button>
-						</div>
-					</>
-				)}
+				{isMac && <WindowControls onClose={handleClose} />}
+				<span className="text-sm font-medium">Find</span>
+				<div className="flex-1" />
+				{!isMac && <WindowControls onClose={handleClose} />}
 			</div>
 
 			<Tabs defaultValue="objects" className="flex-1 flex flex-col overflow-hidden">
