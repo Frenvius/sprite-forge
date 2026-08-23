@@ -1,19 +1,9 @@
-import { ThingCategory } from '~/lib/formats/tibia';
+import type { FormatConfig, ThingCategory } from '~/lib/formats/tibia';
 
-export const categoryNoun = (category: ThingCategory): string =>
-	category === ThingCategory.ITEM
-		? 'item'
-		: category === ThingCategory.OUTFIT
-			? 'outfit'
-			: category === ThingCategory.EFFECT
-				? 'effect'
-				: 'missile';
+export const categoryLabel = (config: FormatConfig, category: ThingCategory): string =>
+	config.categories.find((c) => c.id === category)?.label ?? String(category);
 
-export const categoryTitle = (category: ThingCategory): string =>
-	category === ThingCategory.ITEM
-		? 'Object'
-		: category === ThingCategory.OUTFIT
-			? 'Outfit'
-			: category === ThingCategory.EFFECT
-				? 'Effect'
-				: 'Missile';
+export const categoryNoun = (config: FormatConfig, category: ThingCategory): string =>
+	categoryLabel(config, category).toLowerCase();
+
+export const categoryTitle = categoryLabel;

@@ -13,11 +13,14 @@ import { getThumbnailSpriteIds } from '~/usecase/util/thumbnailUtils';
 import { confirmSpriteReplace } from '~/usecase/util/spriteImportUtils';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import {
+	toDisplayId,
 	ThingCategory,
+	fromDisplayId,
 	type ThingType,
 	isValidSpriteId,
 	createThingType,
 	getCategoryCount,
+	getCategoryRange,
 	setCategoryCount,
 	getCategoryStartId,
 	getCategoryMap as getCategoryMapUtil
@@ -95,10 +98,14 @@ export const useItemList = () => {
 	const allItemIds = React.useMemo(() => {
 		if (!data) return [];
 		const map = getCategoryMapUtil(data, selectedCategory);
-		const count = getCategoryCount(data, selectedCategory);
-		const minId = getCategoryStartId(formatConfig, selectedCategory);
+		const [minId, rangeEnd] = getCategoryRange(formatConfig, selectedCategory);
+		const baseCount = getCategoryCount(data, selectedCategory);
+		const baseStart = getCategoryStartId(
+			formatConfig,
+			formatConfig.categories.find((c) => c.id === selectedCategory)?.base ?? selectedCategory
+		);
+		const maxId = Math.min(rangeEnd, baseStart + baseCount - 1);
 		const ids: number[] = [];
-		const maxId = minId + count - 1;
 		for (let id = minId; id <= maxId; id++) {
 			if (map.has(id)) {
 				ids.push(id);
@@ -141,8 +148,8 @@ export const useItemList = () => {
 	}, [data, selectedCategory, setHighlightedItemId, allItemIds]);
 
 	React.useEffect(() => {
-		setInputValue(highlightedItemId ? String(highlightedItemId) : '');
-	}, [highlightedItemId]);
+		setInputValue(highlightedItemId ? String(toDisplayId(formatConfig, selectedCategory, highlightedItemId)) : '');
+	}, [highlightedItemId, formatConfig, selectedCategory]);
 
 	const [pendingSelection, setPendingSelection] = React.useState<null | { id: number; category: ThingCategory }>(null);
 
@@ -346,7 +353,8 @@ export const useItemList = () => {
 
 	const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === 'Enter') {
-			const itemId = parseInt(inputValue);
+			const typed = parseInt(inputValue);
+			const itemId = isNaN(typed) ? typed : fromDisplayId(formatConfig, selectedCategory, typed);
 			if (!isNaN(itemId) && data) {
 				const item = getThing(itemId, selectedCategory);
 				if (item) {
@@ -402,22 +410,28 @@ export const useItemList = () => {
 	const createNewItem = () => {
 		if (!data) return;
 		const map = getCategoryMapUtil(data, selectedCategory);
-		const minId = getCategoryStartId(formatConfig, selectedCategory);
+		const [minId, rangeEnd] = getCategoryRange(formatConfig, selectedCategory);
 
 		let newId = minId;
-		while (map.has(newId)) {
+		while (map.has(newId) && newId <= rangeEnd) {
 			newId++;
 		}
+		if (newId > rangeEnd) return;
 
 		const undoBefore = captureUndo(selectedCategory, [newId]);
 		const newItem = createThingType(newId, selectedCategory, formatConfig);
 		map.set(newId, newItem);
 
-		const newCount = map.size;
+		const baseStart = getCategoryStartId(
+			formatConfig,
+			formatConfig.categories.find((c) => c.id === selectedCategory)?.base ?? selectedCategory
+		);
+		const prevBaseCount = getCategoryCount(data, selectedCategory);
+		const newCount = Math.max(prevBaseCount, newId - baseStart + 1);
 		setCategoryCount(data, selectedCategory, newCount);
 		pushUndo(undoBefore, captureUndo(selectedCategory, [newId]), 'Create');
 
-		const updatedMaxId = minId + newCount - 1;
+		const updatedMaxId = Math.min(rangeEnd, baseStart + newCount - 1);
 		const updatedAllItemIds: number[] = [];
 		if (map) {
 			for (let id = minId; id <= updatedMaxId; id++) {
@@ -482,7 +496,11 @@ export const useItemList = () => {
 		if (!data) return;
 		const map = getCategoryMapUtil(data, selectedCategory);
 		const idList = Array.isArray(ids) ? ids : [ids];
-		const minId = getCategoryStartId(formatConfig, selectedCategory);
+		const [minId, rangeEnd] = getCategoryRange(formatConfig, selectedCategory);
+		const baseStart = getCategoryStartId(
+			formatConfig,
+			formatConfig.categories.find((c) => c.id === selectedCategory)?.base ?? selectedCategory
+		);
 		const prevCount = getCategoryCount(data, selectedCategory);
 
 		let lastNewId: null | number = null;
@@ -492,10 +510,11 @@ export const useItemList = () => {
 			const source = itemArg && idList.length === 1 ? itemArg : map.get(sourceId);
 			if (!source) continue;
 
-			let newId = sourceId + 1;
-			while (map.has(newId) || newIds.includes(newId)) {
+			let newId = Math.max(sourceId + 1, minId);
+			while ((map.has(newId) || newIds.includes(newId)) && newId <= rangeEnd) {
 				newId++;
 			}
+			if (newId > rangeEnd) continue;
 
 			const duplicate: ThingType = {
 				...source,
@@ -522,7 +541,7 @@ export const useItemList = () => {
 
 		if (lastNewId === null) return;
 
-		const updatedCount = Math.max(getCategoryCount(data, selectedCategory), lastNewId - minId + 1);
+		const updatedCount = Math.max(getCategoryCount(data, selectedCategory), lastNewId - baseStart + 1);
 		setCategoryCount(data, selectedCategory, updatedCount);
 		pushUndo(
 			{ count: prevCount, category: selectedCategory, entries: newIds.map((id) => ({ id, thing: null })) },
@@ -530,7 +549,7 @@ export const useItemList = () => {
 			'Duplicate'
 		);
 
-		const updatedMaxId = minId + updatedCount - 1;
+		const updatedMaxId = Math.min(rangeEnd, baseStart + updatedCount - 1);
 		const updatedAllItemIds: number[] = [];
 		for (let scanId = minId; scanId <= updatedMaxId; scanId++) {
 			if (map.has(scanId)) updatedAllItemIds.push(scanId);
@@ -706,12 +725,16 @@ export const useItemList = () => {
 		const toRemove = idList.filter((id) => map.has(id));
 		if (toRemove.length === 0) return;
 
-		const minId = getCategoryStartId(formatConfig, selectedCategory);
+		const [minId, rangeEnd] = getCategoryRange(formatConfig, selectedCategory);
+		const baseStart = getCategoryStartId(
+			formatConfig,
+			formatConfig.categories.find((c) => c.id === selectedCategory)?.base ?? selectedCategory
+		);
 		const firstRemoved = toRemove[0];
 		const firstIndex = allItemIds.indexOf(firstRemoved);
 
 		let maxId = minId - 1;
-		for (const id of map.keys()) if (id > maxId) maxId = id;
+		for (const id of map.keys()) if (id >= minId && id <= rangeEnd && id > maxId) maxId = id;
 
 		const undoBefore = captureUndo(selectedCategory, toRemove);
 
@@ -728,7 +751,9 @@ export const useItemList = () => {
 			if (openedItemId === id) setOpenedItemId(null);
 		}
 
-		setCategoryCount(data, selectedCategory, map.size);
+		let highestBaseId = baseStart - 1;
+		for (const id of map.keys()) if (id > highestBaseId) highestBaseId = id;
+		setCategoryCount(data, selectedCategory, Math.max(0, highestBaseId - baseStart + 1));
 		for (const entry of undoBefore.entries) markThingModified(entry.id, selectedCategory, entry.thing);
 		pushUndo(undoBefore, captureUndo(selectedCategory, toRemove), 'Remove');
 
@@ -739,7 +764,7 @@ export const useItemList = () => {
 
 		const presentIds: number[] = [];
 		let newMax = minId - 1;
-		for (const id of map.keys()) if (id > newMax) newMax = id;
+		for (const id of map.keys()) if (id >= minId && id <= rangeEnd && id > newMax) newMax = id;
 		for (let id = minId; id <= newMax; id++) if (map.has(id)) presentIds.push(id);
 
 		if (presentIds.length === 0) {

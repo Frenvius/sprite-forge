@@ -4,6 +4,8 @@ import type { RemovedReason, RemovedSprite, OptimizeResult } from '~/lib/formats
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
+import { iterAllThings } from './types';
+
 const REASONS: RemovedReason[] = ['empty', 'duplicate', 'unused'];
 
 export async function optimizeSprites(
@@ -30,10 +32,7 @@ export async function optimizeSprites(
 		}
 	};
 
-	for (const thing of data.items.values()) scanThingSprites(thing);
-	for (const thing of data.outfits.values()) scanThingSprites(thing);
-	for (const thing of data.effects.values()) scanThingSprites(thing);
-	for (const thing of data.missiles.values()) scanThingSprites(thing);
+	for (const thing of iterAllThings(data)) scanThingSprites(thing);
 
 	if (onProgress) onProgress('Optimizing in backend...', currentStep++, steps);
 
@@ -134,10 +133,7 @@ export async function optimizeSprites(
 			}
 		};
 
-		for (const thing of data.items.values()) remapThingSprites(thing);
-		for (const thing of data.outfits.values()) remapThingSprites(thing);
-		for (const thing of data.effects.values()) remapThingSprites(thing);
-		for (const thing of data.missiles.values()) remapThingSprites(thing);
+		for (const thing of iterAllThings(data)) remapThingSprites(thing);
 
 		if (onProgress) onProgress('Reloading sprites...', currentStep++, steps);
 

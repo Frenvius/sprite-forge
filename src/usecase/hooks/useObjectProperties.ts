@@ -4,13 +4,13 @@ import type { OutfitData, Visibility } from '~/usecase/context/PropertiesContext
 import React from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import { ThingCategory } from '~/lib/formats/tibia';
 import { useToast } from '~/usecase/hooks/useToast';
 import { ZOOM_LEVELS } from '~/usecase/util/constants';
 import { type Sprite, type ThingType } from '~/lib/formats/tibia';
 import { useAnimation } from '~/usecase/context/AnimationContext';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { FLAG_DEPENDENT_VALUES } from '~/lib/formats/tibia/propertySchema';
+import { ThingCategory, getCategoryRenderConfig } from '~/lib/formats/tibia';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { loadItemState, saveItemState, getItemStateKey, type ItemPropertiesState } from '~/usecase/util/itemStateUtils';
 
@@ -27,6 +27,7 @@ export const useObjectProperties = (override?: {
 		isNewItem,
 		spriteSize,
 		updateThing,
+		formatConfig,
 		openedItemId,
 		clearNewItem,
 		updateCounter,
@@ -327,9 +328,11 @@ export const useObjectProperties = (override?: {
 
 	const clientVersion = override?.clientVersion ?? data?.version.value ?? 0;
 	const itemCategory = override?.item ? (override.item.category as ThingCategory) : openedItemCategory || selectedCategory;
-	const isItem = itemCategory === ThingCategory.ITEM;
-	const isOutfit = itemCategory === ThingCategory.OUTFIT;
+	const renderConfig = getCategoryRenderConfig(formatConfig, itemCategory);
+	const isOutfit = itemCategory === ThingCategory.OUTFIT || renderConfig?.layerCompositing === true;
 	const isMissile = itemCategory === ThingCategory.MISSILE;
+	const isEffect = itemCategory === ThingCategory.EFFECT;
+	const isItem = !isOutfit && !isMissile && !isEffect;
 
 	const supportsFrameGroups = clientVersion >= 1057;
 

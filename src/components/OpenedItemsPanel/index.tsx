@@ -2,13 +2,22 @@ import { X } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
+import { ThingCategory } from '~/lib/formats/tibia';
 import { DragHandleProps } from '~/usecase/util/dock';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
-import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
 
 export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
-	const { data, openedItems, openedItemId, setOpenedItemId, removeOpenedItem, setSelectedCategoryAndItem } = useAssetData();
+	const {
+		data,
+		openedItems,
+		openedItemId,
+		formatConfig,
+		setOpenedItemId,
+		removeOpenedItem,
+		openedItemCategory,
+		setSelectedCategoryAndItem
+	} = useAssetData();
 	const handleProps = dragHandle ? { ref: dragHandle.ref, ...dragHandle.attributes, ...dragHandle.listeners } : {};
 
 	if (!data) {
@@ -36,8 +45,7 @@ export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps 
 		setSelectedCategoryAndItem(item.category, item.id);
 	};
 
-	const getCategoryLabel = (category: ThingCategory) =>
-		TIBIA_FORMAT_CONFIG.categories.find((c) => c.id === category)?.label ?? category;
+	const getCategoryLabel = (category: ThingCategory) => formatConfig.categories.find((c) => c.id === category)?.label ?? category;
 
 	return (
 		<div className="w-full h-full bg-card rounded-lg shadow-island flex flex-col overflow-hidden flex-shrink-0">
@@ -65,7 +73,7 @@ export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps 
 								className={cn(
 									'w-full rounded-md px-2 py-1 hover:bg-item-hover transition-colors text-left cursor-pointer',
 									'flex items-center justify-between',
-									openedItemId === item.id && 'bg-primary/15 ring-1 ring-primary/50'
+									openedItemId === item.id && openedItemCategory === item.category && 'bg-primary/15 ring-1 ring-primary/50'
 								)}
 							>
 								<div className="flex items-center gap-2 min-w-0">
@@ -78,7 +86,7 @@ export const OpenedItemsPanel = ({ dragHandle }: { dragHandle?: DragHandleProps 
 									className="h-4 w-4 flex-shrink-0 hover:bg-destructive/20 hover:text-destructive"
 									onClick={(e) => {
 										e.stopPropagation();
-										if (item.id === openedItemId) {
+										if (item.id === openedItemId && item.category === openedItemCategory) {
 											setOpenedItemId(null);
 										}
 										removeOpenedItem(item.id, item.category);

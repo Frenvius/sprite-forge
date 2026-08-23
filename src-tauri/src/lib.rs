@@ -2815,6 +2815,8 @@ pub fn run() {
             lua_bridge::forge_app_config,
             lua_bridge::registered_formats,
             lua_bridge::forge_list_formats,
+            lua_bridge::forge_category_labels,
+            lua_bridge::forge_virtual_categories,
             lua_ui::forge_panels,
             lua_ui::forge_panel_list,
             lua_ui::forge_dispatch,

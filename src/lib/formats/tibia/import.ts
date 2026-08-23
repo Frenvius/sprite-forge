@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { log } from '~/lib/log';
+import { getCategoryMap } from './types';
 import { parseImportResponse } from './loader';
 import { ByteWriter, encodeThing } from './compiler';
 
@@ -106,14 +107,9 @@ export async function importObjectSheet(
 			data.spritesCount = maxSpriteId;
 		}
 
-		const categoryMap = {
-			item: data.items,
-			outfit: data.outfits,
-			effect: data.effects,
-			missile: data.missiles
-		}[updatedThing.category];
+		const categoryMap = getCategoryMap(data, updatedThing.category);
 
-		if (categoryMap?.has(thing.id)) {
+		if (categoryMap.has(thing.id)) {
 			categoryMap.set(thing.id, updatedThing);
 		}
 

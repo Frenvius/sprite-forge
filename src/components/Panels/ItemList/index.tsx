@@ -24,7 +24,7 @@ import { SpriteCanvas } from '~/components/commons/SpriteCanvas';
 import { ViewModeMenu } from '~/components/commons/ViewModeMenu';
 import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { ListPagination } from '~/components/commons/ListPagination';
-import { ThingCategory, TIBIA_FORMAT_CONFIG } from '~/lib/formats/tibia';
+import { ThingCategory, TIBIA_FORMAT_CONFIG, toDisplayId } from '~/lib/formats/tibia';
 import { useGeneralSettings } from '~/usecase/context/GeneralSettingsContext';
 import { THUMB_BASE_PX, CANVAS_BASE_PX } from '~/components/Panels/ItemList/constants';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '~/components/ui/tooltip';
@@ -176,6 +176,7 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 									const item = getThing(id, selectedCategory);
 									if (!item) return null;
 
+									const displayId = toDisplayId(formatConfig, selectedCategory, id);
 									const server = showServerInfo ? getServerItemsForClient(id)[0] : undefined;
 									const displayName = server?.nameXml || server?.name || (item.isMarketItem ? item.marketName : '') || '';
 
@@ -232,17 +233,23 @@ export const ItemList = ({ dragHandle }: { dragHandle?: DragHandleProps }) => {
 														)}
 													>
 														{viewMode === 'grid' || viewMode === 'large' ? (
-															<div className="text-[11px] text-foreground font-mono font-medium leading-tight">{id}</div>
+															<div className="text-[11px] text-foreground font-mono font-medium leading-tight">{displayId}</div>
 														) : viewMode === 'large-2' ? (
-															<div className="text-[11px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
+															<div className="text-[11px] text-foreground font-mono font-medium leading-tight truncate">
+																{displayId}
+															</div>
 														) : viewMode === 'grid-3' ? (
-															<div className="text-[10px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
+															<div className="text-[10px] text-foreground font-mono font-medium leading-tight truncate">
+																{displayId}
+															</div>
 														) : viewMode === 'grid-4' ? (
-															<div className="text-[9px] text-foreground font-mono font-medium leading-tight truncate">{id}</div>
+															<div className="text-[9px] text-foreground font-mono font-medium leading-tight truncate">
+																{displayId}
+															</div>
 														) : (
 															<>
 																<div className="text-[11px] text-foreground font-mono font-medium leading-tight truncate">
-																	{id}
+																	{displayId}
 																	{displayName ? ` - ${displayName}` : ''}
 																</div>
 																{server ? (

@@ -13,6 +13,7 @@ import { ServerSection } from './ServerSection';
 import { PropertyColumns } from './PropertyColumns';
 import { Separator } from '~/components/ui/separator';
 import { ScrollArea } from '~/components/ui/scroll-area';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 import { PropertiesContext } from '~/usecase/context/PropertiesContext';
 import { useObjectProperties } from '~/usecase/hooks/useObjectProperties';
 import {
@@ -32,6 +33,7 @@ export const PropertiesPanel = ({ embed }: PropertiesPanelProps) => {
 		[embed?.item, embed?.getSprite, embed?.clientVersion]
 	);
 	const c = useObjectProperties(override);
+	const { formatConfig } = useAssetData();
 
 	if (!embed && (!c.data || !c.item)) {
 		return <EmptyState category={c.itemCategory} />;
@@ -65,7 +67,7 @@ export const PropertiesPanel = ({ embed }: PropertiesPanelProps) => {
 					<h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">
 						{embed
 							? embed.title
-							: `${categoryTitle(c.itemCategory)} Properties - ID ${draftItem.id}${
+							: `${categoryTitle(formatConfig, c.itemCategory)} Properties - ID ${draftItem.id}${
 									draftItem.isMarketItem && draftItem.marketName ? ` - ${draftItem.marketName}` : ''
 								}`}
 					</h2>

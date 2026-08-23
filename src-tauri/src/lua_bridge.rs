@@ -10,6 +10,7 @@ pub fn register(lua: &Lua) -> mlua::Result<()> {
     let forge: Table = lua.globals().get("forge")?;
     forge.set("_formats", lua.create_table()?)?;
     forge.set("_server_profiles", lua.create_table()?)?;
+    forge.set("_category_labels", lua.create_table()?)?;
 
     forge.set(
         "register_server_profile",
@@ -17,6 +18,27 @@ pub fn register(lua: &Lua) -> mlua::Result<()> {
             let forge: Table = lua.globals().get("forge")?;
             let profiles: Table = forge.get("_server_profiles")?;
             profiles.set(profiles.raw_len() + 1, t)?;
+            Ok(())
+        })?,
+    )?;
+
+    forge.set(
+        "set_category_label",
+        lua.create_function(|lua, (id, label): (String, String)| {
+            let forge: Table = lua.globals().get("forge")?;
+            let labels: Table = forge.get("_category_labels")?;
+            labels.set(id.to_lowercase(), label)?;
+            Ok(())
+        })?,
+    )?;
+
+    forge.set("_virtual_categories", lua.create_table()?)?;
+    forge.set(
+        "register_virtual_category",
+        lua.create_function(|lua, t: Table| {
+            let forge: Table = lua.globals().get("forge")?;
+            let list: Table = forge.get("_virtual_categories")?;
+            list.set(list.raw_len() + 1, t)?;
             Ok(())
         })?,
     )?;
@@ -172,6 +194,45 @@ fn lua_value_to_json(value: mlua::Value) -> serde_json::Value {
         }
         _ => Value::Null,
     }
+}
+
+#[tauri::command]
+pub fn forge_category_labels(lua_state: State<LuaState>) -> Result<std::collections::HashMap<String, String>, String> {
+    let guard = lua_state.lock().map_err(|e| e.to_string())?;
+    let forge: Table = guard.lua.globals().get("forge").map_err(|e| e.to_string())?;
+    let labels: Table = forge.get("_category_labels").map_err(|e| e.to_string())?;
+    let mut out = std::collections::HashMap::new();
+    for pair in labels.pairs::<String, String>() {
+        let (k, v) = pair.map_err(|e| e.to_string())?;
+        out.insert(k, v);
+    }
+    Ok(out)
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VirtualCategory {
+    pub id: String,
+    pub base: String,
+    pub label: String,
+    pub start_id: u32,
+}
+
+#[tauri::command]
+pub fn forge_virtual_categories(lua_state: State<LuaState>) -> Result<Vec<VirtualCategory>, String> {
+    let guard = lua_state.lock().map_err(|e| e.to_string())?;
+    let forge: Table = guard.lua.globals().get("forge").map_err(|e| e.to_string())?;
+    let list: Table = forge.get("_virtual_categories").map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for pair in list.pairs::<i64, Table>() {
+        let (_, t) = pair.map_err(|e| e.to_string())?;
+        let id: String = t.get("id").map_err(|e| e.to_string())?;
+        let base: String = t.get("base").map_err(|e| e.to_string())?;
+        let label: String = t.get("label").unwrap_or_else(|_| id.clone());
+        let start_id: u32 = t.get("start_id").unwrap_or(1);
+        out.push(VirtualCategory { id: id.to_lowercase(), base: base.to_lowercase(), label, start_id });
+    }
+    Ok(out)
 }
 
 #[tauri::command]

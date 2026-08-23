@@ -21,6 +21,7 @@ import {
 	ThingType,
 	type Sprite,
 	FormatConfig,
+	iterAllThings,
 	ClientVersion,
 	ThingCategory,
 	type CategoryDef
@@ -61,10 +62,7 @@ async function optimizeScripted(
 		for (const id of t.spriteIndex ?? []) if (id > 0) used.add(id);
 		for (const g of t.frameGroupsData ?? []) for (const id of g.spriteIndex ?? []) if (id > 0) used.add(id);
 	};
-	for (const t of data.items.values()) scan(t);
-	for (const t of data.outfits.values()) scan(t);
-	for (const t of data.effects.values()) scan(t);
-	for (const t of data.missiles.values()) scan(t);
+	for (const t of iterAllThings(data)) scan(t);
 
 	const usedIds = [...used].sort((a, b) => a - b);
 	if (usedIds.length === 0) throw new Error('Optimize aborted: no sprites referenced.');
@@ -119,10 +117,7 @@ async function optimizeScripted(
 			if (g.spriteIndex) g.spriteIndex = g.spriteIndex.map((id) => (id > 0 ? (finalRemap.get(id) ?? 0) : 0));
 		}
 	};
-	for (const t of data.items.values()) remap(t);
-	for (const t of data.outfits.values()) remap(t);
-	for (const t of data.effects.values()) remap(t);
-	for (const t of data.missiles.values()) remap(t);
+	for (const t of iterAllThings(data)) remap(t);
 
 	data.sprites.clear();
 	for (const [nid, sp] of newSprites) data.sprites.set(nid, sp);
@@ -375,18 +370,7 @@ const makeHandler = (meta: LuaFormatMeta): FormatHandler => {
 		async compile(req) {
 			const { data } = req;
 			if (!data.sprPath) throw new Error('No path to save');
-			const seen = new Set<Map<number, ThingType>>();
-			const things: ThingType[] = [];
-			const pushFrom = (m: Map<number, ThingType>) => {
-				if (seen.has(m)) return;
-				seen.add(m);
-				for (const t of m.values()) things.push(t);
-			};
-			if (data.things) for (const m of data.things.values()) pushFrom(m);
-			pushFrom(data.items);
-			pushFrom(data.outfits);
-			pushFrom(data.effects);
-			pushFrom(data.missiles);
+			const things: ThingType[] = [...iterAllThings(data)];
 			const ids = collectReferencedSpriteIds(things);
 			await loadSpritesScripted(data, ids);
 

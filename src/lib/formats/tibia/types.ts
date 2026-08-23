@@ -52,6 +52,7 @@ export interface CategoryDef {
 	label: string;
 	startId: number;
 	id: ThingCategory;
+	base?: ThingCategory;
 	defaults?: Partial<ThingType>;
 	rendering?: CategoryRenderConfig;
 }
@@ -372,8 +373,19 @@ export function getSpriteIndex(
 	);
 }
 
+let virtualBaseResolver: (cat: string) => string = (c) => c;
+
+export function setVirtualCategoryResolver(fn: (cat: string) => string): void {
+	virtualBaseResolver = fn;
+}
+
+export function resolveBaseCategory(category: string | ThingCategory): string {
+	return virtualBaseResolver(String(category));
+}
+
 export function getCategoryMap(data: AssetData, category: string | ThingCategory): Map<number, ThingType> {
-	switch (category) {
+	const resolved = virtualBaseResolver(String(category));
+	switch (resolved) {
 		case ThingCategory.ITEM:
 			return data.items;
 		case ThingCategory.OUTFIT:
@@ -384,16 +396,17 @@ export function getCategoryMap(data: AssetData, category: string | ThingCategory
 			return data.missiles;
 	}
 	if (!data.things) data.things = new Map();
-	let m = data.things.get(category);
+	let m = data.things.get(resolved);
 	if (!m) {
 		m = new Map();
-		data.things.set(category, m);
+		data.things.set(resolved, m);
 	}
 	return m;
 }
 
 export function getCategoryCount(data: AssetData, category: string | ThingCategory): number {
-	switch (category) {
+	const resolved = virtualBaseResolver(String(category));
+	switch (resolved) {
 		case ThingCategory.ITEM:
 			return data.itemsCount;
 		case ThingCategory.OUTFIT:
@@ -403,11 +416,12 @@ export function getCategoryCount(data: AssetData, category: string | ThingCatego
 		case ThingCategory.MISSILE:
 			return data.missilesCount;
 	}
-	return data.things?.get(category)?.size ?? 0;
+	return data.things?.get(resolved)?.size ?? 0;
 }
 
 export function setCategoryCount(data: AssetData, category: string | ThingCategory, count: number): void {
-	switch (category) {
+	const resolved = virtualBaseResolver(String(category));
+	switch (resolved) {
 		case ThingCategory.ITEM:
 			data.itemsCount = count;
 			return;
@@ -425,6 +439,52 @@ export function setCategoryCount(data: AssetData, category: string | ThingCatego
 
 export function getCategoryStartId(config: FormatConfig, category: string | ThingCategory): number {
 	return config.categories.find((c) => c.id === category)?.startId ?? 1;
+}
+
+export function isVirtualCategory(config: FormatConfig, category: string | ThingCategory): boolean {
+	const cat = config.categories.find((c) => c.id === category);
+	return !!(cat?.base && cat.base !== cat.id);
+}
+
+export function toDisplayId(config: FormatConfig, category: string | ThingCategory, actualId: number): number {
+	if (!isVirtualCategory(config, category)) return actualId;
+	const startId = getCategoryStartId(config, category);
+	return actualId - startId + 1;
+}
+
+export function fromDisplayId(config: FormatConfig, category: string | ThingCategory, displayId: number): number {
+	if (!isVirtualCategory(config, category)) return displayId;
+	const startId = getCategoryStartId(config, category);
+	return displayId + startId - 1;
+}
+
+export function getCategoryRange(config: FormatConfig, category: string | ThingCategory): [number, number] {
+	const cat = config.categories.find((c) => c.id === category);
+	if (!cat) return [1, Number.POSITIVE_INFINITY];
+	const base = cat.base ?? cat.id;
+	const siblings = config.categories.filter((c) => (c.base ?? c.id) === base);
+	const nextStart = siblings
+		.map((c) => c.startId)
+		.sort((a, b) => a - b)
+		.find((s) => s > cat.startId);
+	return [cat.startId, nextStart ? nextStart - 1 : Number.POSITIVE_INFINITY];
+}
+
+export function* iterAllThings(data: AssetData): Generator<ThingType> {
+	const seen = new Set<Map<number, ThingType>>();
+	const visit = (m: Map<number, ThingType>) => seen.add(m);
+	const emit = function* (m: Map<number, ThingType>): Generator<ThingType> {
+		if (seen.has(m)) return;
+		visit(m);
+		for (const t of m.values()) yield t;
+	};
+	yield* emit(data.items);
+	yield* emit(data.outfits);
+	yield* emit(data.effects);
+	yield* emit(data.missiles);
+	if (data.things) {
+		for (const m of data.things.values()) yield* emit(m);
+	}
 }
 
 export function getCategoryRenderConfig(

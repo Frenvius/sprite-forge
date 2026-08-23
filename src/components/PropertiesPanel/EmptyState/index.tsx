@@ -3,13 +3,15 @@ import type { ThingCategory } from '~/lib/formats/tibia';
 import { FileQuestion } from 'lucide-react';
 
 import { categoryNoun } from '../constants';
+import { useAssetData } from '~/usecase/context/AssetDataContext';
 
 interface EmptyStateProps {
 	category: ThingCategory;
 }
 
 export const EmptyState = ({ category }: EmptyStateProps) => {
-	const noun = categoryNoun(category);
+	const { formatConfig } = useAssetData();
+	const noun = categoryNoun(formatConfig, category);
 	return (
 		<div className="w-full h-full bg-card rounded-lg shadow-island-lg flex flex-col overflow-hidden">
 			<div className="h-8 px-4 flex items-center border-b border-border/50 bg-secondary/80">
